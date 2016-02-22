@@ -30,10 +30,22 @@ fi
 installed=`which wget`
 if [[$installed == *"not found"*]]; then
     # We need to install wget
+    echo -e "[Install] wget"
     exec brew install wget
 fi
 
+# Check for grc
+installed=`which grc`
+if [[$installed == *"not found"*]]; then
+    # We need to install grc
+    echo -e "[Install] grc"
+    exec brew install grc
+fi
+
+
+
 # Install python brew
+echo -e "[Install] python"
 exec brew install python
 
 # Install fonts for powerline
@@ -63,5 +75,14 @@ fi
 if [ ! -d  "~/.vim/bundle/" ]
     git clone git://github.com/altercation/vim-colors-solarized.git
 fi
+
+# Install 7.4 version of vim and link it to vim
+installed=`which vim`
+if [[$installed == "/usr/local/bin/vim"]]; then
+    exec brew install vim # Installs in /usr/local/bin/vim
+    mv /usr/bin/vim /usr/bin/vim72 # Move original mac vim to vim72.. incase we need it one day
+    ln -s /usr/local/bin/vim /usr/bin/vim
+fi
+
 
 cd ~
