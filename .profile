@@ -1,3 +1,10 @@
+alias ls="ls -laG"
+
+export http_proxy=http://proxy.inet.bloomberg.com:81
+export https_proxy=http://proxy.inet.bloomberg.com:81 
+export HTTP_PROXY=http://proxy.inet.bloomberg.com:81
+export HTTPS_PROXY=http://proxy.inet.bloomberg.com:81
+
 # Git function to change email based on directory
 function updateGitName {
 
@@ -9,15 +16,22 @@ function updateGitName {
     local PERSONAL_DIR="$HOME/workspace/personal"
 
     local current=`pwd`
+    
+    # Check if directory finishes with ".git" if so scrap it
+    local file=$1
+    if [[ "${file: -4}" == ".git" ]]; then
+        file="${file%.git}"
+    fi
+
     # Go to new directory
-    cd $1
+    cd $file
 
     case $current in
         "$WORK_DIR")
-            command git config user.email "<work email>"
+            command git config user.email "jbouchard8@bloomberg.net"
             ;;
         "$PERSONAL_DIR")
-            command git config user.email "<personal email>"
+            command git config user.email "jim@polarcoordinates.org"
             ;;
         *)
             ;;
