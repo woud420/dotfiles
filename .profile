@@ -61,3 +61,10 @@ git() {
         command git "$@"
     fi
 }
+
+alias vi="vim"
+
+alias ls="ls --color=auto"
+alias grep="grep --color=auto"
+
+alias tmux="tmux -2"
