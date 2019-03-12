@@ -167,3 +167,82 @@ if !exists(":DiffOrig")
   command DiffOrig vert new | set bt=nofile | r # | 0d_ | diffthis
 		  \ | wincmd p | diffthis
 endif
+
+"""""""""""""""""""""
+" call plug#begin('~/.vim/plugged')
+" Initialize plugin system
+" Plug 'vim-airline/vim-airline'
+" Plug 'vim-airline/vim-airline-themes' 
+" Plug 'octol/vim-cpp-enhanced-highlight'
+" Plug 'ctrlpvim/ctrlp.vim'
+" Plug 'majutsushi/tagbar'
+" Plug 'craigemery/vim-autotag'
+" call plug#end()
+
+" set encoding=utf-8
+
+" syntax on
+" filetype plugin indent on
+
+"Information on the following setting can be found with
+":help set
+"set tabstop=4
+"set expandtab
+"set autoindent 
+"set shiftwidth=4  "this is the level of autoindent, adjust to taste
+"set ruler
+"set number
+"set backspace=indent,eol,start
+" Uncomment below to make screen not flash on error
+" set vb t_vb=""
+
+"set cursorline
+"set incsearch
+"set hlsearch
+"set showmatch
+
+" Bash like tab
+"set wildmode=longest,list,full
+"set wildmenu
+
+" Erase search results
+"nnoremap <leader><space> :nohlsearch<CR>
+" Open a terminal window in current buffer
+"nnoremap :term :term<space>++curwin
+
+" Shift-x for tags
+" nnoremap <S-x> :TagbarToggle<CR>
+
+" Remapping esc to `jk`
+"inoremap jk <Esc>
+"vnoremap jk <Esc>
+
+" Tab moves to the next window within pane
+"map <Tab> <C-w>w
+"tnoremap <Tab> <C-W>w
+
+" Set split to right and down by default
+":set splitright
+":set splitbelow
+" | creates a vertical split and moves there
+"nmap <Bar> :vnew<CR>
+" - creates a horizontal split and moves there
+"nmap - <C-w>:new<CR>
+
+" Explorer on the right side
+
+"let g:seoul256_background = 234
+"colo seoul256
+"set background=dark
+"let g:airline_powerline_fonts = 1
+
+" Switching between tabs
+"nnoremap <silent> <C-Left> :tabprevious<CR>
+"nnoremap <silent> <C-Right> :tabnext<CR>
+
+" cpp highlight configs
+"let g:cpp_class_scope_highlight = 1
+"let g:cpp_member_variable_highlight = 1
+"let g:cpp_class_decl_highlight = 1
+
+"let g:airline#extensions#tabline#fnamemod = ':t'
