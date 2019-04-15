@@ -60,7 +60,7 @@ fi
 installed=`which python2`
 if [[ -z $installed ]]; then
     echo -e "[Install] python2"
-    brew install python
+    brew install python@2
 else
     echo -e "[Skipping] python2 is installed."
 fi
@@ -84,27 +84,6 @@ else
     echo -e "[Skipping] powerline fonts are installed."
 fi
 
-# Install the bundles before running vim
-if [ -d "~/.vim/bundle" ]; then
-    mkdir -p ~/.vim/bundle
-fi
-
-cd ~/.vim/bundle
-
-# Install Vundle
-if [ -d  "~/.vim/bundle/Vundle.vim" ]; then
-    git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim
-else
-    echo -e "[Skipping] vim-vundle is installed."
-fi
-
-# Install solarized
-if [ -d  "~/.vim/bundle/" ]; then
-    git clone git://github.com/altercation/vim-colors-solarized.git
-else
-    echo -e "[Skipping] vim-colors-solarized is installed."
-fi
-
 # Install 8.1 version of vim and link it to vim
 installed=`which vim`
 if [[ $installed != "/usr/local/bin/vim" ]]; then
@@ -114,6 +93,8 @@ if [[ $installed != "/usr/local/bin/vim" ]]; then
 else
     echo -e "[Skipping] vim 8.1 is installed."
 fi
+
+# brew cask install alacritty
 
 # Install Rust Code
 
