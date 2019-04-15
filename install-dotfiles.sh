@@ -8,81 +8,113 @@
 #           - Internet connection                                               #
 #           - xcode installed if you want macvim                                #
 #                                                                               #
-#   Copyright 2014 - Jean-Michel Bouchard                                       #
+#   Copyright 2014 - 2019 - Jean-Michel Bouchard                                #
 #   https://github.com/woud420                                                  #
 #                                                                               #
 #################################################################################
 
-
+WORKSPACE=~/workspace
+SHELL=`echo $SHELL`
 # GDB and VIM integration
 #Conque GDB
 
 # Check if homebrew is installed
 installed=`which brew`
-if [[$installed == *"not found"*]]; then
+if [[ -z $installed ]]; then
     # We need to install brew
     echo -e "[Install] Brew"
-    exec ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-    exec brew upgrade > /dev/null
+    ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    brew upgrade > /dev/null
+    # Modify path to include brew directory
+    # Only supports bash or zsh .. if you use a different shell.. well you're smart enough to figure this out
+    if [[ $SHELL == *"bash"* ]]; then
+        echo "export PATH=/usr/local/bin:/usr/local/sbin:$PATH" >> ~/.bashrc
+    elif [[ $SHELL == *zsh* ]]; then
+        echo "export PATH=/usr/local/bin:/usr/local/sbin:$PATH" >> ~/.zshrc
+    fi
+else
+    echo -e "[Skipping] Brew is installed."
 fi
 
 # Check for wget
 installed=`which wget`
-if [[$installed == *"not found"*]]; then
+if [[ -z $installed ]]; then
     # We need to install wget
     echo -e "[Install] wget"
-    exec brew install wget
+    brew install wget
+else
+    echo -e "[Skipping] wget is installed."
 fi
 
 # Check for grc
 installed=`which grc`
-if [[$installed == *"not found"*]]; then
+if [[ -z $installed ]]; then
     # We need to install grc
     echo -e "[Install] grc"
-    exec brew install grc
+    brew install grc
+else
+    echo -e "[Skipping] grc is installed."
 fi
 
-
-
 # Install python brew
-echo -e "[Install] python"
-exec brew install python
+installed=`which python2`
+if [[ -z $installed ]]; then
+    echo -e "[Install] python2"
+    brew install python
+else
+    echo -e "[Skipping] python2 is installed."
+fi
+
+installed=`which python3`
+if [[ -z $installed ]]; then
+    echo -e "[Install] python3"
+    brew install python3
+else
+  echo -e "[Skipping] python3 is installed."  
+fi
 
 # Install fonts for powerline
-#wget https://github.com/Lokaltog/powerline/raw/develop/font/PowerlineSymbols.otf
-#wget https://github.com/Lokaltog/powerline/raw/develop/font/10-powerline-symbols.conf
-
-
-# Install Pathogen
-#if [ -d "~/.vim/autoload" ]
- #   mkdir -p ~/.vim/autoload
-#fi
-#curl -LSso ~/.vim/autoload/pathogen.vim https://github.com/tpope/vim-pathogen/raw/master/autoload/pathogen.vim
+if [ -d "~/workspace/fonts" ]; then
+    echo -e "[Creating] ~/workspace/fonts"
+    mkdir -p ~/workspace/fonts
+    git clone https://github.com/powerline/fonts
+    cd $WORKSPACE/fonts && exec ./install.sh
+    cd ~
+else
+    echo -e "[Skipping] powerline fonts are installed."
+fi
 
 # Install the bundles before running vim
-if [ -d "~/.vim/bundle" ]
+if [ -d "~/.vim/bundle" ]; then
     mkdir -p ~/.vim/bundle
 fi
 
 cd ~/.vim/bundle
 
 # Install Vundle
-if [ ! -a  "~/.vim/bundle/Vundle.vim" ]
-    git clone https://github.com/gmarik/Vundle.vim.git ~/.vim/bundle/Vundle.vim
+if [ -d  "~/.vim/bundle/Vundle.vim" ]; then
+    git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim
+else
+    echo -e "[Skipping] vim-vundle is installed."
 fi
 
-# Install solarized if using pathogen
-if [ ! -d  "~/.vim/bundle/" ]
+# Install solarized
+if [ -d  "~/.vim/bundle/" ]; then
     git clone git://github.com/altercation/vim-colors-solarized.git
+else
+    echo -e "[Skipping] vim-colors-solarized is installed."
 fi
 
-# Install 7.4 version of vim and link it to vim
+# Install 8.1 version of vim and link it to vim
 installed=`which vim`
-if [[$installed == "/usr/local/bin/vim"]]; then
-    exec brew install vim # Installs in /usr/local/bin/vim
-    mv /usr/bin/vim /usr/bin/vim72 # Move original mac vim to vim72.. incase we need it one day
-    ln -s /usr/local/bin/vim /usr/bin/vim
+if [[ $installed != "/usr/local/bin/vim" ]]; then
+    brew install vim # Installs in /usr/local/bin/vim
+    #mv /usr/bin/vim /usr/bin/vim72 # Move original mac vim to vim72.. incase we need it one day
+    #ln -s /usr/local/bin/vim /usr/bin/vim
+else
+    echo -e "[Skipping] vim 8.1 is installed."
 fi
 
+# Install Rust Code
 
 cd ~
