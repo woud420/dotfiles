@@ -11,7 +11,8 @@ Plug 'vim-airline/vim-airline'
 "Plug 'Wildog/airline-weather.vim'
 Plug 'flazz/vim-colorschemes'
 Plug 'sheerun/vim-polyglot'
-"Plug 'Valloric/YouCompleteMe'
+Plug 'Valloric/YouCompleteMe'
+Plug 'vim-syntastic/syntastic'
+Plug 'neoclide/coc.nvim', {'do': { -> coc#util#install()}}
+" Plug 'neoclide/coc.nvim', {'branch': 'release'}
 call plug#end()
-
-

@@ -1,6 +1,6 @@
 [user]
 	name=Jean-Michel Bouchard
-	email=jim@polarcoordinates.org
+	email=jm@narrativ.com
 [github]
 	user=woud420
 [color]
@@ -16,4 +16,4 @@
 	cl = !git reset --hard && git clean -df && git st
 
 	up = !git submodule update --init && git st
-        submodules-to-master = submodule foreach "git fetch && git checkout master && git rebase"
+    submodules-to-master = submodule foreach "git fetch && git checkout master && git rebase"

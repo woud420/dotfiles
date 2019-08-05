@@ -1,70 +1,52 @@
-alias ls="ls -laG"
+# Set CLICOLOR if you want Ansi Colors in iTerm2 
+export CLICOLOR=1
 
-export http_proxy=http://proxy.inet.bloomberg.com:81
-export https_proxy=http://proxy.inet.bloomberg.com:81 
-export HTTP_PROXY=http://proxy.inet.bloomberg.com:81
-export HTTPS_PROXY=http://proxy.inet.bloomberg.com:81
+# Set colors to match iTerm2 Terminal Colors
+export TERM=xterm-256color
 
-# Git function to change email based on directory
-function updateGitName {
+export PATH=/usr/local/bin:/usr/local/sbin:~/bin:$PATH
 
-    if [[ $# != 1 ]];then
-        return 1
-    fi
+export PATH="$HOME/.cargo/bin:$PATH"
 
-    local WORK_DIR="$HOME/workspace"
-    local PERSONAL_DIR="$HOME/workspace/personal"
+source ~/.bash/prompt
 
-    local current=`pwd`
-    
-    # Check if directory finishes with ".git" if so scrap it
-    local file=$1
-    if [[ "${file: -4}" == ".git" ]]; then
-        file="${file%.git}"
-    fi
+if [[ $(uname) -eq "Darwin" ]]; then
+    eval $(gdircolors -b $HOME/.dircolors)
 
-    # Go to new directory
-    cd $file
+    # Include mac to gnu alias
+    alias ls="gls --color=always"
+    # Repaint colors if passed through a pipe
+    alias less="less -r"
+    alias more="more -r"
+    alias sed="gsed"
+fi
 
-    case $current in
-        "$WORK_DIR")
-            command git config user.email "jbouchard8@bloomberg.net"
-            ;;
-        "$PERSONAL_DIR")
-            command git config user.email "jim@polarcoordinates.org"
-            ;;
-        *)
-            ;;
-    esac
+alias python="python3"
 
-    cd ..
-}
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
 
-git() {
+if hash pyenv 2>/dev/null; then
+    eval "$(pyenv init -)"
+fi
 
-    if [[ $1 == "clone" ]]; then
-        command git "$@"
+# virtualenvwrapper start
+export WORKON_HOME=$HOME/.virtualenvs
+export PROJECT_HOME=$HOME/workspace
+export VIRTUALENVWRAPPER_PYTHON=python
+if [ -f "$HOME/.local/bin/virtualenvwrapper.sh" ]; then
+    # Linux
+    source "$HOME/.local/bin/virtualenvwrapper.sh";
+elif [ -f "/usr/local/bin/virtualenvwrapper.sh" ]; then
+    # Darwin
+    source /usr/local/bin/virtualenvwrapper.sh
+    #export PATH="$HOME/Library/Python/3.7/bin:$PATH"
+else
+    echo "W: Coudn't find virtualenvwrapper.sh"
+fi
+# virtualenvwrapper end
 
-        # Get last word of command (so either the repo or the chain leading to the repo
-        local repo=$(echo "$@" | awk '{print $NF}')
-
-        # If we didn't set a specific name.. get the repo name that follows the last slash
-        if [[ $repo == */* ]]; then
-            repo=${repo##*/}
-        fi
-
-        # Get result of command
-        if [[ $? == 0 ]]; then
-            updateGitName $repo
-        fi
-    else
-        command git "$@"
-    fi
-}
-
-alias vi="vim"
-
-alias ls="ls --color=auto"
-alias grep="grep --color=auto"
-
-alias tmux="tmux -2"
+# stupid stuff for bloop / scala
+JAVA_HOME="/Library/Java/JavaVirtualMachines/openjdk-11.0.2.jdk/Contents/Home/"
+# Launch tmux automatically
+[[ -z "$TMUX" ]] && exec tmux -2
