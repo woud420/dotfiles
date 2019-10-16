@@ -19,9 +19,14 @@ if [[ $(uname) -eq "Darwin" ]]; then
     alias less="less -r"
     alias more="more -r"
     alias sed="gsed"
+    alias cut="gcut"
+    alias sort="gsort"
+    alias uniq="guniq"
 fi
 
 alias python="python3"
+
+alias unix_mr='f(){ cat "$1" | sort | uniq; unset -f f;}; f'
 
 export PYENV_ROOT="$HOME/.pyenv"
 export PATH="$PYENV_ROOT/bin:$PATH"
@@ -49,4 +54,8 @@ fi
 # stupid stuff for bloop / scala
 JAVA_HOME="/Library/Java/JavaVirtualMachines/openjdk-11.0.2.jdk/Contents/Home/"
 # Launch tmux automatically
-[[ -z "$TMUX" ]] && exec tmux -2
+
+TMUX_DEV=dev
+if [ ! "$TMUX" ]; then
+    tmux new-session -A -s $TMUX_DEV
+fi
