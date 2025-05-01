@@ -1,0 +1,6 @@
+source ~/.vim/plugins.vim
+source ~/.vim/mappings.vim
+source ~/.vim/settings/appearance.vim
+source ~/.vim/settings/performance.vim
+" source ~/.vim/settings/coc-settings.vim
+source ~/.vim/settings/keybindings.vim
