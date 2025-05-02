@@ -12,4 +12,3 @@ nmap <Bar> <C-w>v<C-W><Right>
 
 " - creates a horizontal split and moves there
 nmap - <C-w>s<C-W><Down>
-
