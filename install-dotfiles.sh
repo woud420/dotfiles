@@ -94,7 +94,7 @@ else
     echo -e "[Skipping] vim 8.1 is installed."
 fi
 
-# brew cask install alacritty
+# brew install kitty
 
 # Install Rust Code
 
