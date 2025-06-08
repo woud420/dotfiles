@@ -1,4 +1,4 @@
-" Make sure we have Plug
+"" Make sure we have Plug
 if empty(glob('~/.vim/autoload/plug.vim'))
   silent !curl -fLo ~/.vim/autoload/plug.vim --create-dirs
     \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
@@ -6,13 +6,16 @@ if empty(glob('~/.vim/autoload/plug.vim'))
 endif
 
 call plug#begin('~/.vim/plugged')
+
+" UI Enhancements
 Plug 'vim-airline/vim-airline'
-"Plug 'mattn/webapi-vim'
-"Plug 'Wildog/airline-weather.vim'
+Plug 'vim-airline/vim-airline-themes'
 Plug 'flazz/vim-colorschemes'
+Plug 'catppuccin/vim', { 'as': 'catppuccin' }
+
+" Syntax & Language Support
 Plug 'sheerun/vim-polyglot'
-"Plug 'Valloric/YouCompleteMe'
 Plug 'vim-syntastic/syntastic'
-Plug 'neoclide/coc.nvim', {'do': { -> coc#util#install()}}
-" Plug 'neoclide/coc.nvim', {'branch': 'release'}
+" Plug 'neoclide/coc.nvim', {'do': { -> coc#util#install()}}
+
 call plug#end()

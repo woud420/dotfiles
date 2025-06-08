@@ -1,5 +1,5 @@
 .PHONY: all apt backup-bash brew-sync darwin git-init git-installs help install link linux nodejs-dev profile-source \
-        python-dev snap stow unlink
+	python-dev snap stow unlink venv-wrapper
 .ONESHELL:
 
 SHELL		= /bin/bash
@@ -53,7 +53,7 @@ git-init:
 
 git-installs: python-dev nodejs-dev
 
-python-dev: $(HOME)/.pyenv
+python-dev: $(HOME)/.pyenv venv-wrapper
 nodejs-dev: $(HOME)/.nodenv $(HOME)/.nodenv/plugins/node-build
 
 $(HOME)/.nodenv:
@@ -66,6 +66,8 @@ $(HOME)/.nodenv/plugins/node-build:
 $(HOME)/.pyenv:
 	git clone https://github.com/pyenv/pyenv.git $(HOME)/.pyenv
 
+venv-wrapper:
+	pip3 install --user -U virtualenvwrapper virtualenv
 
 profile-source:
 	source $(HOME)/.bash_profile

@@ -9,25 +9,19 @@ export PATH="$HOME/.cargo/bin:$PATH"
 
 source ~/.bash/prompt
 
-case "$(uname -s)" in
-    Darwin)
-        eval "$(gdircolors -b "$HOME/.dircolors")"
-        # GNU utils installed via brew use a 'g' prefix
-        alias ls="gls --color=always"
-        alias less="less -r"
-        alias more="more -r"
-        alias sed="gsed"
-        alias cut="gcut"
-        alias sort="gsort"
-        alias uniq="guniq"
-        ;;
-    Linux)
-        if command -v dircolors >/dev/null; then
-            eval "$(dircolors -b "$HOME/.dircolors")"
-        fi
-        alias ls="ls --color=auto"
-        ;;
-esac
+if [[ $(uname) -eq "Darwin" ]]; then
+    eval $(gdircolors -b $HOME/.dircolors)
+
+    # Include mac to gnu alias
+    alias ls="gls --color=always"
+    # Repaint colors if passed through a pipe
+    alias less="less -r"
+    alias more="more -r"
+    alias sed="gsed"
+    alias cut="gcut"
+    alias sort="gsort"
+    alias uniq="guniq"
+fi
 
 alias python="python3"
 
@@ -40,6 +34,21 @@ if hash pyenv 2>/dev/null; then
     eval "$(pyenv init -)"
 fi
 
+# virtualenvwrapper start
+export WORKON_HOME=$HOME/.virtualenvs
+export PROJECT_HOME=$HOME/workspace
+export VIRTUALENVWRAPPER_PYTHON=python
+if [ -f "$HOME/.local/bin/virtualenvwrapper.sh" ]; then
+    # Linux
+    source "$HOME/.local/bin/virtualenvwrapper.sh";
+elif [ -f "/usr/local/bin/virtualenvwrapper.sh" ]; then
+    # Darwin
+    source /usr/local/bin/virtualenvwrapper.sh
+    #export PATH="$HOME/Library/Python/3.7/bin:$PATH"
+else
+    echo "W: Coudn't find virtualenvwrapper.sh"
+fi
+# virtualenvwrapper end
 
 # stupid stuff for bloop / scala
 JAVA_HOME="/Library/Java/JavaVirtualMachines/openjdk-11.0.2.jdk/Contents/Home/"
