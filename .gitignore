@@ -1,0 +1,16 @@
+# Virtual environment directories
+virtualenvs/
+venv/
+.venv/
+
+# Python bytecode
+*.pyc
+__pycache__/
+
+# Editor swap files
+*.swp
+*.swo
+*~
+
+# System files
+.DS_Store
