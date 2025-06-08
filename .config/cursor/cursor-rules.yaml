@@ -1,0 +1,7 @@
+# Global preferences for Cursor editor
+preferences:
+  telemetry: false
+  autoUpdate: true
+
+include:
+  - ~/.config/cursor/generated/tools.yaml
