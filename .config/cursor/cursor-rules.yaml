@@ -5,3 +5,47 @@ preferences:
 
 include:
   - ~/.config/cursor/generated/tools.yaml
+
+# Preferred languages and frameworks
+languages:
+  preferred:
+    - rust
+    - python
+    - typescript
+  optional:
+    - bash
+  tags:
+    rust:
+      - backend
+      - systems
+    python:
+      - backend
+      - scripting
+    typescript:
+      - frontend
+
+frontend_frameworks:
+  - next.js (typescript)
+  - react native
+
+backend_frameworks:
+  - flask (python)
+  - actix-web (rust)
+
+project_structure:
+  source_dir: src
+  test_dir: tests
+  infra_dirs:
+    docker: docker/
+    optional:
+      k8s: k8s/
+      terraform: infra/terraform/
+  doc_dirs:
+    design_docs: architecture/
+    markdown: project/
+  prefers_monorepo: false
+  prefers_submodules: true
+
+scaffolding:
+  tool: kickstart
+  config_path: ~/.config/kickstart/config.yaml
