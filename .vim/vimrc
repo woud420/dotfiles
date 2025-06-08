@@ -1,6 +1,23 @@
+" All plugin related stuff here, make sure this stays at top
 source ~/.vim/plugins.vim
+" All the different key mappings
 source ~/.vim/mappings.vim
+" Appearance settings
 source ~/.vim/settings/appearance.vim
+" Performance related settings (empty by default)
 source ~/.vim/settings/performance.vim
-" source ~/.vim/settings/coc-settings.vim
+" Extra keybindings (empty by default)
 source ~/.vim/settings/keybindings.vim
+" Extra coc-settings (empty by default)
+source ~/.vim/settings/coc-settings.vim
+" All general settings (tabs, indent, search, color schemes, etc...)
+source ~/.vim/settings.vim
+
+" Use ftplugin stored in ~/.vim/after/ftplugin/<language>
+" CPP stuff
+
+"let g:cpp_class_scope_highlight = 1
+"let g:cpp_member_variable_highlight = 1
+"let g:cpp_class_decl_highlight = 1
+"let g:cpp_experimental_simple_template_highlight = 1
+"let g:cpp_concepts_highlight = 1
