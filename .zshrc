@@ -12,16 +12,15 @@ precmd() { vcs_info }
 zstyle ':vcs_info:*' enable git
 zstyle ':vcs_info:git:*' formats ' %b'
 
-ROSEWATER=$'%{\e[38;2;245;224;220m%}'
-MAUVE=$'%{\e[38;2;203;166;247m%}'
-TEAL=$'%{\e[38;2;148;226;213m%}'
-PEACH=$'%{\e[38;2;250;179;135m%}'
-SOFT_GRAY=$'%{\e[38;2;108;112;134m%}'
+ROSEWATER='%F{#f5e0dc}'
+MAUVE='%F{#cba6f7}'
+TEAL='%F{#94e2d5}'
+PEACH='%F{#fab387}'
+SOFT_GRAY='%F{#6c7086}'
+RESET='%f%k'
 
-BUBBLE_BG=$'%{\e[48;2;245;224;220m%}'
-BUBBLE_FG=$'%{\e[38;2;30;30;46m%}'
-
-RESET=$'%{\e[0m%}'
+BUBBLE_BG='%{%K{#f5e0dc}%}'
+BUBBLE_FG='%{%F{#1e1e2e}%}'
 
 function pretty_git() {
   # Don't forget the space at the end of the echo
@@ -30,42 +29,60 @@ function pretty_git() {
 
 # Custom function to show 🏡 if in home
 function pretty_pwd() {
-  if [[ "$PWD" == "$HOME" ]]; then
-    echo "🏡"
-  else
-    echo "%~"
-  fi
+  case "$PWD" in
+    "$HOME")
+      echo "🏡"
+      ;;
+    "$HOME/Documents")
+      echo "📄"
+      ;;
+    "$HOME/Downloads")
+      echo "📁"
+      ;;
+    "$HOME/Pictures")
+      echo "🖼️"
+      ;;
+    "$HOME/Music")
+      echo "🎵"
+      ;;
+    "$HOME/Desktop")
+      echo "🖥️"
+      ;;
+    "$HOME/workspace")
+      echo "💻"
+      ;;
+    *)
+      echo "%~"
+      ;;
+  esac
+  #if [[ "$PWD" == "$HOME" ]]; then
+  #  echo "🏡"
+  #else
+  #  echo "%~"
+  #fi
 }
 
 # Dynamic time color based on hour
 function dynamic_time_prompt() {
   local hour=$(date +%H)
-  local icon=""
-  if (( hour >= 6 && hour < 12 )); then
-    # Morning: Peach
-    icon="☀️"
-    echo "${PEACH}%*${RESET} ${icon}"
-  elif (( hour >= 12 && hour < 18 )); then
-    # Afternoon: Teal
-    icon="☀️"
-    echo "${TEAL}%*${RESET} ${icon}"
-  elif (( hour >= 18 && hour < 21 )); then
-    # Evening: Mauve
-    icon="🌙"
-    echo "${MAUVE}%*${RESET} ${icon}"
-  else
-    # Night: Soft Gray
-    icon="🌙"
-    echo "${SOFT_GRAY}%*${RESET} ${icon}"
-  fi
-}
+  local color icon
 
-# One-line cute prompt with correct escapes
-# PROMPT="${PEACH}🌸 ${MAUVE}[${ROSEWATER}%n${MAUVE}@${TEAL}\$(pretty_pwd)${MAUVE}] \$(pretty_git)${RESET} ➔ "
-#PROMPT="⭐ ${MAUVE}[${ROSEWATER}%n${MAUVE}@${TEAL}\$(pretty_pwd)${MAUVE}] ${PEACH}\$(pretty_git)${RESET}➔"
-#PROMPT='⭐ ${MAUVE}[${ROSEWATER}%n${MAUVE}@${TEAL}%{$(pretty_pwd)%}${MAUVE}] ${PEACH}%{$(pretty_git)%}${RESET}➔ '
-#RPROMPT="${SOFT_GRAY}%*${RESET}"
-#RPROMPT='$(dynamic_time_prompt)'
+  if (( hour >= 6 && hour < 12 )); then
+    color=$PEACH
+    icon='☀️'
+  elif (( hour >= 12 && hour < 18 )); then
+    color=$TEAL
+    icon='☀️'
+  elif (( hour >= 18 && hour < 21 )); then
+    color=$MAUVE
+    icon='🌙'
+  else
+    color=$SOFT_GRAY
+    icon='🌙'
+  fi
+
+  echo "%{$color%}%*%{$RESET%}"
+}
 
 function build_prompt() {
   local GIT_INFO="$(pretty_git)"
