@@ -22,6 +22,13 @@ RESET='%f%k'
 BUBBLE_BG='%{%K{#f5e0dc}%}'
 BUBBLE_FG='%{%F{#1e1e2e}%}'
 
+function kube_prompt() {
+  local context=$(kubectl config current-context 2>/dev/null)
+  if [ -n "$context" ]; then
+    echo "(k8s:$context)"
+  fi
+}
+ 
 function pretty_git() {
   # Don't forget the space at the end of the echo
   [[ -n "${vcs_info_msg_0_}" ]] && echo "${vcs_info_msg_0_} "
@@ -116,5 +123,36 @@ export FZF_DEFAULT_OPTS="
 for f in ~/.config/shell-functions/*.sh; do
   source "$f"
 done
+
+function kctx() {
+  local selected
+  selected=$(kubectl config get-contexts -o name | \
+    fzf --prompt="Select context > " \
+        --height=40% \
+        --layout=reverse \
+        --border \
+        --ansi)
+
+  if [[ -n "$selected" ]]; then
+    kubectl config use-context "$selected"
+  else
+    echo "No context selected."
+  fi
+}
+
+function git-ch() {
+  local branch
+  branch=$(git branch --sort=-committerdate | sed 's/* //' | sed 's/^[[:space:]]*//' | \
+    fzf --prompt="Checkout branch > " \
+        --height=40% \
+        --layout=reverse \
+        --border)
+  if [[ -n "$branch" ]]; then
+    git checkout "$branch"
+  fi
+}
+
+alias kc=kctx
+alias gch="git-ch"
 
 export PATH="/opt/homebrew/bin:$PATH"
