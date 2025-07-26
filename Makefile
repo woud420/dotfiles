@@ -9,24 +9,22 @@ OS			:= $(shell uname -s | tr '[:upper:]' '[:lower:]')
 
 all: install
 install: $(OS)
-linux: apt flatpak git-init stow git-installs profile-source font-cache
-darwin: brew brew-upgrade git-init stow git-installs profile-source
+linux: apt flatpak git-init stow-linux git-installs profile-source font-cache
+darwin: brew brew-upgrade git-init stow-darwin git-installs profile-source
 
 
 apt:
 	$(info You may be prompted for super-user privleges:)
-	sudo linux/apt-update.sh
-	sudo linux/apt-minimal.sh
-	sudo linux/apt-full.sh
+	xargs -a linux/debian/packages.list sudo apt-get install -y
 
 darwin: brew
 	softwareupdate -aiR
 
 brew: /usr/local/Homebrew/bin/brew
-	-brew bundle --file=$(DOTFILE_DIR)/Brewfile
+	-brew bundle --file=$(DOTFILE_DIR)/darwin/Brewfile
 
 brew-sync:
-	brew bundle dump --force --file=$(DOTFILE_DIR)/Brewfile
+	brew bundle dump --force --file=$(DOTFILE_DIR)/darwin/Brewfile
 
 brew-upgrade:
 	if brew upgrade ; then brew cleanup ; fi;
@@ -75,13 +73,20 @@ profile-source:
 backup-bash:
 	$(DOTFILE_DIR)/bash_backup.sh
 
-stow: backup-bash
-	stow bash
-	stow bin
-	stow config
-	stow fonts
-	stow tmux
-	stow vim
+stow-common: backup-bash
+	stow -d common -t ~ bash
+	stow -d common -t ~ shell
+	stow -d common -t ~ git
+	stow -d common -t ~/.config htop
+	stow -d common -t ~/.config shell-functions
+
+stow-darwin: stow-common
+	stow -d darwin -t ~/.config kitty
+
+stow-linux: stow-common
+	stow -d linux/common -t ~/.config kitty
+
+stow: stow-$(OS)
 
 link: backup-bash
 	ln -fs bash/.bash_aliases $(HOME)/.bash_aliases

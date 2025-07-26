@@ -1,0 +1,13 @@
+# Debian/Ubuntu packages
+build-essential
+git
+curl
+wget
+htop
+vim
+tmux
+fd-find
+ripgrep
+fzf
+zsh
+kitty

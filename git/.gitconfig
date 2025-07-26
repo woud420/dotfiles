@@ -1,0 +1,19 @@
+[user]
+	name=Jean-Michel Bouchard
+	email=jim@polarcoordinates.org
+[github]
+	user=woud420
+[color]
+	ui = auto
+[alias]
+	st = status -sb
+	lg = log --stat
+	diff-master = !echo "diff master...origin/master:" && git diff master...origin/master --stat && echo "" && echo "diff origin/master...master:" && git diff origin/master...master --stat
+
+	cm = commit -m
+	ca = commit --amend
+	rb = !git fetch && git rebase && git st
+	cl = !git reset --hard && git clean -df && git st
+
+	up = !git submodule update --init && git st
+	submodules-to-master = submodule foreach "git fetch && git checkout master && git rebase"

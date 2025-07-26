@@ -1,0 +1,127 @@
+# ~/.bashrc.server - Minimal bash configuration for servers
+# Conservative version without emoji or fancy features
+
+# If not running interactively, don't do anything
+case $- in
+    *i*) ;;
+      *) return;;
+esac
+
+# History settings
+HISTCONTROL=ignoreboth
+HISTSIZE=10000
+HISTFILESIZE=20000
+shopt -s histappend
+
+# Check window size after each command
+shopt -s checkwinsize
+
+# Git branch for prompt
+parse_git_branch() {
+    git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/ (\1)/'
+}
+
+# Simple color codes
+if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
+    RED=$(tput setaf 1)
+    GREEN=$(tput setaf 2)
+    YELLOW=$(tput setaf 3)
+    BLUE=$(tput setaf 4)
+    MAGENTA=$(tput setaf 5)
+    CYAN=$(tput setaf 6)
+    RESET=$(tput sgr0)
+else
+    RED=""
+    GREEN=""
+    YELLOW=""
+    BLUE=""
+    MAGENTA=""
+    CYAN=""
+    RESET=""
+fi
+
+# Simple prompt without emoji
+PS1="${GREEN}\u${RESET}@${BLUE}\h${RESET}:${CYAN}\w${RESET}${YELLOW}\$(parse_git_branch)${RESET}\$ "
+
+# Load GNU aliases if available
+if [ -f ~/.gnu_aliases ]; then
+    source ~/.gnu_aliases
+fi
+
+# Basic FZF configuration if available
+if command -v fzf >/dev/null 2>&1; then
+    export FZF_DEFAULT_OPTS="--layout=reverse --border"
+    [ -f ~/.fzf.bash ] && source ~/.fzf.bash
+fi
+
+# Git branch switcher (if fzf available)
+if command -v fzf >/dev/null 2>&1; then
+    git-ch() {
+        if ! git rev-parse --git-dir > /dev/null 2>&1; then
+            echo "Not in a git repository"
+            return 1
+        fi
+        
+        local branch
+        branch=$(git branch --sort=-committerdate | sed 's/* //' | sed 's/^[[:space:]]*//' | \
+            fzf --prompt="Checkout branch > " \
+                --height=40% \
+                --layout=reverse \
+                --border)
+        if [[ -n "$branch" ]]; then
+            git checkout "$branch"
+        fi
+    }
+    alias gch="git-ch"
+fi
+
+# Enable color support for ls and grep
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+fi
+
+# Color aliases only if color is supported
+if ls --color=auto >/dev/null 2>&1; then
+    alias ls='ls --color=auto'
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+fi
+
+# Common aliases
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+
+# Safety aliases
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+
+# Useful server aliases
+alias df='df -h'
+alias du='du -h'
+alias free='free -h'
+alias top='htop || top'
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+
+# Add local bin to PATH
+[ -d "$HOME/bin" ] && PATH="$HOME/bin:$PATH"
+[ -d "$HOME/.local/bin" ] && PATH="$HOME/.local/bin:$PATH"
+
+export PATH
+
+# Set default editor
+export EDITOR=vim
+export VISUAL=vim
+
+# Enable programmable completion features
+if ! shopt -oq posix; then
+    if [ -f /usr/share/bash-completion/bash_completion ]; then
+        . /usr/share/bash-completion/bash_completion
+    elif [ -f /etc/bash_completion ]; then
+        . /etc/bash_completion
+    fi
+fi
