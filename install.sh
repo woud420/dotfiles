@@ -20,6 +20,7 @@ BACKUP_DIR="$HOME/.dotfiles-backup-$(date +%Y%m%d_%H%M%S)"
 MINIMAL_MODE=false
 INSTALL_PACKAGES=true
 DRY_RUN=false
+COPY_MODE=false
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -36,11 +37,16 @@ while [[ $# -gt 0 ]]; do
             DRY_RUN=true
             shift
             ;;
+        --copy)
+            COPY_MODE=true
+            shift
+            ;;
         -h|--help)
             echo "Usage: $0 [OPTIONS]"
             echo "  --minimal       Install minimal config (no fancy tools)"
             echo "  --no-packages   Skip package installation"
             echo "  --dry-run       Show what would be done without doing it"
+            echo "  --copy          Copy files instead of creating symlinks"
             echo "  -h, --help      Show this help"
             exit 0
             ;;
@@ -196,7 +202,7 @@ backup_file() {
     fi
 }
 
-# Create symlinks
+# Create symlink or copy file
 create_symlink() {
     local source="$1"
     local target="$2"
@@ -209,11 +215,21 @@ create_symlink() {
         # Remove existing file/link
         [[ -e "$target" ]] || [[ -L "$target" ]] && rm -f "$target"
         
-        # Create symlink
-        ln -sf "$source" "$target"
-        log_success "Linked $source -> $target"
+        if [[ "$COPY_MODE" == "true" ]]; then
+            # Copy file
+            cp "$source" "$target"
+            log_success "Copied $source -> $target"
+        else
+            # Create symlink
+            ln -sf "$source" "$target"
+            log_success "Linked $source -> $target"
+        fi
     else
-        log_info "Would link: $source -> $target"
+        if [[ "$COPY_MODE" == "true" ]]; then
+            log_info "Would copy: $source -> $target"
+        else
+            log_info "Would link: $source -> $target"
+        fi
     fi
 }
 
@@ -301,6 +317,56 @@ install_terminal_config() {
     create_symlink "$DOTFILES_DIR/common/htop/htoprc" "$HOME/.config/htop/htoprc"
 }
 
+# Install vim configuration
+install_vim_config() {
+    log_step "Installing vim configuration..."
+    
+    # Create .vim directory and symlink config files
+    if [[ "$DRY_RUN" == "false" ]]; then
+        mkdir -p "$HOME/.vim/settings"
+        
+        # Link vim configuration files
+        create_symlink "$DOTFILES_DIR/.vim/vimrc" "$HOME/.vim/vimrc"
+        create_symlink "$DOTFILES_DIR/.vim/plugins.vim" "$HOME/.vim/plugins.vim"
+        create_symlink "$DOTFILES_DIR/.vim/mappings.vim" "$HOME/.vim/mappings.vim"
+        create_symlink "$DOTFILES_DIR/.vim/settings.vim" "$HOME/.vim/settings.vim"
+        create_symlink "$DOTFILES_DIR/.vim/coc-settings.json" "$HOME/.vim/coc-settings.json"
+        
+        # Link settings directory files
+        for settings_file in "$DOTFILES_DIR/.vim/settings/"*.vim; do
+            if [[ -f "$settings_file" ]]; then
+                create_symlink "$settings_file" "$HOME/.vim/settings/$(basename "$settings_file")"
+            fi
+        done
+    else
+        log_info "Would install vim configuration"
+        return
+    fi
+    
+    # Install vim plugins if vim is available
+    if command -v vim >/dev/null 2>&1; then
+        log_step "Installing vim plugins..."
+        if [[ "$DRY_RUN" == "false" ]]; then
+            vim +PlugInstall +qall
+            
+            # Compile CoC.nvim if it was installed
+            if [[ -d "$HOME/.vim/plugged/coc.nvim" ]]; then
+                log_step "Compiling CoC.nvim..."
+                if command -v npm >/dev/null 2>&1; then
+                    (cd "$HOME/.vim/plugged/coc.nvim" && npm ci)
+                    log_success "CoC.nvim compiled successfully"
+                else
+                    log_warning "npm not found. CoC.nvim needs manual compilation: cd ~/.vim/plugged/coc.nvim && npm ci"
+                fi
+            fi
+        else
+            log_info "Would install vim plugins and compile CoC.nvim"
+        fi
+    else
+        log_warning "vim not found. Skipping plugin installation."
+    fi
+}
+
 # Install optional tools
 install_optional_tools() {
     if [[ "$MINIMAL_MODE" == "true" ]]; then
@@ -360,6 +426,7 @@ main() {
     install_git_config
     install_shell_functions
     install_terminal_config
+    install_vim_config
     install_optional_tools
     
     echo -e "${GREEN}"

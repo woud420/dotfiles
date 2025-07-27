@@ -1,12 +1,13 @@
 syntax on
 filetype plugin indent on
+
 " Always show status line
 set laststatus=2
 
-" colorscheme spacegray
+" Catppuccin theme settings
+let g:catppuccin_flavour = 'mocha' " latte, frappe, macchiato, mocha
 colorscheme catppuccin_mocha
 
-let g:airline_theme='catppuccin_mocha'
 " let g:airline_extensions = ['branch']
 " let g:airline_extensions = ['branch', 'hunks', 'whitespace']
 " let g:airline#extensions#default#enabled = 1

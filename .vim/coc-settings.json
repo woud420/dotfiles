@@ -1,16 +1,45 @@
 {
-  "java.home" : "/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home",
+  "suggest.enablePreview": true,
+  "suggest.maxCompleteItemCount": 20,
+  "suggest.noselect": false,
+  "suggest.preferCompleteThanJumpPlaceholder": true,
+  "suggest.acceptSuggestionOnCommitCharacter": true,
+  
+  "diagnostic.errorSign": "✘",
+  "diagnostic.warningSign": "⚠",
+  "diagnostic.infoSign": "ℹ",
+  "diagnostic.hintSign": "➤",
+  "diagnostic.virtualText": true,
+  "diagnostic.checkCurrentLine": true,
+  
+  "signature.enable": true,
+  "signature.target": "float",
+  
+  "hover.target": "float",
+  
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": true,
+  "python.formatting.provider": "black",
+  "python.jediEnabled": false,
+  
+  "typescript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces": true,
+  "javascript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces": true,
+  
   "languageserver": {
-    "metals": {
-      "command": "metals-vim",
-      "rootPatterns": ["build.sbt"],
-      "filetypes": ["scala", "sbt", "sbt.scala"]
+    "terraform": {
+      "command": "terraform-ls",
+      "args": ["serve"],
+      "filetypes": ["terraform", "tf"],
+      "initializationOptions": {},
+      "settings": {}
     },
     "bash": {
       "command": "bash-language-server",
       "args": ["start"],
-      "filetypes": ["sh"],
-      "ignoredRootPaths": ["~"]
+      "filetypes": ["sh", "bash"]
     }
-  }
+  },
+  
+  "coc.preferences.formatOnSaveFiletypes": ["python", "javascript", "typescript", "json", "jsonc", "yaml", "rust"],
+  "coc.preferences.colorSupport": true
 }

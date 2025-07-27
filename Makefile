@@ -19,6 +19,9 @@ install-no-packages:
 install-dry-run:
 	$(DOTFILE_DIR)/install.sh --dry-run
 
+install-copy:
+	$(DOTFILE_DIR)/install.sh --copy
+
 # Legacy OS-specific targets (kept for compatibility)
 legacy: $(OS)
 linux: apt flatpak git-init stow-linux git-installs profile-source font-cache
@@ -124,9 +127,10 @@ clean-backup:
 help:
 	@echo "Dotfiles Installation Options:"
 	@echo ""
-	@echo "  make install          # Full installation (recommended)"
+	@echo "  make install          # Full installation with symlinks (recommended)"
 	@echo "  make install-minimal  # Minimal config for servers/containers"
 	@echo "  make install-no-packages # Install configs only, skip packages"
+	@echo "  make install-copy     # Copy files instead of symlinks"
 	@echo "  make install-dry-run  # Show what would be installed"
 	@echo ""
 	@echo "Advanced:"

@@ -124,4 +124,7 @@ for f in ~/.config/shell-functions/*.sh; do
   [[ -r "$f" ]] && source "$f"
 done
 
+# Source local secrets (if exists)
+[[ -f ~/.env.secrets ]] && source ~/.env.secrets
+
 export PATH="/opt/homebrew/bin:$PATH"

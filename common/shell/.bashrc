@@ -170,3 +170,11 @@ alias mv='mv -i'
 
 # Make less more friendly for non-text input files
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+
+# Source shell functions
+for func in ~/.config/shell-functions/*.sh; do
+    [ -r "$func" ] && source "$func"
+done
+
+# Source local secrets (if exists)
+[ -f ~/.env.secrets ] && source ~/.env.secrets
