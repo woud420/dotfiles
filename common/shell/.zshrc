@@ -121,38 +121,7 @@ export FZF_DEFAULT_OPTS="
 
 # Load custom shell functions
 for f in ~/.config/shell-functions/*.sh; do
-  source "$f"
+  [[ -r "$f" ]] && source "$f"
 done
-
-function kctx() {
-  local selected
-  selected=$(kubectl config get-contexts -o name | \
-    fzf --prompt="Select context > " \
-        --height=40% \
-        --layout=reverse \
-        --border \
-        --ansi)
-
-  if [[ -n "$selected" ]]; then
-    kubectl config use-context "$selected"
-  else
-    echo "No context selected."
-  fi
-}
-
-function git-ch() {
-  local branch
-  branch=$(git branch --sort=-committerdate | sed 's/* //' | sed 's/^[[:space:]]*//' | \
-    fzf --prompt="Checkout branch > " \
-        --height=40% \
-        --layout=reverse \
-        --border)
-  if [[ -n "$branch" ]]; then
-    git checkout "$branch"
-  fi
-}
-
-alias kc=kctx
-alias gch="git-ch"
 
 export PATH="/opt/homebrew/bin:$PATH"

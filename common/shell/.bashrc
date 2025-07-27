@@ -142,50 +142,6 @@ if [ -d ~/.config/shell-functions ]; then
     done
 fi
 
-# Kubernetes context switcher
-kctx() {
-    if ! command -v kubectl >/dev/null 2>&1; then
-        echo "kubectl not found"
-        return 1
-    fi
-    
-    local selected
-    selected=$(kubectl config get-contexts -o name | \
-        fzf --prompt="Select context > " \
-            --height=40% \
-            --layout=reverse \
-            --border \
-            --ansi)
-
-    if [[ -n "$selected" ]]; then
-        kubectl config use-context "$selected"
-    else
-        echo "No context selected."
-    fi
-}
-
-# Git branch switcher
-git-ch() {
-    if ! git rev-parse --git-dir > /dev/null 2>&1; then
-        echo "Not in a git repository"
-        return 1
-    fi
-    
-    local branch
-    branch=$(git branch --sort=-committerdate | sed 's/* //' | sed 's/^[[:space:]]*//' | \
-        fzf --prompt="Checkout branch > " \
-            --height=40% \
-            --layout=reverse \
-            --border)
-    if [[ -n "$branch" ]]; then
-        git checkout "$branch"
-    fi
-}
-
-# Aliases
-alias kc=kctx
-alias gch="git-ch"
-
 # Add local bin to PATH if exists
 [ -d "$HOME/bin" ] && PATH="$HOME/bin:$PATH"
 [ -d "$HOME/.local/bin" ] && PATH="$HOME/.local/bin:$PATH"

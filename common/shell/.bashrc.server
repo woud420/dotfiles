@@ -54,25 +54,11 @@ if command -v fzf >/dev/null 2>&1; then
     [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 fi
 
-# Git branch switcher (if fzf available)
-if command -v fzf >/dev/null 2>&1; then
-    git-ch() {
-        if ! git rev-parse --git-dir > /dev/null 2>&1; then
-            echo "Not in a git repository"
-            return 1
-        fi
-        
-        local branch
-        branch=$(git branch --sort=-committerdate | sed 's/* //' | sed 's/^[[:space:]]*//' | \
-            fzf --prompt="Checkout branch > " \
-                --height=40% \
-                --layout=reverse \
-                --border)
-        if [[ -n "$branch" ]]; then
-            git checkout "$branch"
-        fi
-    }
-    alias gch="git-ch"
+# Load shell functions if available
+if [ -d ~/.config/shell-functions ]; then
+    for f in ~/.config/shell-functions/*.sh; do
+        [ -r "$f" ] && source "$f"
+    done
 fi
 
 # Enable color support for ls and grep

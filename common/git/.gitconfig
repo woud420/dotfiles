@@ -17,3 +17,61 @@
 
 	up = !git submodule update --init && git st
 	submodules-to-master = submodule foreach "git fetch && git checkout master && git rebase"
+
+	# Fuzzy branch checkout with fallback
+	ch = "!f() { \
+		if command -v fzf >/dev/null 2>&1; then \
+			git branch --sort=-committerdate | sed 's/^..//' | \
+			fzf --prompt='Checkout branch > ' \
+				--height=40% \
+				--layout=reverse \
+				--border \
+				--preview='git log --oneline --color=always -10 {}' | \
+			xargs -r git checkout; \
+		else \
+			echo 'Available branches:'; \
+			git branch --sort=-committerdate; \
+			echo; \
+			read -p 'Enter branch name to checkout: ' branch; \
+			if [ -n \"$branch\" ]; then git checkout \"$branch\"; fi; \
+		fi; \
+	}; f"
+
+	# Fuzzy log viewer - interactive log browser
+	flog = "!f() { \
+		if command -v fzf >/dev/null 2>&1; then \
+			git log --oneline --color=always | \
+			fzf --ansi \
+				--preview='git show --color=always {1}' \
+				--preview-window=right:60%:wrap \
+				--bind='enter:execute(git show {1} | less -R)' \
+				--header='Press ENTER to view commit details'; \
+		else \
+			git log --oneline -20; \
+		fi; \
+	}; f"
+
+	# Fuzzy add - select files to stage
+	fadd = "!f() { \
+		if command -v fzf >/dev/null 2>&1; then \
+			git status --porcelain | \
+			fzf -m \
+				--preview='if [[ {1} == \"??\" ]]; then bat --color=always {2} 2>/dev/null || cat {2}; else git diff --color=always {2}; fi' \
+				--preview-window=right:60%:wrap \
+				--header='Select files to add (TAB to multi-select)' | \
+			awk '{print $2}' | xargs -r git add; \
+		else \
+			git add -i; \
+		fi; \
+	}; f"
+
+	# Alternative: git log with fuzzy search through commits
+	llog = "!f() { \
+		if command -v fzf >/dev/null 2>&1; then \
+			git log --pretty=format:'%h %s (%cr) <%an>' --abbrev-commit | \
+			fzf --preview='git show --color=always {1}' \
+				--preview-window=right:60%:wrap; \
+		else \
+			git log --oneline; \
+		fi; \
+	}; f"
