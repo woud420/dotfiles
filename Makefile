@@ -1,14 +1,26 @@
-.PHONY: all apt backup-bash brew-sync darwin git-init git-installs help install link linux nodejs-dev profile-source \
-	python-dev snap stow unlink venv-wrapper
+.PHONY: all help install install-minimal install-no-packages backup-bash brew-sync clean-backup legacy
 .ONESHELL:
 
 SHELL		= /bin/bash
 DOTFILE_DIR	:= $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 OS			:= $(shell uname -s | tr '[:upper:]' '[:lower:]')
 
-
+# Main install targets using new universal installer
 all: install
-install: $(OS)
+install:
+	$(DOTFILE_DIR)/install.sh
+
+install-minimal:
+	$(DOTFILE_DIR)/install.sh --minimal
+
+install-no-packages:
+	$(DOTFILE_DIR)/install.sh --no-packages
+
+install-dry-run:
+	$(DOTFILE_DIR)/install.sh --dry-run
+
+# Legacy OS-specific targets (kept for compatibility)
+legacy: $(OS)
 linux: apt flatpak git-init stow-linux git-installs profile-source font-cache
 darwin: brew brew-upgrade git-init stow-darwin git-installs profile-source
 
@@ -103,6 +115,25 @@ unlink:
 	unlink $(HOME)/.bashrc
 	unlink $(HOME)/.curlrc
 
+# Cleanup
+clean-backup:
+	@echo "Removing old backup directories..."
+	find $(HOME) -maxdepth 1 -name ".dotfiles-backup-*" -type d -mtime +30 -exec rm -rf {} \;
+
+# Help
 help:
-	@echo "help yourself :P"
+	@echo "Dotfiles Installation Options:"
+	@echo ""
+	@echo "  make install          # Full installation (recommended)"
+	@echo "  make install-minimal  # Minimal config for servers/containers"
+	@echo "  make install-no-packages # Install configs only, skip packages"
+	@echo "  make install-dry-run  # Show what would be installed"
+	@echo ""
+	@echo "Advanced:"
+	@echo "  make legacy          # Use legacy OS-specific installation"
+	@echo "  make clean-backup    # Remove old backup directories (30+ days)"
+	@echo "  make brew-sync       # Update Brewfile with current packages"
+	@echo ""
+	@echo "Direct script usage:"
+	@echo "  ./install.sh --help  # Show all script options"
 

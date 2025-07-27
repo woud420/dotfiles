@@ -1,10 +1,10 @@
-# Debian/Ubuntu packages (based on macOS Brewfile)
+# Fedora/RHEL packages (based on macOS Brewfile)
 awscli
 bash
-build-essential
+binutils
 coreutils
 curl
-docker.io
+docker
 docker-compose
 fd-find
 fzf
@@ -20,8 +20,12 @@ python3
 python3-pip
 python3-virtualenv
 ripgrep
+rust
+cargo
 tmux
 tree
 vim
 wget
 zsh
+# Modern alternatives
+bat

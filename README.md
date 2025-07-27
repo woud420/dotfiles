@@ -1,104 +1,224 @@
 # Dotfiles
 
-My personal dotfiles organized by operating system for easy deployment.
+Personal dotfiles for macOS and Linux with modular shell functions, git workflows, and kubectl shortcuts.
 
-## Structure
-
-```
-.
-├── common/          # Universal configs that work on all platforms
-│   ├── bash/        # Bash configurations for servers
-│   ├── shell/       # Shell configs (.zshrc, .gnu_aliases, .dircolors)
-│   ├── git/         # Git configuration and global gitignore
-│   ├── themes/      # Color themes (Catppuccin)
-│   ├── htop/        # htop configuration
-│   └── shell-functions/  # Shell function scripts
-│
-├── darwin/          # macOS-specific configurations
-│   ├── Brewfile     # Homebrew packages and casks
-│   └── kitty.conf   # Kitty terminal with macOS keybindings
-│
-└── linux/           # Linux-specific configurations
-    ├── common/      # Configs for all Linux distros
-    ├── debian/      # Debian/Ubuntu specific
-    ├── arch/        # Arch Linux specific
-    └── fedora/      # Fedora/RHEL specific
-```
-
-## Installation
-
-### Quick Start
+## 🚀 Quick Install
 
 ```bash
-# Clone the repository
-git clone https://github.com/woud420/dotfiles.git ~/workspace/projects/dotfiles
+# Clone and install
+git clone https://github.com/yourusername/dotfiles.git ~/workspace/projects/dotfiles
 cd ~/workspace/projects/dotfiles
+./install.sh
 
-# Install for your OS
+# Or use make
 make install
 ```
 
-### macOS
+### Installation Options
 
 ```bash
-# Install Homebrew packages and set up configs
-make darwin
+./install.sh --minimal      # Minimal config for servers/containers
+./install.sh --no-packages  # Skip package installation
+./install.sh --dry-run      # Preview what will be installed
+
+# Make targets
+make install              # Full installation
+make install-minimal      # Minimal config
+make install-no-packages  # Config files only
+make install-dry-run      # Preview changes
 ```
 
-### Linux
+### Remote Installation
 
 ```bash
-# For Debian/Ubuntu
-make linux
+# One-liner for remote servers
+curl -fsSL https://raw.githubusercontent.com/yourusername/dotfiles/main/install.sh | bash -s -- --minimal
 
-# The Makefile will detect your distro and use appropriate package manager
+# SSH with dotfiles
+ssh user@host 'bash -s' < install.sh --minimal
 ```
 
-## Manual Installation
+## 📁 Directory Structure
 
-### Common files (all platforms)
+```
+dotfiles/
+├── common/                  # Cross-platform configurations
+│   ├── shell/              # Shell configs (.bashrc, .zshrc)
+│   ├── git/                # Git configuration
+│   ├── shell-functions/    # Modular functions & aliases
+│   └── themes/             # Color themes (Catppuccin)
+├── darwin/                 # macOS specific
+│   ├── Brewfile           # Homebrew packages
+│   └── kitty.conf         # macOS kitty config
+├── linux/                  # Linux specific
+│   ├── debian/            # Ubuntu/Debian packages
+│   ├── arch/              # Arch Linux packages
+│   ├── fedora/            # Fedora/RHEL packages
+│   └── alpine/            # Alpine Linux packages
+└── install.sh             # Universal installer
+```
+
+## 🔧 What Gets Installed
+
+### Configuration Files
+
+| File | Installed Location | Description |
+|------|-------------------|-------------|
+| `.bashrc` | `~/.bashrc` | Bash configuration with prompt, colors, functions |
+| `.zshrc` | `~/.zshrc` | Zsh configuration with Catppuccin theme |
+| `.bash_profile` | `~/.bash_profile` | Bash profile (sources .bashrc) |
+| `.bashrc.server` | `~/.bashrc` | Conservative bash config for servers (minimal mode) |
+| `.gitconfig` | `~/.gitconfig` | Git aliases and fuzzy commands |
+| `.gitignore_global` | `~/.config/git/ignore` | Global git ignores |
+| `.gnu_aliases` | `~/.gnu_aliases` | GNU coreutils aliases for macOS |
+| `.dircolors` | `~/.dircolors` | Directory colors |
+| `kitty.conf` | `~/.config/kitty/kitty.conf` | Kitty terminal config |
+| `htoprc` | `~/.config/htop/htoprc` | htop configuration |
+
+### Shell Functions
+
+All shell functions are installed to `~/.config/shell-functions/`:
+
+| File | Purpose | Key Commands |
+|------|---------|--------------|
+| `kubectl-aliases.sh` | Kubernetes shortcuts | `k get p`, `kgpw`, `kdp`, `kshp` |
+| `git-aliases.sh` | Git shortcuts | `g`, `gs`, `gaa`, `gcm`, `gp` |
+| `git.sh` | Git workflow functions | `git-ch()`, `git-log()`, `git-add()` |
+| `ssh.sh` | SSH helpers | `sshdot`, `sshconf`, `ssht` |
+| `docker.sh` | Docker helpers | `dex`, `dlog`, `dclean` |
+| `utils.sh` | Utilities | `mkcd`, `extract`, `backup` |
+| `fuzzy-vim.sh` | Vim with fzf | `v` (fuzzy file open) |
+
+### Git Aliases (in .gitconfig)
+
 ```bash
-make stow-common
+git ch          # Fuzzy branch checkout with preview
+git flog        # Interactive commit browser
+git fadd        # Fuzzy file staging with diff preview
+git llog        # Fuzzy search through commit history
+git st          # status
+git cm          # commit -m
+git lg          # Pretty log with graph
 ```
 
-### macOS specific
+### Kubectl Aliases
+
 ```bash
-make stow-darwin
+# Quick shortcuts
+k               # kubectl
+kgp             # kubectl get pods
+kgpw            # kubectl get pods -o wide
+kdp             # kubectl describe pod
+klf             # kubectl logs -f
+
+# Functions
+kshp <pattern>  # Shell into first pod matching pattern
+klp <pattern>   # Logs from first pod matching pattern
+kctx            # Switch context with fzf
+kns             # Switch namespace with fzf
 ```
 
-### Linux specific
-```bash
-make stow-linux
-```
-
-## Managing Packages
+## 📦 Packages
 
 ### macOS (Homebrew)
-```bash
-# Update Brewfile with currently installed packages
-make brew-sync
 
-# Install packages from Brewfile
-make brew
-```
+Core tools: `awscli`, `bash`, `coreutils`, `git`, `fzf`, `fd`, `ripgrep`, `htop`, `tree`, `wget`
+Development: `node`, `python`, `rust`, `poetry`, `virtualenv`
+Kubernetes: `kubernetes-cli`, `helm`, `k9s`, `eksctl`, `minikube`
+Infrastructure: `terraform`, `terraformer`, `tflint`
+Apps: `docker`, `docker-desktop`, `slack`, `spotify`
 
 ### Linux
-Package lists are maintained in `linux/<distro>/packages.list`
 
-## Python Environment
+Equivalent packages are automatically installed based on distribution:
+- **Debian/Ubuntu**: Via apt from `linux/debian/packages.list`
+- **Arch/Manjaro**: Via pacman from `linux/arch/packages.list`
+- **Fedora/RHEL**: Via dnf/yum from `linux/fedora/packages.list`
+- **Alpine**: Via apk from `linux/alpine/packages.list`
 
-Create a project-specific virtual environment:
+## 🎨 Features
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+### Shell Prompt
+- **Catppuccin Mocha** color theme
+- Git branch and status indicators
+- Current directory with smart truncation
+- Kubernetes context awareness
+- Python virtual environment display
+
+Example prompt:
+```
+⭐ [jm@~/projects/dotfiles] main ➔
 ```
 
-## Key Features
+### Fuzzy Everything
+- **File search**: `v` to open files with vim
+- **Git branches**: `git ch` for interactive checkout
+- **Git commits**: `git flog` to browse history
+- **Git staging**: `git fadd` to stage files
+- **Kubernetes**: `kctx`/`kns` for context/namespace switching
 
-- **OS-specific organization**: Configs are separated by platform
-- **Common configs**: Shared configurations work everywhere
-- **Theme consistency**: Catppuccin color scheme across all tools
-- **Shell flexibility**: Both zsh (primary) and bash (for servers) configs
-- **GNU tools**: Consistent command behavior across macOS and Linux
+### GNU Tools on macOS
+Automatically aliases GNU versions to replace BSD utilities:
+- `ls` → `gls` with colors
+- `grep` → `ggrep`
+- `sed` → `gsed`
+- And more...
+
+## 🔒 Backup
+
+The installer automatically backs up existing configs to:
+```
+~/.dotfiles-backup-YYYYMMDD_HHMMSS/
+```
+
+To clean old backups (30+ days):
+```bash
+make clean-backup
+```
+
+## 🐳 Container Usage
+
+The installer auto-detects container environments and uses minimal mode:
+```bash
+# In a Docker container
+./install.sh  # Automatically uses --minimal
+```
+
+## ⚙️ Environment Detection
+
+The installer automatically detects:
+- **OS**: macOS, Linux (Ubuntu, Debian, Arch, Fedora, Alpine, etc.)
+- **Environment**: Local, SSH session, Docker container
+- **Shell**: Bash, Zsh
+- **Available tools**: Adjusts configs based on what's available
+
+## 🔧 Customization
+
+### Local Overrides
+Create `~/.bashrc.local` or `~/.zshrc.local` for machine-specific configs.
+
+### Memory Management
+The installer respects `CLAUDE.md` files for project-specific context.
+
+## 📚 Requirements
+
+- **macOS**: Homebrew (auto-installed if missing)
+- **Linux**: sudo access for package installation
+- **All systems**: Git, Bash 4+
+
+## 🚑 Troubleshooting
+
+```bash
+# Check what would be installed
+./install.sh --dry-run
+
+# Skip package installation
+./install.sh --no-packages
+
+# Force minimal mode
+./install.sh --minimal
+
+# View installer help
+./install.sh --help
+```
+

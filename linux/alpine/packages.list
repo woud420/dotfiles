@@ -1,0 +1,19 @@
+# Alpine Linux packages (minimal based on macOS Brewfile)
+bash
+curl
+docker
+docker-compose
+git
+gzip
+htop
+make
+nodejs
+npm
+python3
+py3-pip
+py3-virtualenv
+tmux
+tree
+vim
+wget
+zsh
