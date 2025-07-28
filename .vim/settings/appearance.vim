@@ -48,3 +48,6 @@ set termguicolors
 
 " Hide ~ characters at end of buffer
 set fillchars=eob:\ 
+
+" Hide mode indicator (airline already shows it)
+set noshowmode

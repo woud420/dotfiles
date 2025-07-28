@@ -23,15 +23,18 @@ let g:fzf_layout = { 'window': { 'width': 0.9, 'height': 0.6, 'relative': v:true
 " FZF preview window
 let g:fzf_preview_window = ['right:50%:hidden', 'ctrl-/']
 
+" Binary file extensions to exclude from search
+let g:rg_binary_extensions = 'jpg,jpeg,png,gif,bmp,svg,ico,pdf,zip,tar,gz,7z,rar,exe,dll,so,dylib,bin,dat,db,sqlite'
+
 " Use ripgrep for FZF if available
 if executable('rg')
-  let $FZF_DEFAULT_COMMAND = 'rg --files --hidden --follow --glob "!.git/*"'
+  let $FZF_DEFAULT_COMMAND = 'rg --files --hidden --follow --glob "!.git/*" -g "!*.{' . g:rg_binary_extensions . '}"'
 elseif executable('fd')
-  let $FZF_DEFAULT_COMMAND = 'fd --type f --hidden --follow --exclude .git'
+  let $FZF_DEFAULT_COMMAND = 'fd --type f --hidden --follow --exclude .git -E "*.{' . g:rg_binary_extensions . '}"'
 endif
 
 " FZF default options
-let $FZF_DEFAULT_OPTS = '--layout=reverse --info=inline --border --margin=1 --padding=1'
+let $FZF_DEFAULT_OPTS = '--layout=reverse --info=hidden --border --margin=1 --padding=1'
 
 " ===== Key Mappings =====
 
@@ -46,8 +49,8 @@ nnoremap <silent> <leader>g  :RG<CR>
 nnoremap <silent> <leader>G  :RG <C-R><C-W><CR>
 nnoremap <silent> <leader>/  :Lines<CR>
 
-" Vim operations
-nnoremap <silent> <leader>c  :Commands<CR>
+" Vim operations  
+nnoremap <silent> <leader>c  :call FzfCommands()<CR>
 nnoremap <silent> <leader>h  :Helptags<CR>
 nnoremap <silent> <leader>m  :Marks<CR>
 nnoremap <silent> <leader>:  :History:<CR>
@@ -66,9 +69,6 @@ command! -bang -nargs=* Rg
   \ call fzf#vim#grep(
   \   'rg --column --line-number --no-heading --color=always --smart-case -- '.shellescape(<q-args>), 1,
   \   fzf#vim#with_preview(), <bang>0)
-
-" Binary file extensions to exclude from search
-let g:rg_binary_extensions = 'jpg,jpeg,png,gif,bmp,svg,ico,pdf,zip,tar,gz,7z,rar,exe,dll,so,dylib,bin,dat,db,sqlite'
 
 " Interactive ripgrep with live search
 " Features:
@@ -133,3 +133,30 @@ nnoremap <silent> <leader>fw :call <SID>RgWordUnderCursor()<CR>
 nnoremap <silent> <leader>fd :call <SID>FilesInCurrentDir()<CR>
 nnoremap <silent> <leader>fq :call <SID>QuickFiles()<CR>
 nnoremap <silent> <leader>fr :MRU<CR>
+
+" Override FZF command options globally
+let g:fzf_action = {
+  \ 'ctrl-t': 'tab split',
+  \ 'ctrl-x': 'split',
+  \ 'ctrl-v': 'vsplit' }
+
+" Custom command function with prompt
+function! FzfCommands()
+  " Get vim commands and execute directly on selection
+  let commands = getcompletion('', 'command')
+  call fzf#run(fzf#wrap({
+    \ 'source': commands,
+    \ 'sink': function('s:execute_command_directly'),
+    \ 'options': ['--prompt', '▶ ', '--info=hidden']
+    \ }))
+endfunction
+
+" Execute command without showing it in command line
+function! s:execute_command_directly(cmd)
+  " Execute the command directly without showing command line
+  try
+    execute cmd
+  catch
+    echo "Command failed: " . cmd
+  endtry
+endfunction
