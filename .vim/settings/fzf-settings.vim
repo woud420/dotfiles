@@ -42,8 +42,8 @@ nnoremap <silent> <leader>b  :Buffers<CR>
 nnoremap <silent> <leader>l  :BLines<CR>
 
 " Search operations
-nnoremap <silent> <leader>g  :Rg<CR>
-nnoremap <silent> <leader>G  :Rg <C-R><C-W><CR>
+nnoremap <silent> <leader>g  :RG<CR>
+nnoremap <silent> <leader>G  :RG <C-R><C-W><CR>
 nnoremap <silent> <leader>/  :Lines<CR>
 
 " Vim operations
@@ -66,6 +66,38 @@ command! -bang -nargs=* Rg
   \ call fzf#vim#grep(
   \   'rg --column --line-number --no-heading --color=always --smart-case -- '.shellescape(<q-args>), 1,
   \   fzf#vim#with_preview(), <bang>0)
+
+" Binary file extensions to exclude from search
+let g:rg_binary_extensions = 'jpg,jpeg,png,gif,bmp,svg,ico,pdf,zip,tar,gz,7z,rar,exe,dll,so,dylib,bin,dat,db,sqlite'
+
+" Interactive ripgrep with live search
+" Features:
+"   - Shows empty results initially (no file spam)
+"   - Updates results live as you type
+"   - Excludes binary files using g:rg_binary_extensions
+"   - Shortens long paths to [..]/parent/file format for readability
+"   - Hides the file count info for cleaner UI
+function! RipgrepFzf(query, fullscreen)
+  " Build the ripgrep command with:
+  " - Binary file exclusions from g:rg_binary_extensions
+  " - Pipe through awk to shorten paths (keep last 2 components)
+  let command_fmt = 'rg --column --line-number --no-heading --color=always --smart-case --binary -g "!*.{' . g:rg_binary_extensions . '}" -- %s | awk -F: ''{split($1,a,"/"); if(length(a)>2) $1="[..]/"a[length(a)-1]"/"a[length(a)]; else $1=$1; printf "%%s:%%s:%%s:%%s\n", $1, $2, $3, substr($0,index($0,$4))}'' || true'
+  
+  " Start with empty results
+  let initial_command = 'echo ""'
+  
+  " Only run ripgrep when query is non-empty
+  let reload_command = 'if [ -n "{q}" ]; then ' . printf(command_fmt, '{q}') . '; else echo ""; fi'
+  
+  " FZF options:
+  " --phony: Don't run initial command on every keystroke
+  " --bind change:reload: Re-run command when input changes
+  " --info=hidden: Hide the match counter
+  let spec = {'options': ['--phony', '--query', a:query, '--bind', 'change:reload:'.reload_command, '--prompt', '🔍 ', '--info=hidden']}
+  call fzf#vim#grep(initial_command, 1, fzf#vim#with_preview(spec), a:fullscreen)
+endfunction
+
+command! -nargs=* -bang RG call RipgrepFzf(<q-args>, <bang>0)
 
 " Search in open buffers
 command! -bang -nargs=* BRg
