@@ -1,23 +1,33 @@
-" All plugin related stuff here, make sure this stays at top
+" ===== Vim Configuration Structure =====
+" This file defines the loading order of all vim configurations
+" Order matters! Some settings depend on others being loaded first
+
+" Essential encoding settings (must be first)
+set encoding=utf-8
+set fileencoding=utf-8
+set termencoding=utf-8
+set termguicolors
+
+" 1. Plugins - Load all plugins first (includes plugin-specific settings)
 source ~/.vim/plugins.vim
-" All the different key mappings
-source ~/.vim/mappings.vim
-" Appearance settings
+
+" 2. Appearance - Colors, themes, UI elements (after plugins are loaded)
 source ~/.vim/settings/appearance.vim
-" Performance related settings (empty by default)
+
+" 3. Performance - Speed optimizations (early for best effect)
 source ~/.vim/settings/performance.vim
-" Extra keybindings (empty by default)
+
+" 4. Key mappings - Basic vim keybindings
+source ~/.vim/mappings.vim
+
+" 5. Extra keybindings - Leader key and custom bindings
 source ~/.vim/settings/keybindings.vim
-" Extra coc-settings (empty by default)
+
+" 6. CoC LSP - Language server configuration (after basic settings)
 source ~/.vim/settings/coc-settings.vim
-" All general settings (tabs, indent, search, color schemes, etc...)
+
+" 7. FZF - Fuzzy finder configuration (after keybindings)
+source ~/.vim/settings/fzf-settings.vim
+
+" 8. General settings - Search, behavior, etc. (loaded last)
 source ~/.vim/settings.vim
-
-" Use ftplugin stored in ~/.vim/after/ftplugin/<language>
-" CPP stuff
-
-"let g:cpp_class_scope_highlight = 1
-"let g:cpp_member_variable_highlight = 1
-"let g:cpp_class_decl_highlight = 1
-"let g:cpp_experimental_simple_template_highlight = 1
-"let g:cpp_concepts_highlight = 1

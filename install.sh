@@ -1,7 +1,25 @@
 #!/usr/bin/env bash
-# Universal dotfiles installer with OS detection
+# ===== Universal Dotfiles Installer =====
 # Works on macOS, Linux (Ubuntu/Debian, Arch, RHEL/CentOS, Alpine)
-# Usage: ./install.sh [--minimal] [--no-packages] [--dry-run]
+# Usage: ./install.sh [--minimal] [--no-packages] [--dry-run] [--copy]
+#
+# Installation Order:
+# 1. OS Detection & Environment Setup
+# 2. Package Installation (optional)
+# 3. Configuration Installation:
+#    - Shell configs (foundation)
+#    - Git configuration
+#    - Shell functions & aliases
+#    - Terminal configs (kitty, htop)
+#    - Vim setup (plugins, LSP, themes)
+#    - Optional tools (fzf, etc.)
+#
+# Features:
+# - Auto-detects OS and environment (local/remote/container)
+# - Creates backups before changes
+# - Supports both symlinks and file copying
+# - Compiles CoC.nvim automatically
+# - Installs language servers and tools
 
 set -e
 
@@ -421,13 +439,13 @@ main() {
         log_info "Skipping package installation"
     fi
     
-    # Install configurations
-    install_shell_configs
-    install_git_config
-    install_shell_functions
-    install_terminal_config
-    install_vim_config
-    install_optional_tools
+    # Install configurations in dependency order
+    install_shell_configs      # 1. Shell configs (.bashrc, .zshrc) - foundation
+    install_git_config         # 2. Git configuration (.gitconfig)
+    install_shell_functions     # 3. Shell functions (depends on shell configs)
+    install_terminal_config     # 4. Terminal configs (kitty, htop)
+    install_vim_config          # 5. Vim setup (plugins, settings, CoC compilation)
+    install_optional_tools      # 6. Optional tools (fzf, etc.) - last
     
     echo -e "${GREEN}"
     echo "╔══════════════════════════════════════════════════════════════╗"

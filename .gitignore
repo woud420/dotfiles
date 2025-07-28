@@ -1,3 +1,24 @@
+# Secrets and sensitive files
+.env*
+!.env.example
+*.secret
+*.secrets
+*.key
+*.pem
+*_rsa
+*_dsa
+*_ecdsa
+*_ed25519
+.secrets/
+secrets/
+
+# API Keys and credentials
+.openai
+.anthropic
+.aws/credentials
+.config/gh/hosts.yml
+.config/hub
+
 # Virtual environment directories
 virtualenvs/
 venv/

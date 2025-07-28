@@ -6,9 +6,6 @@ set showmatch
 
 set nomodeline
 
-" Polyglot Settings
-let g:polyglot_disabled = ['csv']
-
 " COC Settings
 " Smaller updatetime for CursorHold & CursorHoldI
 set updatetime=300
