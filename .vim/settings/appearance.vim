@@ -45,3 +45,6 @@ set showmatch
 
 set relativenumber
 set termguicolors
+
+" Hide ~ characters at end of buffer
+set fillchars=eob:\ 
