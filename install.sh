@@ -310,24 +310,34 @@ install_shell_functions() {
 install_terminal_config() {
     log_step "Installing terminal configuration..."
     
-    # Kitty config based on OS
+    # Kitty config based on OS (using hard copies for kitty to work properly)
     mkdir -p "$HOME/.config/kitty"
     
-    if [[ "$OS" == "macos" ]]; then
-        create_symlink "$DOTFILES_DIR/darwin/kitty.conf" "$HOME/.config/kitty/kitty.conf"
-    else
-        create_symlink "$DOTFILES_DIR/linux/common/kitty.conf" "$HOME/.config/kitty/kitty.conf"
-    fi
-    
-    # Themes
     if [[ "$DRY_RUN" == "false" ]]; then
+        if [[ "$OS" == "macos" ]]; then
+            backup_file "$HOME/.config/kitty/kitty.conf"
+            cp "$DOTFILES_DIR/darwin/kitty.conf" "$HOME/.config/kitty/kitty.conf"
+            log_success "Copied darwin/kitty.conf -> ~/.config/kitty/kitty.conf"
+        else
+            backup_file "$HOME/.config/kitty/kitty.conf"
+            cp "$DOTFILES_DIR/linux/common/kitty.conf" "$HOME/.config/kitty/kitty.conf"
+            log_success "Copied linux/common/kitty.conf -> ~/.config/kitty/kitty.conf"
+        fi
+        
+        # Copy themes
         for theme_file in "$DOTFILES_DIR/common/themes/"*.conf; do
             if [[ -f "$theme_file" ]]; then
-                create_symlink "$theme_file" "$HOME/.config/kitty/$(basename "$theme_file")"
+                cp "$theme_file" "$HOME/.config/kitty/$(basename "$theme_file")"
+                log_success "Copied $(basename "$theme_file") -> ~/.config/kitty/"
             fi
         done
     else
-        log_info "Would install kitty themes"
+        if [[ "$OS" == "macos" ]]; then
+            log_info "Would copy: darwin/kitty.conf -> ~/.config/kitty/kitty.conf"
+        else
+            log_info "Would copy: linux/common/kitty.conf -> ~/.config/kitty/kitty.conf"
+        fi
+        log_info "Would copy kitty themes to ~/.config/kitty/"
     fi
     
     # htop config
