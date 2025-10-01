@@ -31,3 +31,9 @@ source ~/.vim/settings/fzf-settings.vim
 
 " 8. General settings - Search, behavior, etc. (loaded last)
 source ~/.vim/settings.vim
+
+" Give the highlighter more time but cap per-line work
+set redrawtime=10000
+set synmaxcol=300          " don't try to highlight beyond column 300
+syntax sync minlines=128   " don't rescan the entire file from top
+

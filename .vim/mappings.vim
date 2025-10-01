@@ -5,7 +5,7 @@ inoremap jk <Esc>
 vnoremap jk <Esc>
 
 " Tab moves to next window within pane
-map <Tab> <C-w>w
+nnoremap <Tab> <C-w>w
 
 " | Creates a vertical split and moves there
 nmap <Bar> <C-w>v<C-W><Right>

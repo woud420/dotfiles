@@ -8,7 +8,18 @@ setopt prompt_subst
 
 # Git branch info setup
 autoload -Uz vcs_info
-precmd() { vcs_info }
+precmd() { 
+  vcs_info
+  # Set tab title to show current directory (last 2 path components)
+  print -Pn "\e]0;%2~\a"
+}
+
+# Show running command in tab title
+preexec() {
+  # Show command being executed (first word only for simplicity)
+  print -Pn "\e]0;%2~ ▶ ${1%% *}\a"
+}
+
 zstyle ':vcs_info:*' enable git
 zstyle ':vcs_info:git:*' formats ' %b'
 
@@ -124,7 +135,24 @@ for f in ~/.config/shell-functions/*.sh; do
   [[ -r "$f" ]] && source "$f"
 done
 
+function kctx() {
+  local selected
+  selected=$(kubectl config get-contexts -o name | \
+    fzf --prompt="Select context > " \
+        --height=40% \
+        --layout=reverse \
+        --border \
+        --ansi)
+
+  if [[ -n "$selected" ]]; then
+    kubectl config use-context "$selected"
+  else
+    echo "No context selected."
+  fi
+}
+
 # Source local secrets (if exists)
 [[ -f ~/.env.secrets ]] && source ~/.env.secrets
 
 export PATH="/opt/homebrew/bin:$PATH"
+. "$HOME/.local/bin/env"

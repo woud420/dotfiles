@@ -178,3 +178,4 @@ done
 
 # Source local secrets (if exists)
 [ -f ~/.env.secrets ] && source ~/.env.secrets
+. "$HOME/.local/bin/env"
