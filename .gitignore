@@ -38,3 +38,16 @@ __pycache__/
 
 # Cursor generated configuration
 .config/cursor/generated/
+
+# Kubernetes configs with credentials
+**/.kube/config*
+!**/.kube/config.template
+
+# SSH sensitive files
+**/.ssh/id_*
+**/.ssh/*_rsa*
+**/.ssh/*_dsa*
+**/.ssh/*_ecdsa*
+**/.ssh/*_ed25519*
+**/.ssh/known_hosts
+**/.ssh/authorized_keys

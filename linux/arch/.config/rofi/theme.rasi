@@ -1,0 +1,96 @@
+/**
+ * Rofi Theme - Matching your purple/dark Waybar theme
+ */
+
+* {
+    bg-main:     #221820;
+    bg-dark:     #6b4456;
+    bg-selected: #9d5a7f;
+    fg-main:     #d0d0d0;
+    fg-dim:      #626262;
+    border-color: #9d5a7f;
+
+    background-color: transparent;
+    text-color: @fg-main;
+    font: "Noto Sans 11";
+}
+
+window {
+    background-color: @bg-main;
+    border: 2px solid;
+    border-color: @border-color;
+    border-radius: 16px;
+    padding: 15px;
+    width: 600px;
+}
+
+mainbox {
+    background-color: transparent;
+    children: [inputbar, listview];
+    spacing: 10px;
+}
+
+inputbar {
+    background-color: transparent;
+    border: 0px 0px 1px 0px solid;
+    border-color: @border-color;
+    padding: 12px 15px;
+    children: [prompt, entry];
+    spacing: 10px;
+}
+
+prompt {
+    text-color: @border-color;
+    font: "Noto Sans Bold 11";
+}
+
+entry {
+    text-color: @fg-main;
+    placeholder: "";
+    placeholder-color: @fg-dim;
+}
+
+listview {
+    background-color: transparent;
+    lines: 8;
+    spacing: 4px;
+    scrollbar: false;
+    cycle: true;
+}
+
+element {
+    background-color: transparent;
+    text-color: @fg-main;
+    border-radius: 8px;
+    padding: 8px 12px;
+}
+
+element-icon {
+    size: 24px;
+    margin: 0px 10px 0px 0px;
+}
+
+element-text {
+    background-color: transparent;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @bg-selected;
+    text-color: @fg-main;
+}
+
+element normal.normal {
+    background-color: transparent;
+    text-color: @fg-main;
+}
+
+element alternate.normal {
+    background-color: transparent;
+    text-color: @fg-main;
+}
+
+element selected.normal {
+    background-color: @bg-selected;
+    text-color: @fg-main;
+}
