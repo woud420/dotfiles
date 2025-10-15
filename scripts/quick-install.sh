@@ -46,12 +46,12 @@ ln -sf "$DOTFILES_DIR/common/git/.gitconfig" "$HOME/.gitconfig"
 mkdir -p "$HOME/.config/git"
 ln -sf "$DOTFILES_DIR/common/git/.gitignore_global" "$HOME/.config/git/ignore"
 
-# GNU aliases
-ln -sf "$DOTFILES_DIR/common/shell/.gnu_aliases" "$HOME/.gnu_aliases"
+# GNU aliases (copy to avoid symlink on targets)
+cp -f "$DOTFILES_DIR/common/shell/.gnu_aliases" "$HOME/.gnu_aliases"
 
-# Shell functions
+# Shell functions (copy to ensure standalone files)
 mkdir -p "$HOME/.config/shell-functions"
-ln -sf "$DOTFILES_DIR/common/shell-functions/"* "$HOME/.config/shell-functions/"
+cp -f "$DOTFILES_DIR/common/shell-functions/"*.sh "$HOME/.config/shell-functions/"
 
 # Optional: Install FZF if not in minimal mode
 if [ "$MINIMAL" = "0" ] && ! command -v fzf >/dev/null 2>&1; then

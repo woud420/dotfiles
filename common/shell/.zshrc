@@ -117,7 +117,29 @@ function build_rprompt() {
 
 precmd_functions+=(build_rprompt)
 
-source ~/.gnu_aliases
+# PATH helpers
+path_prepend() {
+  local dir
+  for dir in "$@"; do
+    [[ -d "$dir" ]] || continue
+    case ":$PATH:" in
+      *":$dir:"*) ;;
+      *) PATH="$dir:$PATH" ;;
+    esac
+  done
+}
+
+path_prepend "/usr/local/bin" "/usr/local/sbin" "$HOME/bin" "$HOME/.cargo/bin"
+
+if [[ -d "$HOME/.pyenv" ]]; then
+  export PYENV_ROOT="$HOME/.pyenv"
+  path_prepend "$PYENV_ROOT/bin"
+  if command -v pyenv >/dev/null 2>&1; then
+    eval "$(pyenv init -)"
+  fi
+fi
+
+[[ -r "$HOME/.gnu_aliases" ]] && source "$HOME/.gnu_aliases"
 
 # Soft pastel fzf colors
 export FZF_DEFAULT_OPTS="

@@ -251,6 +251,21 @@ create_symlink() {
     fi
 }
 
+copy_file() {
+    local source="$1"
+    local target="$2"
+    local target_dir
+    target_dir="$(dirname "$target")"
+
+    if [[ "$DRY_RUN" == "false" ]]; then
+        mkdir -p "$target_dir"
+        cp -f "$source" "$target"
+        log_success "Copied $source -> $target"
+    else
+        log_info "Would copy: $source -> $target"
+    fi
+}
+
 # Install shell configurations
 install_shell_configs() {
     log_step "Installing shell configurations..."
@@ -273,8 +288,8 @@ install_shell_configs() {
     # GNU aliases and dircolors
     backup_file "$HOME/.gnu_aliases"
     backup_file "$HOME/.dircolors"
-    create_symlink "$DOTFILES_DIR/common/shell/.gnu_aliases" "$HOME/.gnu_aliases"
-    create_symlink "$DOTFILES_DIR/common/shell/.dircolors" "$HOME/.dircolors"
+    copy_file "$DOTFILES_DIR/common/shell/.gnu_aliases" "$HOME/.gnu_aliases"
+    copy_file "$DOTFILES_DIR/common/shell/.dircolors" "$HOME/.dircolors"
 }
 
 # Install git configuration
@@ -298,7 +313,7 @@ install_shell_functions() {
         # Copy all shell function files
         for func_file in "$DOTFILES_DIR/common/shell-functions/"*.sh; do
             if [[ -f "$func_file" ]]; then
-                create_symlink "$func_file" "$HOME/.config/shell-functions/$(basename "$func_file")"
+                copy_file "$func_file" "$HOME/.config/shell-functions/$(basename "$func_file")"
             fi
         done
     else
