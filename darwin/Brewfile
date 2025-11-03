@@ -1,5 +1,6 @@
 brew "awscli"
 brew "bash"
+brew "bat"
 brew "binutils"
 brew "coreutils"
 brew "diffutils"
