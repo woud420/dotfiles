@@ -20,8 +20,8 @@ let g:fzf_colors =
 " FZF layout - centered floating window
 let g:fzf_layout = { 'window': { 'width': 0.9, 'height': 0.6, 'relative': v:true } }
 
-" FZF preview window
-let g:fzf_preview_window = ['right:50%:hidden', 'ctrl-/']
+" FZF preview window - visible by default, toggle with ctrl-/
+let g:fzf_preview_window = ['right:50%', 'ctrl-/']
 
 " Binary file extensions to exclude from search
 let g:rg_binary_extensions = 'jpg,jpeg,png,gif,bmp,svg,ico,pdf,zip,tar,gz,7z,rar,exe,dll,so,dylib,bin,dat,db,sqlite'
@@ -38,8 +38,17 @@ let $FZF_DEFAULT_OPTS = '--layout=reverse --info=hidden --border --margin=1 --pa
 
 " ===== Key Mappings =====
 
+" Git-aware file finder - uses GFiles in git repos, Files otherwise
+function! GitAwareFiles()
+  if !empty(system('git rev-parse --is-inside-work-tree 2>/dev/null'))
+    execute 'GFiles'
+  else
+    execute 'Files'
+  endif
+endfunction
+
 " File operations
-nnoremap <silent> <leader>f  :Files<CR>
+nnoremap <silent> <leader>f  :call GitAwareFiles()<CR>
 nnoremap <silent> <leader>F  :Files ~<CR>
 nnoremap <silent> <leader>b  :Buffers<CR>
 nnoremap <silent> <leader>l  :BLines<CR>
@@ -60,6 +69,17 @@ nnoremap <silent> <leader>"  :Registers<CR>
 nnoremap <silent> <leader>t  :Filetypes<CR>
 
 " ===== Custom Commands =====
+
+" Override Files command to always show preview
+command! -bang -nargs=? -complete=dir Files
+  \ call fzf#vim#files(<q-args>, fzf#vim#with_preview(), <bang>0)
+
+" Override GFiles command to always show preview with git root path
+command! -bang -nargs=? GFiles
+  \ call fzf#vim#gitfiles(<q-args>,
+  \   fzf#vim#with_preview({
+  \     'options': ['--prompt', fnamemodify(system('git rev-parse --show-toplevel 2>/dev/null'), ':p:~') . '> ']
+  \   }), <bang>0)
 
 " Files in git root (if in git repo, otherwise current directory)
 command! -bang ProjectFiles call fzf#vim#files(FugitiveExtractGitDir(expand('%:p:h')) != '' ? FugitiveWorkTree() : '.', <bang>0)
