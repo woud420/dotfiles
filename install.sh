@@ -115,7 +115,7 @@ detect_os() {
         OS="unknown"
         DISTRO="unknown"
     fi
-    
+
     log_info "Detected OS: $OS, Distribution: $DISTRO"
 }
 
@@ -144,7 +144,7 @@ install_packages_macos() {
             log_info "Would install Homebrew"
         fi
     fi
-    
+
     log_step "Installing packages from Brewfile..."
     if [[ "$DRY_RUN" == "false" ]]; then
         brew bundle --file="$DOTFILES_DIR/darwin/Brewfile" || log_warning "Some packages failed to install"
@@ -155,7 +155,7 @@ install_packages_macos() {
 
 install_packages_linux() {
     local package_list=""
-    
+
     case "$DISTRO" in
         ubuntu|debian)
             package_list="$DOTFILES_DIR/linux/debian/packages.list"
@@ -225,14 +225,14 @@ create_symlink() {
     local source="$1"
     local target="$2"
     local target_dir="$(dirname "$target")"
-    
+
     if [[ "$DRY_RUN" == "false" ]]; then
         # Create target directory if it doesn't exist
         mkdir -p "$target_dir"
-        
+
         # Remove existing file/link
         [[ -e "$target" ]] || [[ -L "$target" ]] && rm -f "$target"
-        
+
         if [[ "$COPY_MODE" == "true" ]]; then
             # Copy file
             cp "$source" "$target"
@@ -269,7 +269,7 @@ copy_file() {
 # Install shell configurations
 install_shell_configs() {
     log_step "Installing shell configurations..."
-    
+
     # Determine which shell config to use
     if [[ "$MINIMAL_MODE" == "true" ]]; then
         backup_file "$HOME/.bashrc"
@@ -279,12 +279,12 @@ install_shell_configs() {
         backup_file "$HOME/.bashrc"
         backup_file "$HOME/.zshrc"
         backup_file "$HOME/.bash_profile"
-        
+
         create_symlink "$DOTFILES_DIR/common/shell/.bashrc" "$HOME/.bashrc"
         create_symlink "$DOTFILES_DIR/common/shell/.zshrc" "$HOME/.zshrc"
         create_symlink "$DOTFILES_DIR/common/shell/.bash_profile" "$HOME/.bash_profile"
     fi
-    
+
     # GNU aliases and dircolors
     backup_file "$HOME/.gnu_aliases"
     backup_file "$HOME/.dircolors"
@@ -295,10 +295,10 @@ install_shell_configs() {
 # Install git configuration
 install_git_config() {
     log_step "Installing git configuration..."
-    
+
     backup_file "$HOME/.gitconfig"
     create_symlink "$DOTFILES_DIR/common/git/.gitconfig" "$HOME/.gitconfig"
-    
+
     # Global gitignore
     mkdir -p "$HOME/.config/git"
     create_symlink "$DOTFILES_DIR/common/git/.gitignore_global" "$HOME/.config/git/ignore"
@@ -307,7 +307,7 @@ install_git_config() {
 # Install shell functions
 install_shell_functions() {
     log_step "Installing shell functions..."
-    
+
     if [[ "$DRY_RUN" == "false" ]]; then
         mkdir -p "$HOME/.config/shell-functions"
         # Copy all shell function files
@@ -324,10 +324,10 @@ install_shell_functions() {
 # Install terminal configuration
 install_terminal_config() {
     log_step "Installing terminal configuration..."
-    
+
     # Kitty config based on OS (using hard copies for kitty to work properly)
     mkdir -p "$HOME/.config/kitty"
-    
+
     if [[ "$DRY_RUN" == "false" ]]; then
         if [[ "$OS" == "macos" ]]; then
             backup_file "$HOME/.config/kitty/kitty.conf"
@@ -338,7 +338,7 @@ install_terminal_config() {
             cp "$DOTFILES_DIR/linux/common/kitty.conf" "$HOME/.config/kitty/kitty.conf"
             log_success "Copied linux/common/kitty.conf -> ~/.config/kitty/kitty.conf"
         fi
-        
+
         # Copy themes
         for theme_file in "$DOTFILES_DIR/common/themes/"*.conf; do
             if [[ -f "$theme_file" ]]; then
@@ -354,7 +354,7 @@ install_terminal_config() {
         fi
         log_info "Would copy kitty themes to ~/.config/kitty/"
     fi
-    
+
     # htop config
     mkdir -p "$HOME/.config/htop"
     create_symlink "$DOTFILES_DIR/common/htop/htoprc" "$HOME/.config/htop/htoprc"
@@ -363,18 +363,18 @@ install_terminal_config() {
 # Install vim configuration
 install_vim_config() {
     log_step "Installing vim configuration..."
-    
+
     # Create .vim directory and symlink config files
     if [[ "$DRY_RUN" == "false" ]]; then
         mkdir -p "$HOME/.vim/settings"
-        
+
         # Link vim configuration files
         create_symlink "$DOTFILES_DIR/.vim/vimrc" "$HOME/.vim/vimrc"
         create_symlink "$DOTFILES_DIR/.vim/plugins.vim" "$HOME/.vim/plugins.vim"
         create_symlink "$DOTFILES_DIR/.vim/mappings.vim" "$HOME/.vim/mappings.vim"
         create_symlink "$DOTFILES_DIR/.vim/settings.vim" "$HOME/.vim/settings.vim"
         create_symlink "$DOTFILES_DIR/.vim/coc-settings.json" "$HOME/.vim/coc-settings.json"
-        
+
         # Link settings directory files
         for settings_file in "$DOTFILES_DIR/.vim/settings/"*.vim; do
             if [[ -f "$settings_file" ]]; then
@@ -385,23 +385,40 @@ install_vim_config() {
         log_info "Would install vim configuration"
         return
     fi
-    
+
     # Install vim plugins if vim is available
     if command -v vim >/dev/null 2>&1; then
         log_step "Installing vim plugins..."
         if [[ "$DRY_RUN" == "false" ]]; then
             vim +PlugInstall +qall
-            
+
             # Compile CoC.nvim if it was installed
             if [[ -d "$HOME/.vim/plugged/coc.nvim" ]]; then
                 log_step "Compiling CoC.nvim..."
                 if command -v npm >/dev/null 2>&1; then
-                    (cd "$HOME/.vim/plugged/coc.nvim" && npm ci)
-                    log_success "CoC.nvim compiled successfully"
+                    (
+                        set +e  # don't kill the whole install on a coc build failure
+                        cd "$HOME/.vim/plugged/coc.nvim" || exit 0
+
+                        if [[ -f package-lock.json || -f npm-shrinkwrap.json ]]; then
+                            npm ci
+                        elif [[ -f package.json ]]; then
+                            npm install
+                        else
+                            log_warning "No package.json / lockfile found in coc.nvim, skipping build"
+                            exit 0
+                        fi
+                    )
+                    if [[ $? -eq 0 ]]; then
+                        log_success "CoC.nvim compiled successfully"
+                    else
+                        log_warning "CoC.nvim compilation failed. You can retry manually: cd ~/.vim/plugged/coc.nvim && npm install"
+                    fi
                 else
-                    log_warning "npm not found. CoC.nvim needs manual compilation: cd ~/.vim/plugged/coc.nvim && npm ci"
+                    log_warning "npm not found. CoC.nvim needs manual compilation: cd ~/.vim/plugged/coc.nvim && npm install"
                 fi
             fi
+
         else
             log_info "Would install vim plugins and compile CoC.nvim"
         fi
@@ -416,9 +433,9 @@ install_optional_tools() {
         log_info "Minimal mode: Skipping optional tools"
         return
     fi
-    
+
     log_step "Installing optional tools..."
-    
+
     # FZF
     if ! command -v fzf >/dev/null 2>&1; then
         log_info "Installing fzf..."
@@ -439,14 +456,14 @@ main() {
     echo "║              Universal Unix/Linux/macOS                     ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
-    
+
     detect_os
     detect_environment
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_warning "DRY RUN MODE - No changes will be made"
     fi
-    
+
     # Install packages if requested
     if [[ "$INSTALL_PACKAGES" == "true" ]] && [[ "$MINIMAL_MODE" == "false" ]]; then
         case "$OS" in
@@ -463,7 +480,7 @@ main() {
     else
         log_info "Skipping package installation"
     fi
-    
+
     # Install configurations in dependency order
     install_shell_configs      # 1. Shell configs (.bashrc, .zshrc) - foundation
     install_git_config         # 2. Git configuration (.gitconfig)
@@ -471,19 +488,19 @@ main() {
     install_terminal_config     # 4. Terminal configs (kitty, htop)
     install_vim_config          # 5. Vim setup (plugins, settings, CoC compilation)
     install_optional_tools      # 6. Optional tools (fzf, etc.) - last
-    
+
     echo -e "${GREEN}"
     echo "╔══════════════════════════════════════════════════════════════╗"
     echo "║                   Installation Complete!                    ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
-    
+
     if [[ -d "$BACKUP_DIR" ]]; then
         log_info "Backups saved to: $BACKUP_DIR"
     fi
-    
+
     log_info "Please run: source ~/.bashrc  (or source ~/.zshrc)"
-    
+
     if [[ "$MINIMAL_MODE" == "false" ]]; then
         echo
         log_info "Try these new commands:"
