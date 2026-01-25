@@ -431,6 +431,107 @@ install_optional_tools() {
     fi
 }
 
+# Install AI context files (CLAUDE.md, MACHINE.md, AGENTS.md)
+install_ai_context() {
+    log_step "Installing AI context files..."
+
+    # Create ~/.claude directory
+    mkdir -p "$HOME/.claude"
+
+    # CLAUDE.md -> ~/.claude/CLAUDE.md
+    local claude_src="$DOTFILES_DIR/common/ai-context/CLAUDE.md"
+    if [[ -f "$claude_src" ]]; then
+        backup_file "$HOME/.claude/CLAUDE.md"
+        create_symlink "$claude_src" "$HOME/.claude/CLAUDE.md"
+    fi
+
+    # AGENTS.md -> ~/AGENTS.md (for Codex/Copilot compatibility)
+    local agents_src="$DOTFILES_DIR/common/ai-context/AGENTS.md"
+    if [[ -f "$agents_src" ]]; then
+        backup_file "$HOME/AGENTS.md"
+        create_symlink "$agents_src" "$HOME/AGENTS.md"
+    fi
+
+    # OS-specific machine.md -> ~/MACHINE.md
+    local machine_src=""
+    case "$DISTRO" in
+        arch|manjaro)
+            machine_src="$DOTFILES_DIR/linux/arch/ai-context/machine.md"
+            ;;
+        ubuntu|debian)
+            machine_src="$DOTFILES_DIR/linux/debian/ai-context/machine.md"
+            ;;
+        darwin|macos)
+            machine_src="$DOTFILES_DIR/darwin/ai-context/machine.md"
+            ;;
+    esac
+
+    if [[ -n "$machine_src" && -f "$machine_src" ]]; then
+        backup_file "$HOME/MACHINE.md"
+        create_symlink "$machine_src" "$HOME/MACHINE.md"
+    else
+        log_warning "No machine.md found for $DISTRO"
+    fi
+
+    # Run refresh script to generate initial machine-state.md
+    local refresh_script="$DOTFILES_DIR/scripts/refresh-machine-state.sh"
+    if [[ -f "$refresh_script" ]]; then
+        log_step "Generating initial machine-state.md..."
+        if [[ "$DRY_RUN" == "false" ]]; then
+            chmod +x "$refresh_script"
+            "$refresh_script"
+            # Symlink the generated state file
+            local state_file=""
+            case "$DISTRO" in
+                arch|manjaro)
+                    state_file="$DOTFILES_DIR/linux/arch/ai-context/machine-state.md"
+                    ;;
+                ubuntu|debian)
+                    state_file="$DOTFILES_DIR/linux/debian/ai-context/machine-state.md"
+                    ;;
+                darwin|macos)
+                    state_file="$DOTFILES_DIR/darwin/ai-context/machine-state.md"
+                    ;;
+            esac
+            if [[ -n "$state_file" && -f "$state_file" ]]; then
+                create_symlink "$state_file" "$HOME/MACHINE-STATE.md"
+            fi
+        else
+            log_info "Would run: $refresh_script"
+            log_info "Would symlink machine-state.md -> ~/MACHINE-STATE.md"
+        fi
+    fi
+}
+
+# Install pacman hook (Arch Linux only)
+install_pacman_hook() {
+    if [[ "$DISTRO" != "arch" && "$DISTRO" != "manjaro" ]]; then
+        return
+    fi
+
+    local hook_src="$DOTFILES_DIR/linux/arch/hooks/90-refresh-ai-context.hook"
+    local hook_dest="/etc/pacman.d/hooks/90-refresh-ai-context.hook"
+
+    if [[ ! -f "$hook_src" ]]; then
+        log_warning "Pacman hook source not found: $hook_src"
+        return
+    fi
+
+    log_step "Installing pacman hook for AI context refresh..."
+
+    if [[ "$DRY_RUN" == "false" ]]; then
+        # Ensure hooks directory exists
+        sudo mkdir -p /etc/pacman.d/hooks
+
+        # Template and install the hook
+        sed "s|__DOTFILES_DIR__|$DOTFILES_DIR|g" "$hook_src" | sudo tee "$hook_dest" > /dev/null
+        log_success "Installed pacman hook: $hook_dest"
+    else
+        log_info "Would install pacman hook: $hook_src -> $hook_dest"
+        log_info "Would replace __DOTFILES_DIR__ with $DOTFILES_DIR"
+    fi
+}
+
 # Main installation function
 main() {
     echo -e "${CYAN}"
@@ -470,7 +571,9 @@ main() {
     install_shell_functions     # 3. Shell functions (depends on shell configs)
     install_terminal_config     # 4. Terminal configs (kitty, htop)
     install_vim_config          # 5. Vim setup (plugins, settings, CoC compilation)
-    install_optional_tools      # 6. Optional tools (fzf, etc.) - last
+    install_optional_tools      # 6. Optional tools (fzf, etc.)
+    install_ai_context          # 7. AI context files (CLAUDE.md, MACHINE.md, etc.)
+    install_pacman_hook         # 8. Pacman hook for AI context (Arch only)
     
     echo -e "${GREEN}"
     echo "╔══════════════════════════════════════════════════════════════╗"

@@ -8,4 +8,4 @@ Target = *
 [Action]
 Description = Refreshing AI context machine state...
 When = PostTransaction
-Exec = /home/jm/workspace/dotfiles/scripts/refresh-machine-state.sh
+Exec = __DOTFILES_DIR__/scripts/refresh-machine-state.sh
