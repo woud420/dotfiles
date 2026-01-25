@@ -1,0 +1,11 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Type = Package
+Target = *
+
+[Action]
+Description = Refreshing AI context machine state...
+When = PostTransaction
+Exec = /home/jm/workspace/dotfiles/scripts/refresh-machine-state.sh
