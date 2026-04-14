@@ -55,7 +55,7 @@ jobs:
             test -f ~/.config/kitty/kitty.conf && echo "OK: kitty.conf"
             test -f ~/.config/kitty/current-theme.conf && echo "OK: current-theme.conf"
             grep -q "custom-purple\|Custom Purple" ~/.config/kitty/current-theme.conf && echo "OK: Linux purple theme applied"
-            grep -q "Iosevka" ~/.config/kitty/kitty.conf && echo "OK: Iosevka font set"
+            grep -q "FiraCode" ~/.config/kitty/kitty.conf && echo "OK: FiraCode font set"
 
             echo "=== All checks passed ==="
           '
