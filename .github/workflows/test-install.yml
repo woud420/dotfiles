@@ -1,0 +1,144 @@
+name: Test install.sh
+
+on:
+  push:
+    branches: [main, "feature/*", "fix/*"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-arch:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install base dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm base-devel git zsh vim fzf sudo
+
+      - name: Create test user
+        run: |
+          useradd -m -s /bin/zsh testuser
+          echo "testuser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+      - name: Run install (dry-run)
+        run: |
+          cp -r "$GITHUB_WORKSPACE" /home/testuser/dotfiles
+          chown -R testuser:testuser /home/testuser/dotfiles
+          su testuser -c "cd /home/testuser/dotfiles && ./install.sh --dry-run --no-packages"
+
+      - name: Run install
+        run: |
+          su testuser -c "cd /home/testuser/dotfiles && ./install.sh --no-packages"
+
+      - name: Verify deployments
+        run: |
+          su testuser -c '
+            set -e
+            echo "=== Checking symlinks ==="
+            test -L ~/.bashrc && echo "OK: .bashrc"
+            test -L ~/.zshrc && echo "OK: .zshrc"
+            test -L ~/.gitconfig && echo "OK: .gitconfig"
+            test -L ~/.tmux.conf && echo "OK: .tmux.conf"
+            test -L ~/.inputrc && echo "OK: .inputrc"
+            test -L ~/.vim/vimrc && echo "OK: .vim/vimrc"
+
+            echo "=== Checking copies ==="
+            test -f ~/.gnu_aliases && echo "OK: .gnu_aliases"
+            test -f ~/.dircolors && echo "OK: .dircolors"
+            test -d ~/.config/shell-functions && echo "OK: shell-functions dir"
+
+            echo "=== Checking kitty theme ==="
+            test -f ~/.config/kitty/kitty.conf && echo "OK: kitty.conf"
+            test -f ~/.config/kitty/current-theme.conf && echo "OK: current-theme.conf"
+            grep -q "custom-purple\|Custom Purple" ~/.config/kitty/current-theme.conf && echo "OK: Linux purple theme applied"
+            grep -q "Iosevka" ~/.config/kitty/kitty.conf && echo "OK: Iosevka font set"
+
+            echo "=== All checks passed ==="
+          '
+
+  test-debian:
+    runs-on: ubuntu-latest
+    container:
+      image: debian:bookworm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install base dependencies
+        run: |
+          apt-get update
+          apt-get install -y git zsh vim sudo curl
+
+      - name: Create test user
+        run: |
+          useradd -m -s /bin/zsh testuser
+          echo "testuser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+      - name: Run install (dry-run)
+        run: |
+          cp -r "$GITHUB_WORKSPACE" /home/testuser/dotfiles
+          chown -R testuser:testuser /home/testuser/dotfiles
+          su testuser -c "cd /home/testuser/dotfiles && ./install.sh --dry-run --no-packages"
+
+      - name: Run install
+        run: |
+          su testuser -c "cd /home/testuser/dotfiles && ./install.sh --no-packages"
+
+      - name: Verify deployments
+        run: |
+          su testuser -c '
+            set -e
+            echo "=== Checking symlinks ==="
+            test -L ~/.bashrc && echo "OK: .bashrc"
+            test -L ~/.zshrc && echo "OK: .zshrc"
+            test -L ~/.gitconfig && echo "OK: .gitconfig"
+            test -L ~/.tmux.conf && echo "OK: .tmux.conf"
+            test -L ~/.inputrc && echo "OK: .inputrc"
+
+            echo "=== Checking copies ==="
+            test -f ~/.gnu_aliases && echo "OK: .gnu_aliases"
+            test -f ~/.dircolors && echo "OK: .dircolors"
+
+            echo "=== Checking kitty (Linux theme) ==="
+            test -f ~/.config/kitty/kitty.conf && echo "OK: kitty.conf"
+            test -f ~/.config/kitty/current-theme.conf && echo "OK: current-theme.conf"
+            grep -q "custom-purple\|Custom Purple" ~/.config/kitty/current-theme.conf && echo "OK: Linux purple theme applied"
+
+            echo "=== All checks passed ==="
+          '
+
+  test-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run install (dry-run)
+        run: ./install.sh --dry-run --no-packages
+
+      - name: Run install
+        run: ./install.sh --no-packages
+
+      - name: Verify deployments
+        run: |
+          set -e
+          echo "=== Checking symlinks ==="
+          test -L ~/.bashrc && echo "OK: .bashrc"
+          test -L ~/.zshrc && echo "OK: .zshrc"
+          test -L ~/.gitconfig && echo "OK: .gitconfig"
+          test -L ~/.tmux.conf && echo "OK: .tmux.conf"
+          test -L ~/.inputrc && echo "OK: .inputrc"
+
+          echo "=== Checking copies ==="
+          test -f ~/.gnu_aliases && echo "OK: .gnu_aliases"
+          test -f ~/.dircolors && echo "OK: .dircolors"
+
+          echo "=== Checking kitty (macOS theme) ==="
+          test -f ~/.config/kitty/kitty.conf && echo "OK: kitty.conf"
+          test -f ~/.config/kitty/current-theme.conf && echo "OK: current-theme.conf"
+          grep -q "Catppuccin-Mocha" ~/.config/kitty/current-theme.conf && echo "OK: macOS Catppuccin Mocha theme applied"
+          grep -q "FiraCode" ~/.config/kitty/kitty.conf && echo "OK: FiraCode font set (macOS)"
+
+          echo "=== All checks passed ==="
