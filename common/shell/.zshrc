@@ -8,7 +8,7 @@ setopt prompt_subst
 
 # Git branch info setup
 autoload -Uz vcs_info
-precmd() { 
+precmd() {
   vcs_info
   # Set tab title to show current directory (last 2 path components)
   print -Pn "\e]0;%2~\a"
@@ -39,7 +39,7 @@ function kube_prompt() {
     echo "(k8s:$context)"
   fi
 }
- 
+
 function pretty_git() {
   # Don't forget the space at the end of the echo
   [[ -n "${vcs_info_msg_0_}" ]] && echo "${vcs_info_msg_0_} "
@@ -131,12 +131,9 @@ path_prepend() {
 
 path_prepend "/usr/local/bin" "/usr/local/sbin" "$HOME/bin" "$HOME/.cargo/bin"
 
-if [[ -d "$HOME/.pyenv" ]]; then
-  export PYENV_ROOT="$HOME/.pyenv"
-  path_prepend "$PYENV_ROOT/bin"
-  if command -v pyenv >/dev/null 2>&1; then
-    eval "$(pyenv init -)"
-  fi
+# mise (version manager for Python, Node, etc.)
+if command -v mise >/dev/null 2>&1; then
+  eval "$(mise activate zsh)"
 fi
 
 [[ -r "$HOME/.gnu_aliases" ]] && source "$HOME/.gnu_aliases"
@@ -177,4 +174,4 @@ function kctx() {
 [[ -f ~/.env.secrets ]] && source ~/.env.secrets
 
 export PATH="/opt/homebrew/bin:$PATH"
-. "$HOME/.local/bin/env"
+[[ -f "$HOME/.local/bin/env" ]] && . "$HOME/.local/bin/env"
