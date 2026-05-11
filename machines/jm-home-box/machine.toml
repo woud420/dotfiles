@@ -1,0 +1,28 @@
+name = "jm-home-box"
+profile = "personal"
+os = "arch"
+shell = "zsh"
+terminal = "kitty"
+editor = "nvim"
+style = "personal-pink"
+sshd = true
+
+[paths]
+workspace = "~/workspace"
+
+[packages]
+pacman = [
+  "bash",
+  "fzf",
+  "git",
+  "kitty",
+  "neovim",
+  "openssh",
+  "python",
+  "ripgrep",
+  "zsh",
+]
+aur = [
+  "1password",
+  "1password-cli",
+]

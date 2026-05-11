@@ -1,4 +1,4 @@
-.PHONY: all help install install-minimal install-no-packages backup-bash brew-sync clean-backup legacy
+.PHONY: all help install install-minimal install-no-packages backup-bash brew-sync clean-backup legacy dotfiles-doctor dotfiles-dry-run dotfiles-install dotfiles-diff-live dotfiles-backup
 .ONESHELL:
 
 SHELL		= /bin/bash
@@ -21,6 +21,21 @@ install-dry-run:
 
 install-copy:
 	$(DOTFILE_DIR)/install.sh --copy
+
+dotfiles-doctor:
+	$(DOTFILE_DIR)/scripts/dotfiles.py doctor
+
+dotfiles-dry-run:
+	$(DOTFILE_DIR)/scripts/dotfiles.py install --dry-run
+
+dotfiles-install:
+	$(DOTFILE_DIR)/scripts/dotfiles.py install
+
+dotfiles-diff-live:
+	$(DOTFILE_DIR)/scripts/dotfiles.py diff-live
+
+dotfiles-backup:
+	$(DOTFILE_DIR)/scripts/dotfiles.py backup
 
 # Legacy OS-specific targets (kept for compatibility)
 legacy: $(OS)
@@ -132,6 +147,11 @@ help:
 	@echo "  make install-no-packages # Install configs only, skip packages"
 	@echo "  make install-copy     # Copy files instead of symlinks"
 	@echo "  make install-dry-run  # Show what would be installed"
+	@echo "  make dotfiles-doctor  # Check expected tools for this machine"
+	@echo "  make dotfiles-dry-run # Preview copy-based convergence installer"
+	@echo "  make dotfiles-install # Copy managed files and write manifest"
+	@echo "  make dotfiles-diff-live # Compare live managed files to repo"
+	@echo "  make dotfiles-backup  # Back up live managed files"
 	@echo ""
 	@echo "Advanced:"
 	@echo "  make legacy          # Use legacy OS-specific installation"
@@ -140,4 +160,3 @@ help:
 	@echo ""
 	@echo "Direct script usage:"
 	@echo "  ./install.sh --help  # Show all script options"
-

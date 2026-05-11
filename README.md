@@ -176,6 +176,29 @@ To clean old backups (30+ days):
 make clean-backup
 ```
 
+## 🧭 Machine Convergence Workflow
+
+The copy-based convergence workflow is being introduced alongside the legacy
+installer. It is intended for personal machines where configs should be copied
+into place, tracked with a manifest, and checked for drift.
+
+```bash
+make dotfiles-doctor     # Check required/preferred tools for this machine
+make dotfiles-dry-run    # Preview managed copies without changing files
+make dotfiles-backup     # Back up managed live files
+make dotfiles-install    # Copy managed files and write install manifest
+make dotfiles-diff-live  # Report live files that drift from the repo
+```
+
+Machine profiles live in `machines/<hostname>/machine.toml`. The current Arch
+profile is `machines/jm-home-box/machine.toml`.
+
+This path keeps Bash available as a fallback, but converges personal interactive
+machines on Zsh, Kitty, and Neovim.
+
+The active convergence plan is tracked in
+`docs/machine-convergence-plan.md`.
+
 ## 🐳 Container Usage
 
 The installer auto-detects container environments and uses minimal mode:
@@ -221,4 +244,3 @@ The installer respects `CLAUDE.md` files for project-specific context.
 # View installer help
 ./install.sh --help
 ```
-
