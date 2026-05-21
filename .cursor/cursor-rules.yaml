@@ -1,0 +1,29 @@
+#include:
+  #- ~/.cursor/generated/tools.yaml
+
+languages:
+  preferred:
+    - rust
+    - python
+    - typescript
+
+frontend_frameworks:
+  - next.js (typescript)
+  - react native
+
+backend_frameworks:
+  - flask (python)
+  - actix-web (rust)
+
+project_structure:
+  source_dir: src
+  test_dir: tests
+  infra_dirs:
+    docker: docker/
+    k8s: k8s/
+    terraform: infra/terraform/
+  doc_dirs:
+    design_docs: architecture/
+    markdown: project/
+  prefers_monorepo: false
+  prefers_submodules: true

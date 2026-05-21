@@ -75,3 +75,5 @@
 			git log --oneline; \
 		fi; \
 	}; f"
+[url "git@github.com:"]
+	insteadOf = https://github.com/
