@@ -80,8 +80,14 @@ pretty_pwd() {
             echo "💻"
             ;;
         *)
-            # For bash, use \w for relative path
-            echo "\w"
+            case "$PWD" in
+                "$HOME"/*)
+                    printf '~/%s\n' "${PWD#"$HOME"/}"
+                    ;;
+                *)
+                    printf '%s\n' "$PWD"
+                    ;;
+            esac
             ;;
     esac
 }

@@ -3,9 +3,6 @@ set $super Super_L
 
 input * {
     xkb_layout us,ca
-    # Mac-style shortcuts: physical Cmd/Win acts as Ctrl for apps, while
-    # physical left Ctrl becomes the Sway modifier.
-    xkb_options ctrl:swap_lwin_lctl
 }
 
 # Home row direction keys, like vim
@@ -61,21 +58,23 @@ output * bg ~/.config/sway/assets/beautiful-morning-4k-3840x2160.jpg fill
 # Basics:
 #
     # Start a terminal
-    bindsym $mod+Return exec $term
+    bindsym $mod+Return workspace number 1, exec $term
 
     # Kill focused window
     bindsym $mod+q kill
 
-    # sshot
-    bindsym $mod+z sshot
+    # Screenshot
+    bindsym $mod+Ctrl+Shift+3 exec sshot
+
     # Start your launcher
-    bindsym $mod+d exec $menu
+    bindsym $mod+space exec $menu
+    bindsym $mod+Ctrl+d exec $menu
 
     # Window switcher (like macOS Cmd+Tab)
     bindsym $mod+Tab exec rofi -show window
 
-    # Clipboard history (Mod+P for "paste history")
-    bindsym $mod+p exec cliphist list | rofi -dmenu | cliphist decode | wl-copy
+    # Clipboard history
+    bindsym $mod+Ctrl+p exec cliphist list | rofi -dmenu | cliphist decode | wl-copy
 
     # SSH windows
     bindsym $mod+Shift+q exec $ssh-menu
@@ -161,12 +160,12 @@ set $ws5 "5"
     bindsym $mod+Shift+v splitv
 
     # Switch the current container between different layout styles
-    bindsym $mod+s layout stacking
-    bindsym $mod+w layout tabbed
+    bindsym $mod+Ctrl+s layout stacking
+    bindsym $mod+Ctrl+w layout tabbed
     # bindsym $mod+e layout toggle split  # Disabled - using for file manager
 
     # Make the current focus fullscreen
-    bindsym $mod+f fullscreen
+    bindsym $mod+Ctrl+f fullscreen
 
     # File managers
     bindsym $mod+e exec thunar
@@ -176,10 +175,10 @@ set $ws5 "5"
     bindsym $mod+Shift+space floating toggle
 
     # Swap focus between the tiling area and the floating area
-    bindsym $mod+space focus mode_toggle
+    bindsym $mod+Ctrl+space focus mode_toggle
 
     # Move focus to the parent container
-    bindsym $mod+a focus parent
+    bindsym $mod+Ctrl+a focus parent
 #
 # Scratchpad:
 #
@@ -187,11 +186,11 @@ set $ws5 "5"
     # You can send windows there and get them back later.
 
     # Move the currently focused window to the scratchpad
-    bindsym $mod+Shift+minus move scratchpad
+    bindsym $mod+Ctrl+Shift+minus move scratchpad
 
     # Show the next scratchpad window or hide the focused scratchpad window.
     # If there are multiple scratchpad windows, this command cycles through them.
-    bindsym $mod+minus scratchpad show
+    bindsym $mod+Ctrl+minus scratchpad show
 #
 # Resizing containers:
 #
@@ -215,7 +214,7 @@ mode "resize" {
     bindsym Return mode "default"
     bindsym Escape mode "default"
 }
-bindsym $mod+r mode "resize"
+bindsym $mod+Ctrl+r mode "resize"
 
 # Assignment of apps
 bindsym $mod+Shift+f exec firefox
