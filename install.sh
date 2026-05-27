@@ -346,6 +346,15 @@ install_terminal_config() {
                 log_success "Copied $(basename "$theme_file") -> ~/.config/kitty/"
             fi
         done
+
+        # Arch-specific theme overrides (e.g. personal-pink plum background)
+        if [[ "$DISTRO" == "arch" ]]; then
+            for theme_file in "$DOTFILES_DIR/linux/arch/.config/kitty/"*.conf; do
+                [[ -f "$theme_file" ]] || continue
+                cp "$theme_file" "$HOME/.config/kitty/$(basename "$theme_file")"
+                log_success "Applied Arch kitty override: $(basename "$theme_file")"
+            done
+        fi
     else
         if [[ "$OS" == "macos" ]]; then
             log_info "Would copy: darwin/kitty.conf -> ~/.config/kitty/kitty.conf"
@@ -353,6 +362,9 @@ install_terminal_config() {
             log_info "Would copy: linux/common/kitty.conf -> ~/.config/kitty/kitty.conf"
         fi
         log_info "Would copy kitty themes to ~/.config/kitty/"
+        if [[ "$DISTRO" == "arch" ]]; then
+            log_info "Would apply Arch kitty overrides from linux/arch/.config/kitty/ to ~/.config/kitty/"
+        fi
     fi
     
     # htop config
