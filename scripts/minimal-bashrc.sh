@@ -4,6 +4,7 @@
 
 # Just download the essential files directly
 mkdir -p ~/.config/shell-functions
+mkdir -p ~/.config/git
 
 # Download server bashrc
 curl -sSL https://raw.githubusercontent.com/woud420/dotfiles/master/common/shell/.bashrc.server -o ~/.bashrc
@@ -13,5 +14,8 @@ curl -sSL https://raw.githubusercontent.com/woud420/dotfiles/master/common/shell
 
 # Download git config
 curl -sSL https://raw.githubusercontent.com/woud420/dotfiles/master/common/git/.gitconfig -o ~/.gitconfig
+
+# Download git commit template
+curl -sSL https://raw.githubusercontent.com/woud420/dotfiles/master/common/git/commit-template.md -o ~/.config/git/commit-template.md
 
 echo "✅ Minimal configs installed! Run: source ~/.bashrc"

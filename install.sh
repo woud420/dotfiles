@@ -302,6 +302,7 @@ install_git_config() {
     # Global gitignore
     mkdir -p "$HOME/.config/git"
     create_symlink "$DOTFILES_DIR/common/git/.gitignore_global" "$HOME/.config/git/ignore"
+    create_symlink "$DOTFILES_DIR/common/git/commit-template.md" "$HOME/.config/git/commit-template.md"
 }
 
 # Install shell functions

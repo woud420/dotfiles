@@ -69,6 +69,7 @@ dotfiles/
 | `.bash_profile` | `~/.bash_profile` | Bash profile (sources .bashrc) |
 | `.bashrc.server` | `~/.bashrc` | Conservative bash config for servers (minimal mode) |
 | `.gitconfig` | `~/.gitconfig` | Git aliases and fuzzy commands |
+| `commit-template.md` | `~/.config/git/commit-template.md` | Default structured git commit template |
 | `.gitignore_global` | `~/.config/git/ignore` | Global git ignores |
 | `.gnu_aliases` | `~/.gnu_aliases` | GNU coreutils aliases for macOS |
 | `.dircolors` | `~/.dircolors` | Directory colors |
