@@ -45,6 +45,7 @@ ln -sf "$DOTFILES_DIR/common/shell/.bash_profile" "$HOME/.bash_profile"
 ln -sf "$DOTFILES_DIR/common/git/.gitconfig" "$HOME/.gitconfig"
 mkdir -p "$HOME/.config/git"
 ln -sf "$DOTFILES_DIR/common/git/.gitignore_global" "$HOME/.config/git/ignore"
+ln -sf "$DOTFILES_DIR/common/git/commit-template.md" "$HOME/.config/git/commit-template.md"
 
 # GNU aliases (copy to avoid symlink on targets)
 cp -f "$DOTFILES_DIR/common/shell/.gnu_aliases" "$HOME/.gnu_aliases"

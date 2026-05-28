@@ -21,6 +21,7 @@ scp "$DOTFILES_DIR/common/shell/.bash_profile" "$HOST:~/.bash_profile"
 scp "$DOTFILES_DIR/common/shell/.gnu_aliases" "$HOST:~/.gnu_aliases"
 scp "$DOTFILES_DIR/common/git/.gitconfig" "$HOST:~/.gitconfig"
 scp "$DOTFILES_DIR/common/git/.gitignore_global" "$HOST:~/.config/git/ignore"
+scp "$DOTFILES_DIR/common/git/commit-template.md" "$HOST:~/.config/git/commit-template.md"
 scp "$DOTFILES_DIR/common/shell-functions/"*.sh "$HOST:~/.config/shell-functions/"
 
 echo "✅ Dotfiles copied to $HOST"

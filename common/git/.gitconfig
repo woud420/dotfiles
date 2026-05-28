@@ -5,6 +5,8 @@
 	user=woud420
 [color]
 	ui = auto
+[commit]
+	template = ~/.config/git/commit-template.md
 [alias]
 	st = status -sb
 	lg = log --stat
