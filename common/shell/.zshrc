@@ -129,7 +129,7 @@ path_prepend() {
   done
 }
 
-path_prepend "/usr/local/bin" "/usr/local/sbin" "$HOME/bin" "$HOME/.cargo/bin"
+path_prepend "/opt/homebrew/bin" "/usr/local/bin" "/usr/local/sbin" "$HOME/bin" "$HOME/.cargo/bin"
 
 if [[ -d "$HOME/.pyenv" ]]; then
   export PYENV_ROOT="$HOME/.pyenv"
@@ -176,5 +176,10 @@ function kctx() {
 # Source local secrets (if exists)
 [[ -f ~/.env.secrets ]] && source ~/.env.secrets
 
-export PATH="/opt/homebrew/bin:$PATH"
 . "$HOME/.local/bin/env"
+
+if [[ -d "$HOME/.bun" ]]; then
+  export BUN_INSTALL="$HOME/.bun"
+  path_prepend "$BUN_INSTALL/bin"
+  [[ -s "$BUN_INSTALL/_bun" ]] && source "$BUN_INSTALL/_bun"
+fi

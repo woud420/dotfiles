@@ -6,11 +6,13 @@ This directory contains organized shell functions and aliases grouped by tool an
 
 ### Core Function Files
 - **`fuzzy-vim.sh`** - Enhanced vim wrapper with fuzzy file selection
+- **`editor.sh`** - Default editor aliases and environment
 - **`ssh.sh`** - SSH and remote connection helpers
 - **`git.sh`** - Advanced git workflow functions  
 - **`k8s.sh`** - Kubernetes management functions
 - **`docker.sh`** - Docker container management functions
 - **`utils.sh`** - General utility functions
+- **`which.sh`** - Shell-aware command lookup that includes aliases
 
 ### Alias Files  
 - **`kubectl-aliases.sh`** - Kubectl short aliases (`k get p`, `kgpw`, etc.)
