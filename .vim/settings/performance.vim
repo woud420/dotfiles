@@ -3,7 +3,9 @@
 
 " Display performance
 set lazyredraw              " Don't redraw screen during macros/scripts
-set ttyfast                 " Indicates fast terminal connection
+if exists('+ttyfast')
+  set ttyfast               " Indicates fast terminal connection
+endif
 set scrolljump=5            " Jump 5 lines when cursor moves off screen
 set sidescroll=1            " Minimal horizontal scrolling
 

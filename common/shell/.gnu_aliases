@@ -21,7 +21,6 @@ if [ "$(uname -s)" = "Darwin" ]; then
   safe_alias grep 'ggrep' fallback 'grep'
   safe_alias xargs 'gxargs' fallback 'xargs'
   safe_alias tar 'gtar' fallback 'tar'
-  safe_alias which 'gwhich' fallback 'which'
   safe_alias make 'gmake' fallback 'make'
   safe_alias dircolors 'gdircolors' fallback 'dircolors'
 

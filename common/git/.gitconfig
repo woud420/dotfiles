@@ -7,6 +7,8 @@
 	ui = auto
 [commit]
 	template = ~/.config/git/commit-template.md
+[url "git@github.com:"]
+	insteadOf = https://github.com/
 [alias]
 	st = status -sb
 	lg = log --stat
@@ -77,5 +79,3 @@
 			git log --oneline; \
 		fi; \
 	}; f"
-[url "git@github.com:"]
-	insteadOf = https://github.com/

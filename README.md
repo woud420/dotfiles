@@ -88,7 +88,9 @@ All shell functions are installed to `~/.config/shell-functions/`:
 | `ssh.sh` | SSH helpers | `sshdot`, `sshconf`, `ssht` |
 | `docker.sh` | Docker helpers | `dex`, `dlog`, `dclean` |
 | `utils.sh` | Utilities | `mkcd`, `extract`, `backup` |
-| `fuzzy-vim.sh` | Vim with fzf | `v` (fuzzy file open) |
+| `fuzzy-vim.sh` | Vim/Neovim with fzf | `v` (fuzzy file open) |
+| `editor.sh` | Editor defaults | `vi`, `vim`, `vimdiff` use Neovim when available |
+| `which.sh` | Command lookup | Includes shell aliases and functions |
 
 ### Git Aliases (in .gitconfig)
 
@@ -123,7 +125,7 @@ kns             # Switch namespace with fzf
 
 ### macOS (Homebrew)
 
-Core tools: `awscli`, `bash`, `coreutils`, `git`, `fzf`, `fd`, `ripgrep`, `htop`, `tree`, `wget`
+Core tools: `awscli`, `bash`, `coreutils`, `git`, `fzf`, `fd`, `ripgrep`, `htop`, `neovim`, `tree`, `wget`
 Development: `node`, `python`, `rust`, `poetry`, `virtualenv`
 Kubernetes: `kubernetes-cli`, `helm`, `k9s`, `eksctl`, `minikube`
 Infrastructure: `terraform`, `terraformer`, `tflint`
@@ -152,7 +154,7 @@ Example prompt:
 ```
 
 ### Fuzzy Everything
-- **File search**: `v` to open files with vim
+- **File search**: `v` to open files with vim-compatible editor config
 - **Git branches**: `git ch` for interactive checkout
 - **Git commits**: `git flog` to browse history
 - **Git staging**: `git fadd` to stage files
@@ -222,4 +224,3 @@ The installer respects `CLAUDE.md` files for project-specific context.
 # View installer help
 ./install.sh --help
 ```
-

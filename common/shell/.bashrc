@@ -135,19 +135,18 @@ export FZF_DEFAULT_OPTS="
 # Source FZF if available
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
+# Add local bin to PATH if exists
+[ -d /opt/homebrew/bin ] && PATH="/opt/homebrew/bin:$PATH"
+[ -d "$HOME/bin" ] && PATH="$HOME/bin:$PATH"
+[ -d "$HOME/.local/bin" ] && PATH="$HOME/.local/bin:$PATH"
+export PATH
+
 # Load custom shell functions
 if [ -d ~/.config/shell-functions ]; then
     for f in ~/.config/shell-functions/*.sh; do
         [ -r "$f" ] && source "$f"
     done
 fi
-
-# Add local bin to PATH if exists
-[ -d "$HOME/bin" ] && PATH="$HOME/bin:$PATH"
-[ -d "$HOME/.local/bin" ] && PATH="$HOME/.local/bin:$PATH"
-
-# Export PATH
-export PATH
 
 # Enable color support for ls and grep
 if [ -x /usr/bin/dircolors ]; then
@@ -170,11 +169,6 @@ alias mv='mv -i'
 
 # Make less more friendly for non-text input files
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
-
-# Source shell functions
-for func in ~/.config/shell-functions/*.sh; do
-    [ -r "$func" ] && source "$func"
-done
 
 # Source local secrets (if exists)
 [ -f ~/.env.secrets ] && source ~/.env.secrets

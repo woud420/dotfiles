@@ -100,8 +100,16 @@ alias ....='cd ../../..'
 export PATH
 
 # Set default editor
-export EDITOR=vim
-export VISUAL=vim
+if command -v nvim >/dev/null 2>&1; then
+    export EDITOR=nvim
+    export VISUAL=nvim
+    alias vi='nvim'
+    alias vim='nvim'
+    alias vimdiff='nvim -d'
+else
+    export EDITOR=vim
+    export VISUAL=vim
+fi
 
 # Enable programmable completion features
 if ! shopt -oq posix; then

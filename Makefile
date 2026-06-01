@@ -1,4 +1,4 @@
-.PHONY: all help install install-minimal install-no-packages backup-bash brew-sync clean-backup legacy
+.PHONY: all help install install-minimal install-no-packages backup-bash brew-sync clean-backup legacy check test-install check-editor
 .ONESHELL:
 
 SHELL		= /bin/bash
@@ -21,6 +21,17 @@ install-dry-run:
 
 install-copy:
 	$(DOTFILE_DIR)/install.sh --copy
+
+check: test-install
+	bash -n $(DOTFILE_DIR)/install.sh
+	bash -n $(DOTFILE_DIR)/scripts/check-editor-parity.sh
+	bash -n $(DOTFILE_DIR)/scripts/test-install.sh
+
+test-install:
+	$(DOTFILE_DIR)/scripts/test-install.sh
+
+check-editor:
+	$(DOTFILE_DIR)/scripts/check-editor-parity.sh
 
 # Legacy OS-specific targets (kept for compatibility)
 legacy: $(OS)
@@ -88,28 +99,15 @@ profile-source:
 backup-bash:
 	$(DOTFILE_DIR)/bash_backup.sh
 
-stow-common: backup-bash
-	stow -d common -t ~ bash
-	stow -d common -t ~ shell
-	stow -d common -t ~ git
-	stow -d common -t ~/.config htop
-	stow -d common -t ~/.config shell-functions
+stow-common: install-no-packages
 
 stow-darwin: stow-common
-	stow -d darwin -t ~/.config kitty
 
 stow-linux: stow-common
-	stow -d linux/common -t ~/.config kitty
 
 stow: stow-$(OS)
 
-link: backup-bash
-	ln -fs bash/.bash_aliases $(HOME)/.bash_aliases
-	ln -fs bash/.bash_logout $(HOME)/.bash_logout
-	ln -fs bash/.bash_profile $(HOME)/.bash_profile
-	ln -fs bash/.bashrc $(HOME)/.bashrc
-	ln -fs bash/.curlrc $(HOME)/.curlrc
-	ln -fs bin/bin $(HOME)/bin
+link: install-no-packages
 
 unlink:
 	unlink $(HOME)/.bash_aliases
@@ -127,10 +125,10 @@ clean-backup:
 help:
 	@echo "Dotfiles Installation Options:"
 	@echo ""
-	@echo "  make install          # Full installation with symlinks (recommended)"
+	@echo "  make install          # Full installation with regular file copies"
 	@echo "  make install-minimal  # Minimal config for servers/containers"
 	@echo "  make install-no-packages # Install configs only, skip packages"
-	@echo "  make install-copy     # Copy files instead of symlinks"
+	@echo "  make install-copy     # Compatibility alias; files are always copied"
 	@echo "  make install-dry-run  # Show what would be installed"
 	@echo ""
 	@echo "Advanced:"
@@ -140,4 +138,3 @@ help:
 	@echo ""
 	@echo "Direct script usage:"
 	@echo "  ./install.sh --help  # Show all script options"
-

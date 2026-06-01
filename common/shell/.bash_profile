@@ -6,8 +6,13 @@ if [ -f ~/.bashrc ]; then
 fi
 
 # User specific environment and startup programs
-export EDITOR=vim
-export VISUAL=vim
+if command -v nvim >/dev/null 2>&1; then
+    export EDITOR=nvim
+    export VISUAL=nvim
+else
+    export EDITOR=vim
+    export VISUAL=vim
+fi
 
 # Set PATH so it includes user's private bin if it exists
 if [ -d "$HOME/bin" ] ; then

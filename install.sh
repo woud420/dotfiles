@@ -11,13 +11,13 @@
 #    - Git configuration
 #    - Shell functions & aliases
 #    - Terminal configs (kitty, htop)
-#    - Vim setup (plugins, LSP, themes)
+#    - Vim/Neovim setup (plugins, LSP, themes)
 #    - Optional tools (fzf, etc.)
 #
 # Features:
 # - Auto-detects OS and environment (local/remote/container)
 # - Creates backups before changes
-# - Supports both symlinks and file copying
+# - Installs regular file copies, not symlinks
 # - Compiles CoC.nvim automatically
 # - Installs language servers and tools
 
@@ -35,10 +35,11 @@ NC='\033[0m' # No Color
 # Configuration
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKUP_DIR="$HOME/.dotfiles-backup-$(date +%Y%m%d_%H%M%S)"
+AUDIT_LOG=""
+INSTALL_ARGS="$*"
 MINIMAL_MODE=false
 INSTALL_PACKAGES=true
 DRY_RUN=false
-COPY_MODE=false
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -56,7 +57,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --copy)
-            COPY_MODE=true
+            # Historical no-op: copied files are now the only install mode.
             shift
             ;;
         -h|--help)
@@ -64,7 +65,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --minimal       Install minimal config (no fancy tools)"
             echo "  --no-packages   Skip package installation"
             echo "  --dry-run       Show what would be done without doing it"
-            echo "  --copy          Copy files instead of creating symlinks"
+            echo "  --copy          No-op; files are always copied"
             echo "  -h, --help      Show this help"
             exit 0
             ;;
@@ -94,6 +95,52 @@ log_error() {
 
 log_step() {
     echo -e "${PURPLE}[STEP]${NC} $1"
+}
+
+init_audit() {
+    if [[ "$DRY_RUN" == "true" ]] || [[ -n "$AUDIT_LOG" ]]; then
+        return
+    fi
+
+    mkdir -p "$BACKUP_DIR"
+    AUDIT_LOG="$BACKUP_DIR/install-audit.tsv"
+    {
+        printf '# dotfiles install audit\n'
+        printf '# started_at\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        printf '# dotfiles_dir\t%s\n' "$DOTFILES_DIR"
+        printf '# args\t%s\n' "$INSTALL_ARGS"
+        printf 'timestamp\taction\tsource\ttarget\tdetail\n'
+    } > "$AUDIT_LOG"
+}
+
+audit_action() {
+    local action="$1"
+    local source="${2:-}"
+    local target="${3:-}"
+    local detail="${4:-}"
+
+    if [[ "$DRY_RUN" == "true" ]]; then
+        return
+    fi
+
+    init_audit
+    printf '%s\t%s\t%s\t%s\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$action" "$source" "$target" "$detail" >> "$AUDIT_LOG"
+}
+
+backup_path_for() {
+    local file="$1"
+    local relative
+
+    case "$file" in
+        "$HOME"/*)
+            relative="${file#"$HOME"/}"
+            ;;
+        *)
+            relative="absolute/${file#/}"
+            ;;
+    esac
+
+    printf '%s/files/%s' "$BACKUP_DIR" "$relative"
 }
 
 # OS Detection
@@ -211,17 +258,24 @@ backup_file() {
     local file="$1"
     if [[ -f "$file" ]] || [[ -L "$file" ]]; then
         if [[ "$DRY_RUN" == "false" ]]; then
-            mkdir -p "$BACKUP_DIR"
-            cp -L "$file" "$BACKUP_DIR/$(basename "$file")" 2>/dev/null || true
-            log_info "Backed up $file to $BACKUP_DIR"
+            local backup_path
+            backup_path="$(backup_path_for "$file")"
+            mkdir -p "$(dirname "$backup_path")"
+            if [[ -e "$backup_path" ]] || [[ -L "$backup_path" ]]; then
+                audit_action "backup-skip" "$file" "$backup_path" "existing backup retained"
+            else
+                cp -a "$file" "$backup_path"
+                audit_action "backup" "$file" "$backup_path" "existing target preserved"
+                log_info "Backed up $file to $backup_path"
+            fi
         else
             log_info "Would backup: $file"
         fi
     fi
 }
 
-# Create symlink or copy file
-create_symlink() {
+# Install a regular copied file
+install_file() {
     local source="$1"
     local target="$2"
     local target_dir="$(dirname "$target")"
@@ -229,25 +283,20 @@ create_symlink() {
     if [[ "$DRY_RUN" == "false" ]]; then
         # Create target directory if it doesn't exist
         mkdir -p "$target_dir"
-        
+        audit_action "mkdir" "" "$target_dir" "ensure target directory"
+
         # Remove existing file/link
-        [[ -e "$target" ]] || [[ -L "$target" ]] && rm -f "$target"
-        
-        if [[ "$COPY_MODE" == "true" ]]; then
-            # Copy file
-            cp "$source" "$target"
-            log_success "Copied $source -> $target"
-        else
-            # Create symlink
-            ln -sf "$source" "$target"
-            log_success "Linked $source -> $target"
+        if [[ -e "$target" ]] || [[ -L "$target" ]]; then
+            backup_file "$target"
+            rm -f "$target"
+            audit_action "remove" "" "$target" "replace existing target"
         fi
+
+        cp -f "$source" "$target"
+        audit_action "copy" "$source" "$target" "regular file copy"
+        log_success "Copied $source -> $target"
     else
-        if [[ "$COPY_MODE" == "true" ]]; then
-            log_info "Would copy: $source -> $target"
-        else
-            log_info "Would link: $source -> $target"
-        fi
+        log_info "Would copy: $source -> $target"
     fi
 }
 
@@ -259,7 +308,12 @@ copy_file() {
 
     if [[ "$DRY_RUN" == "false" ]]; then
         mkdir -p "$target_dir"
+        audit_action "mkdir" "" "$target_dir" "ensure target directory"
+        if [[ -e "$target" ]] || [[ -L "$target" ]]; then
+            backup_file "$target"
+        fi
         cp -f "$source" "$target"
+        audit_action "copy" "$source" "$target" "copy file"
         log_success "Copied $source -> $target"
     else
         log_info "Would copy: $source -> $target"
@@ -273,16 +327,16 @@ install_shell_configs() {
     # Determine which shell config to use
     if [[ "$MINIMAL_MODE" == "true" ]]; then
         backup_file "$HOME/.bashrc"
-        create_symlink "$DOTFILES_DIR/common/shell/.bashrc.server" "$HOME/.bashrc"
+        install_file "$DOTFILES_DIR/common/shell/.bashrc.server" "$HOME/.bashrc"
     else
         # Install both bash and zsh configs
         backup_file "$HOME/.bashrc"
         backup_file "$HOME/.zshrc"
         backup_file "$HOME/.bash_profile"
         
-        create_symlink "$DOTFILES_DIR/common/shell/.bashrc" "$HOME/.bashrc"
-        create_symlink "$DOTFILES_DIR/common/shell/.zshrc" "$HOME/.zshrc"
-        create_symlink "$DOTFILES_DIR/common/shell/.bash_profile" "$HOME/.bash_profile"
+        install_file "$DOTFILES_DIR/common/shell/.bashrc" "$HOME/.bashrc"
+        install_file "$DOTFILES_DIR/common/shell/.zshrc" "$HOME/.zshrc"
+        install_file "$DOTFILES_DIR/common/shell/.bash_profile" "$HOME/.bash_profile"
     fi
     
     # GNU aliases and dircolors
@@ -297,12 +351,12 @@ install_git_config() {
     log_step "Installing git configuration..."
     
     backup_file "$HOME/.gitconfig"
-    create_symlink "$DOTFILES_DIR/common/git/.gitconfig" "$HOME/.gitconfig"
+    install_file "$DOTFILES_DIR/common/git/.gitconfig" "$HOME/.gitconfig"
     
     # Global gitignore
     mkdir -p "$HOME/.config/git"
-    create_symlink "$DOTFILES_DIR/common/git/.gitignore_global" "$HOME/.config/git/ignore"
-    create_symlink "$DOTFILES_DIR/common/git/commit-template.md" "$HOME/.config/git/commit-template.md"
+    install_file "$DOTFILES_DIR/common/git/.gitignore_global" "$HOME/.config/git/ignore"
+    install_file "$DOTFILES_DIR/common/git/commit-template.md" "$HOME/.config/git/commit-template.md"
 }
 
 # Install shell functions
@@ -328,23 +382,21 @@ install_terminal_config() {
     
     # Kitty config based on OS (using hard copies for kitty to work properly)
     mkdir -p "$HOME/.config/kitty"
+    if [[ "$DRY_RUN" == "false" ]]; then
+        audit_action "mkdir" "" "$HOME/.config/kitty" "ensure kitty config directory"
+    fi
     
     if [[ "$DRY_RUN" == "false" ]]; then
         if [[ "$OS" == "macos" ]]; then
-            backup_file "$HOME/.config/kitty/kitty.conf"
-            cp "$DOTFILES_DIR/darwin/kitty.conf" "$HOME/.config/kitty/kitty.conf"
-            log_success "Copied darwin/kitty.conf -> ~/.config/kitty/kitty.conf"
+            copy_file "$DOTFILES_DIR/darwin/kitty.conf" "$HOME/.config/kitty/kitty.conf"
         else
-            backup_file "$HOME/.config/kitty/kitty.conf"
-            cp "$DOTFILES_DIR/linux/common/kitty.conf" "$HOME/.config/kitty/kitty.conf"
-            log_success "Copied linux/common/kitty.conf -> ~/.config/kitty/kitty.conf"
+            copy_file "$DOTFILES_DIR/linux/common/kitty.conf" "$HOME/.config/kitty/kitty.conf"
         fi
         
         # Copy themes
         for theme_file in "$DOTFILES_DIR/common/themes/"*.conf; do
             if [[ -f "$theme_file" ]]; then
-                cp "$theme_file" "$HOME/.config/kitty/$(basename "$theme_file")"
-                log_success "Copied $(basename "$theme_file") -> ~/.config/kitty/"
+                copy_file "$theme_file" "$HOME/.config/kitty/$(basename "$theme_file")"
             fi
         done
     else
@@ -358,28 +410,28 @@ install_terminal_config() {
     
     # htop config
     mkdir -p "$HOME/.config/htop"
-    create_symlink "$DOTFILES_DIR/common/htop/htoprc" "$HOME/.config/htop/htoprc"
+    install_file "$DOTFILES_DIR/common/htop/htoprc" "$HOME/.config/htop/htoprc"
 }
 
 # Install vim configuration
 install_vim_config() {
     log_step "Installing vim configuration..."
     
-    # Create .vim directory and symlink config files
+    # Create .vim directory and copy config files
     if [[ "$DRY_RUN" == "false" ]]; then
         mkdir -p "$HOME/.vim/settings"
         
         # Link vim configuration files
-        create_symlink "$DOTFILES_DIR/.vim/vimrc" "$HOME/.vim/vimrc"
-        create_symlink "$DOTFILES_DIR/.vim/plugins.vim" "$HOME/.vim/plugins.vim"
-        create_symlink "$DOTFILES_DIR/.vim/mappings.vim" "$HOME/.vim/mappings.vim"
-        create_symlink "$DOTFILES_DIR/.vim/settings.vim" "$HOME/.vim/settings.vim"
-        create_symlink "$DOTFILES_DIR/.vim/coc-settings.json" "$HOME/.vim/coc-settings.json"
+        install_file "$DOTFILES_DIR/.vim/vimrc" "$HOME/.vim/vimrc"
+        install_file "$DOTFILES_DIR/.vim/plugins.vim" "$HOME/.vim/plugins.vim"
+        install_file "$DOTFILES_DIR/.vim/mappings.vim" "$HOME/.vim/mappings.vim"
+        install_file "$DOTFILES_DIR/.vim/settings.vim" "$HOME/.vim/settings.vim"
+        install_file "$DOTFILES_DIR/.vim/coc-settings.json" "$HOME/.vim/coc-settings.json"
         
         # Link settings directory files
         for settings_file in "$DOTFILES_DIR/.vim/settings/"*.vim; do
             if [[ -f "$settings_file" ]]; then
-                create_symlink "$settings_file" "$HOME/.vim/settings/$(basename "$settings_file")"
+                install_file "$settings_file" "$HOME/.vim/settings/$(basename "$settings_file")"
             fi
         done
     else
@@ -408,6 +460,41 @@ install_vim_config() {
         fi
     else
         log_warning "vim not found. Skipping plugin installation."
+    fi
+}
+
+# Install neovim configuration
+install_neovim_config() {
+    log_step "Installing neovim configuration..."
+
+    if [[ "$DRY_RUN" == "false" ]]; then
+        mkdir -p "$HOME/.config/nvim"
+
+        backup_file "$HOME/.config/nvim/init.vim"
+        backup_file "$HOME/.config/nvim/coc-settings.json"
+
+        install_file "$DOTFILES_DIR/common/nvim/init.vim" "$HOME/.config/nvim/init.vim"
+        install_file "$DOTFILES_DIR/.vim/coc-settings.json" "$HOME/.config/nvim/coc-settings.json"
+    else
+        log_info "Would install neovim configuration"
+        return
+    fi
+
+    if command -v nvim >/dev/null 2>&1; then
+        log_step "Installing neovim plugins..."
+        nvim --headless +PlugInstall +qall
+
+        if [[ -d "$HOME/.vim/plugged/coc.nvim" ]]; then
+            log_step "Compiling CoC.nvim for neovim..."
+            if command -v npm >/dev/null 2>&1; then
+                (cd "$HOME/.vim/plugged/coc.nvim" && npm ci)
+                log_success "CoC.nvim compiled successfully"
+            else
+                log_warning "npm not found. CoC.nvim needs manual compilation: cd ~/.vim/plugged/coc.nvim && npm ci"
+            fi
+        fi
+    else
+        log_warning "nvim not found. Skipping neovim plugin installation."
     fi
 }
 
@@ -471,7 +558,8 @@ main() {
     install_shell_functions     # 3. Shell functions (depends on shell configs)
     install_terminal_config     # 4. Terminal configs (kitty, htop)
     install_vim_config          # 5. Vim setup (plugins, settings, CoC compilation)
-    install_optional_tools      # 6. Optional tools (fzf, etc.) - last
+    install_neovim_config       # 6. Neovim bridge to Vim config
+    install_optional_tools      # 7. Optional tools (fzf, etc.) - last
     
     echo -e "${GREEN}"
     echo "╔══════════════════════════════════════════════════════════════╗"
@@ -481,6 +569,9 @@ main() {
     
     if [[ -d "$BACKUP_DIR" ]]; then
         log_info "Backups saved to: $BACKUP_DIR"
+        if [[ -n "$AUDIT_LOG" ]]; then
+            log_info "Audit log: $AUDIT_LOG"
+        fi
     fi
     
     log_info "Please run: source ~/.bashrc  (or source ~/.zshrc)"
