@@ -71,7 +71,7 @@ def main() -> None:
         "brew_packages": get_brew_packages(),
         "aliases": get_shell_aliases(),
     }
-    out_path = Path.home() / ".config/cursor/generated/tools.yaml"
+    out_path = Path.home() / ".cursor/generated/tools.yaml"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(dump_yaml(data))
     print(f"Wrote {out_path}")
