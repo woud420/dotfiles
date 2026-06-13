@@ -1,0 +1,21 @@
+machines/jm-home-box/machine.toml
+  s_97d4218dd8107b::t_3838f80e26082d 26,29-47
+linux/arch/ai-context/machine-state.md
+  s_97d4218dd8107b::t_4c1dd393129069 4,8,15,22-25,31-35,40,43,46-78
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "5629b7fc3b45c13334fecb6ee3e45105dc58dd68",
+  "prompts": {},
+  "sessions": {
+    "s_97d4218dd8107b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "652cff19-e85a-43ae-9bb6-36b03e3e4aa6",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Jean-Michel Bouchard <jim@polarcoordinates.org>"
+    }
+  }
+}
