@@ -1,0 +1,23 @@
+darwin/Brewfile
+  s_94668c16f2278d::t_73a6502878acb5 16,27,43,56-57,65
+common/shell/.bashrc
+  s_94668c16f2278d::t_3e13d907d9fd88 142
+common/shell/.zshrc
+  s_94668c16f2278d::t_b0712035b938eb 8,133
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "b4c731eb2eff474ac2705345d454634efcd6a67b",
+  "prompts": {},
+  "sessions": {
+    "s_94668c16f2278d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e840b-85f7-7d80-9299-4233f2324740",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Jean-Michel Bouchard <jim@polarcoordinates.org>"
+    }
+  }
+}
