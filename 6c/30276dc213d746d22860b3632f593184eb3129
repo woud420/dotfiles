@@ -1,0 +1,20 @@
+linux/arch/ai-context/machine-state.md
+  s_97d4218dd8107b::t_09066b7a29c91e 4
+  s_97d4218dd8107b::t_9b918f46020dc7 40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "6c30276dc213d746d22860b3632f593184eb3129",
+  "prompts": {},
+  "sessions": {
+    "s_97d4218dd8107b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "652cff19-e85a-43ae-9bb6-36b03e3e4aa6",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Jean-Michel Bouchard <jim@polarcoordinates.org>"
+    }
+  }
+}
