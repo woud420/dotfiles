@@ -139,6 +139,7 @@ export FZF_DEFAULT_OPTS="
 [ -d /opt/homebrew/bin ] && PATH="/opt/homebrew/bin:$PATH"
 [ -d "$HOME/bin" ] && PATH="$HOME/bin:$PATH"
 [ -d "$HOME/.local/bin" ] && PATH="$HOME/.local/bin:$PATH"
+[ -d "$HOME/.git-ai/bin" ] && PATH="$HOME/.git-ai/bin:$PATH"
 export PATH
 
 # Load custom shell functions

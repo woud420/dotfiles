@@ -5,6 +5,7 @@ compinit
 # Load colors
 autoload -Uz colors && colors
 setopt prompt_subst
+PROMPT_EOL_MARK=''
 
 # Git branch info setup
 autoload -Uz vcs_info
@@ -129,7 +130,7 @@ path_prepend() {
   done
 }
 
-path_prepend "/opt/homebrew/bin" "/usr/local/bin" "/usr/local/sbin" "$HOME/bin" "$HOME/.cargo/bin"
+path_prepend "/opt/homebrew/bin" "/usr/local/bin" "/usr/local/sbin" "$HOME/bin" "$HOME/.cargo/bin" "$HOME/.git-ai/bin"
 
 if [[ -d "$HOME/.pyenv" ]]; then
   export PYENV_ROOT="$HOME/.pyenv"
