@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ===== Universal Dotfiles Installer =====
 # Works on macOS, Linux (Ubuntu/Debian, Arch, RHEL/CentOS, Alpine)
-# Usage: ./install.sh [--minimal] [--no-packages] [--dry-run] [--copy]
+# Usage: ./install.sh [--minimal] [--no-packages] [--dry-run] [--symlink]
 #
 # Installation Order:
 # 1. OS Detection & Environment Setup
@@ -38,7 +38,7 @@ BACKUP_DIR="$HOME/.dotfiles-backup-$(date +%Y%m%d_%H%M%S)"
 MINIMAL_MODE=false
 INSTALL_PACKAGES=true
 DRY_RUN=false
-COPY_MODE=false
+COPY_MODE=true
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -55,8 +55,8 @@ while [[ $# -gt 0 ]]; do
             DRY_RUN=true
             shift
             ;;
-        --copy)
-            COPY_MODE=true
+        --symlink)
+            COPY_MODE=false
             shift
             ;;
         -h|--help)
@@ -64,7 +64,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --minimal       Install minimal config (no fancy tools)"
             echo "  --no-packages   Skip package installation"
             echo "  --dry-run       Show what would be done without doing it"
-            echo "  --copy          Copy files instead of creating symlinks"
+            echo "  --symlink       Use symlinks instead of copies (not recommended)"
             echo "  -h, --help      Show this help"
             exit 0
             ;;
@@ -206,16 +206,18 @@ install_packages_linux() {
     esac
 }
 
-# Backup existing files
+# Backup existing files (path-preserving: mirrors directory structure under BACKUP_DIR)
 backup_file() {
     local file="$1"
     if [[ -f "$file" ]] || [[ -L "$file" ]]; then
+        local rel_path="${file#$HOME/}"
+        local backup_dest="$BACKUP_DIR/$rel_path"
         if [[ "$DRY_RUN" == "false" ]]; then
-            mkdir -p "$BACKUP_DIR"
-            cp -L "$file" "$BACKUP_DIR/$(basename "$file")" 2>/dev/null || true
-            log_info "Backed up $file to $BACKUP_DIR"
+            mkdir -p "$(dirname "$backup_dest")"
+            cp -L "$file" "$backup_dest" 2>/dev/null || true
+            log_info "Backed up $file -> $backup_dest"
         else
-            log_info "Would backup: $file"
+            log_info "Would backup: $file -> $backup_dest"
         fi
     fi
 }
@@ -307,17 +309,20 @@ install_git_config() {
 # Install shell functions
 install_shell_functions() {
     log_step "Installing shell functions..."
-    
+
     if [[ "$DRY_RUN" == "false" ]]; then
         mkdir -p "$HOME/.config/shell-functions"
-        # Copy all shell function files
         for func_file in "$DOTFILES_DIR/common/shell-functions/"*.sh; do
             if [[ -f "$func_file" ]]; then
                 copy_file "$func_file" "$HOME/.config/shell-functions/$(basename "$func_file")"
             fi
         done
     else
-        log_info "Would install shell functions to ~/.config/shell-functions/"
+        for func_file in "$DOTFILES_DIR/common/shell-functions/"*.sh; do
+            if [[ -f "$func_file" ]]; then
+                log_info "Would copy: $func_file -> ~/.config/shell-functions/$(basename "$func_file")"
+            fi
+        done
     fi
 }
 
@@ -372,39 +377,41 @@ install_terminal_config() {
     create_symlink "$DOTFILES_DIR/common/htop/htoprc" "$HOME/.config/htop/htoprc"
 }
 
-# Install vim configuration
+# Install vim + nvim configuration
 install_vim_config() {
     log_step "Installing vim configuration..."
-    
-    # Create .vim directory and symlink config files
+
     if [[ "$DRY_RUN" == "false" ]]; then
         mkdir -p "$HOME/.vim/settings"
-        
-        # Link vim configuration files
-        create_symlink "$DOTFILES_DIR/.vim/vimrc" "$HOME/.vim/vimrc"
-        create_symlink "$DOTFILES_DIR/.vim/plugins.vim" "$HOME/.vim/plugins.vim"
-        create_symlink "$DOTFILES_DIR/.vim/mappings.vim" "$HOME/.vim/mappings.vim"
-        create_symlink "$DOTFILES_DIR/.vim/settings.vim" "$HOME/.vim/settings.vim"
-        create_symlink "$DOTFILES_DIR/.vim/coc-settings.json" "$HOME/.vim/coc-settings.json"
-        
-        # Link settings directory files
+
+        copy_file "$DOTFILES_DIR/.vim/vimrc" "$HOME/.vim/vimrc"
+        copy_file "$DOTFILES_DIR/.vim/plugins.vim" "$HOME/.vim/plugins.vim"
+        copy_file "$DOTFILES_DIR/.vim/mappings.vim" "$HOME/.vim/mappings.vim"
+        copy_file "$DOTFILES_DIR/.vim/coc-settings.json" "$HOME/.vim/coc-settings.json"
+
         for settings_file in "$DOTFILES_DIR/.vim/settings/"*.vim; do
             if [[ -f "$settings_file" ]]; then
-                create_symlink "$settings_file" "$HOME/.vim/settings/$(basename "$settings_file")"
+                copy_file "$settings_file" "$HOME/.vim/settings/$(basename "$settings_file")"
             fi
         done
     else
-        log_info "Would install vim configuration"
-        return
+        log_info "Would copy: .vim/vimrc -> ~/.vim/vimrc"
+        log_info "Would copy: .vim/plugins.vim -> ~/.vim/plugins.vim"
+        log_info "Would copy: .vim/mappings.vim -> ~/.vim/mappings.vim"
+        log_info "Would copy: .vim/coc-settings.json -> ~/.vim/coc-settings.json"
+        for settings_file in "$DOTFILES_DIR/.vim/settings/"*.vim; do
+            if [[ -f "$settings_file" ]]; then
+                log_info "Would copy: .vim/settings/$(basename "$settings_file") -> ~/.vim/settings/$(basename "$settings_file")"
+            fi
+        done
     fi
-    
+
     # Install vim plugins if vim is available
     if command -v vim >/dev/null 2>&1; then
         log_step "Installing vim plugins..."
         if [[ "$DRY_RUN" == "false" ]]; then
             vim +PlugInstall +qall
-            
-            # Compile CoC.nvim if it was installed
+
             if [[ -d "$HOME/.vim/plugged/coc.nvim" ]]; then
                 log_step "Compiling CoC.nvim..."
                 if command -v npm >/dev/null 2>&1; then
@@ -417,8 +424,19 @@ install_vim_config() {
         else
             log_info "Would install vim plugins and compile CoC.nvim"
         fi
+    fi
+
+    log_step "Installing nvim configuration..."
+
+    if [[ -f "$DOTFILES_DIR/common/nvim/init.vim" ]]; then
+        if [[ "$DRY_RUN" == "false" ]]; then
+            mkdir -p "$HOME/.config/nvim"
+            copy_file "$DOTFILES_DIR/common/nvim/init.vim" "$HOME/.config/nvim/init.vim"
+        else
+            log_info "Would copy: common/nvim/init.vim -> ~/.config/nvim/init.vim"
+        fi
     else
-        log_warning "vim not found. Skipping plugin installation."
+        log_warning "common/nvim/init.vim not found, skipping nvim config"
     fi
 }
 
