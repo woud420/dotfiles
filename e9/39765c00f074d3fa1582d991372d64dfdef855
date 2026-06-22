@@ -1,0 +1,25 @@
+install.sh
+  s_97d4218dd8107b::t_1d721a371fdecb 58-59
+  s_97d4218dd8107b::t_d9ce8990372abc 209,213-214,216-218,220
+  s_97d4218dd8107b::t_f4d42e83b4741e 312,321-325
+  s_97d4218dd8107b::t_84619be3b7f076 380,383,386-391,394,398-406,408,414,427-437,439
+  s_97d4218dd8107b::t_92a7c6ece90b77 67
+  s_97d4218dd8107b::t_7f0e19341a4a8d 41
+  s_97d4218dd8107b::t_c354a3cc971392 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "e939765c00f074d3fa1582d991372d64dfdef855",
+  "prompts": {},
+  "sessions": {
+    "s_97d4218dd8107b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "652cff19-e85a-43ae-9bb6-36b03e3e4aa6",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Jean-Michel Bouchard <jim@polarcoordinates.org>"
+    }
+  }
+}
