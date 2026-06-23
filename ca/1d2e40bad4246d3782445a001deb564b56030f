@@ -1,0 +1,22 @@
+linux/arch/packages.list
+  s_6284f9557066b9::t_6594116c719c22 19-26,49
+  s_6284f9557066b9::t_56a4648fa0a238 16-18
+scripts/dotfiles.py
+  s_6284f9557066b9::t_fa980b7577b9dd 100,102
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.10",
+  "base_commit_sha": "ca1d2e40bad4246d3782445a001deb564b56030f",
+  "prompts": {},
+  "sessions": {
+    "s_6284f9557066b9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ef1a2-880f-78b0-95e5-616af9ce6db1",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Jean-Michel Bouchard <jim@polarcoordinates.org>"
+    }
+  }
+}
