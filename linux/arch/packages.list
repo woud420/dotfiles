@@ -13,6 +13,17 @@ gzip
 htop
 jq
 kitty
+linux-headers
+nvidia-open
+nvidia-utils
+wl-clipboard
+wtype
+swayfx
+waybar
+rofi
+mako
+cliphist
+playerctl
 make
 nodejs
 npm

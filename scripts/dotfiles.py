@@ -97,7 +97,9 @@ def managed_files(machine: dict) -> list[ManagedFile]:
 
     if os_name in {"arch"}:
         add_file(entries, "linux/arch/.config/sway/config", "~/.config/sway/config", "sway")
+        add_file(entries, "linux/arch/.config/sway/key-bindings", "~/.config/sway/key-bindings", "sway")
         add_glob(entries, "linux/arch/.config/sway/assets/*", "~/.config/sway/assets", "sway")
+        add_glob(entries, "linux/arch/.config/sway/scripts/*", "~/.config/sway/scripts", "sway")
 
     add_file(entries, ".vim/vimrc", "~/.vim/vimrc", "vim")
     add_file(entries, ".vim/plugins.vim", "~/.vim/plugins.vim", "vim")
