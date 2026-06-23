@@ -1,0 +1,279 @@
+/*
+ * Local GTK polish for Sway/kitty/mako.
+ * Nordic-darker remains the base theme; these rules bend GTK dialogs toward
+ * the desktop palette used by Sway, Waybar, mako, and kitty.
+ */
+
+@define-color jm_bg #221820;
+@define-color jm_bg_deep #18121a;
+@define-color jm_bg_soft #2a1e2e;
+@define-color jm_surface #332635;
+@define-color jm_surface_raised #4a3844;
+@define-color jm_accent #9d5a7f;
+@define-color jm_accent_soft #6b4456;
+@define-color jm_text #d0d0d0;
+@define-color jm_text_bright #cdd6f4;
+@define-color jm_muted #8a8a8a;
+@define-color jm_urgent #d68787;
+
+window,
+dialog,
+messagedialog,
+filechooser,
+filechooserdialog {
+  background-color: @jm_bg_soft;
+  color: @jm_text;
+}
+
+decoration {
+  border: 2px solid @jm_accent;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+}
+
+headerbar,
+headerbar.titlebar,
+.titlebar {
+  background-image: none;
+  background-color: @jm_bg;
+  color: @jm_text_bright;
+  border-bottom: 1px solid @jm_accent_soft;
+  box-shadow: none;
+}
+
+headerbar label,
+.titlebar label {
+  color: @jm_text_bright;
+}
+
+toolbar,
+actionbar,
+revealer > box,
+filechooser .view,
+filechooser placessidebar,
+filechooser placessidebar list,
+filechooser stack,
+filechooser paned,
+filechooserdialog .background,
+dialog .background {
+  background-color: @jm_bg_soft;
+  color: @jm_text;
+}
+
+filechooser paned > separator,
+paned > separator,
+separator {
+  background-color: @jm_accent_soft;
+  color: @jm_accent_soft;
+  min-width: 1px;
+  min-height: 1px;
+}
+
+placessidebar {
+  background-color: @jm_bg;
+  border-right: 1px solid @jm_accent_soft;
+}
+
+placessidebar row,
+list row,
+treeview.view,
+treeview.view row,
+.view {
+  background-color: @jm_bg;
+  color: @jm_text;
+}
+
+placessidebar row:hover,
+list row:hover,
+treeview.view row:hover,
+.view:hover {
+  background-color: @jm_surface;
+  color: @jm_text_bright;
+}
+
+placessidebar row:selected,
+list row:selected,
+treeview.view:selected,
+treeview.view row:selected,
+.view:selected,
+.view:selected:focus {
+  background-color: @jm_accent_soft;
+  color: @jm_text_bright;
+}
+
+treeview.view header button {
+  background-image: none;
+  background-color: @jm_bg_soft;
+  color: @jm_text;
+  border-color: @jm_accent_soft;
+}
+
+entry,
+spinbutton,
+combobox box button.combo,
+filechooser entry,
+searchbar entry {
+  background-image: none;
+  background-color: @jm_bg;
+  color: @jm_text_bright;
+  border: 1px solid @jm_accent_soft;
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+entry:focus,
+spinbutton:focus,
+combobox box button.combo:focus {
+  border-color: @jm_accent;
+  box-shadow: 0 0 0 1px alpha(@jm_accent, 0.65);
+}
+
+dialog button,
+dialog button.flat,
+dialog button.image-button,
+dialog button.text-button,
+messagedialog button,
+filechooser button,
+filechooser button.flat,
+filechooser button.image-button,
+filechooser button.text-button,
+filechooserdialog button,
+filechooserdialog button.flat,
+filechooserdialog button.image-button,
+filechooserdialog button.text-button,
+popover button,
+headerbar button,
+.titlebar button {
+  background-image: none;
+  background-color: @jm_surface;
+  color: @jm_text;
+  border: 1px solid @jm_accent_soft;
+  border-radius: 6px;
+  box-shadow: none;
+  text-shadow: none;
+}
+
+dialog button:hover,
+dialog button.flat:hover,
+dialog button.image-button:hover,
+dialog button.text-button:hover,
+messagedialog button:hover,
+filechooser button:hover,
+filechooser button.flat:hover,
+filechooser button.image-button:hover,
+filechooser button.text-button:hover,
+filechooserdialog button:hover,
+filechooserdialog button.flat:hover,
+filechooserdialog button.image-button:hover,
+filechooserdialog button.text-button:hover,
+popover button:hover,
+headerbar button:hover,
+.titlebar button:hover {
+  background-color: @jm_surface_raised;
+  color: @jm_text_bright;
+  border-color: @jm_accent;
+}
+
+dialog button:active,
+dialog button:checked,
+dialog button.suggested-action,
+dialog button.suggested-action:hover,
+messagedialog button:active,
+messagedialog button:checked,
+messagedialog button.suggested-action,
+messagedialog button.suggested-action:hover,
+filechooser button:active,
+filechooser button:checked,
+filechooser button.suggested-action,
+filechooser button.suggested-action:hover,
+filechooserdialog button:active,
+filechooserdialog button:checked,
+filechooserdialog button.suggested-action,
+filechooserdialog button.suggested-action:hover {
+  background-color: @jm_accent;
+  color: @jm_text_bright;
+  border-color: @jm_accent;
+}
+
+dialog button.destructive-action,
+dialog button.destructive-action:hover,
+messagedialog button.destructive-action,
+messagedialog button.destructive-action:hover,
+filechooser button.destructive-action,
+filechooser button.destructive-action:hover,
+filechooserdialog button.destructive-action,
+filechooserdialog button.destructive-action:hover {
+  background-color: @jm_urgent;
+  color: @jm_bg_deep;
+  border-color: @jm_urgent;
+}
+
+pathbar button,
+filechooser #pathbarbox button {
+  background-color: @jm_bg;
+  color: @jm_text;
+  border-color: transparent;
+}
+
+pathbar button:hover,
+filechooser #pathbarbox button:hover {
+  background-color: @jm_surface;
+  color: @jm_text_bright;
+  border-color: @jm_accent_soft;
+}
+
+scrollbar trough {
+  background-color: @jm_bg;
+}
+
+scrollbar slider {
+  background-color: @jm_accent_soft;
+  border-radius: 6px;
+  min-width: 6px;
+  min-height: 6px;
+}
+
+scrollbar slider:hover {
+  background-color: @jm_accent;
+}
+
+popover,
+menu,
+menuitem,
+.context-menu {
+  background-color: @jm_bg;
+  color: @jm_text;
+  border-color: @jm_accent_soft;
+}
+
+menuitem:hover,
+menuitem:selected {
+  background-color: @jm_surface_raised;
+  color: @jm_text_bright;
+}
+
+tooltip,
+.tooltip {
+  background-color: @jm_bg;
+  color: @jm_text;
+  border: 2px solid @jm_accent;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+tooltip *,
+.tooltip * {
+  background-color: transparent;
+  color: @jm_text;
+}
+
+selection,
+dialog *:selected,
+filechooser *:selected,
+filechooserdialog *:selected {
+  background-color: @jm_accent;
+  color: @jm_text_bright;
+}
+
+NautilusWindow {
+  background-color: transparent;
+}

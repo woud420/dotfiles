@@ -239,6 +239,9 @@ assign [class="^Steam$"] $ws4
 # pavucontrol floating
 for_window [app_id="pavucontrol" title=".*"] floating enabled, resize set width 1000px height 400px, move position 750 px 750 px
 
+# GTK portal file pickers, e.g. Firefox open/save dialogs
+for_window [app_id="xdg-desktop-portal-gtk"] floating enabled, resize set width 1400px height 900px, move position center, opacity 0.96
+
 # Unity Assign
 for_window [class="^Unity$" title="^Starting Unity...$"] floating enabled
 for_window [class="^Unity$" title="^Hold On$"] floating enabled
