@@ -41,6 +41,12 @@ case "$OS" in
     debian)
         OUTPUT_FILE="$DOTFILES_DIR/linux/debian/ai-context/machine-state.md"
         ;;
+    fedora)
+        OUTPUT_FILE="$DOTFILES_DIR/linux/fedora/ai-context/machine-state.md"
+        ;;
+    alpine)
+        OUTPUT_FILE="$DOTFILES_DIR/linux/alpine/ai-context/machine-state.md"
+        ;;
     darwin)
         OUTPUT_FILE="$DOTFILES_DIR/darwin/ai-context/machine-state.md"
         ;;
