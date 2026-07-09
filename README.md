@@ -6,7 +6,7 @@ Personal dotfiles for macOS and Linux with modular shell functions, git workflow
 
 ```bash
 # Clone and install
-git clone https://github.com/yourusername/dotfiles.git ~/workspace/projects/dotfiles
+git clone https://github.com/woud420/dotfiles.git ~/workspace/projects/dotfiles
 cd ~/workspace/projects/dotfiles
 ./install.sh
 
@@ -32,7 +32,7 @@ make install-dry-run      # Preview changes
 
 ```bash
 # One-liner for remote servers
-curl -fsSL https://raw.githubusercontent.com/yourusername/dotfiles/main/install.sh | bash -s -- --minimal
+curl -fsSL https://raw.githubusercontent.com/woud420/dotfiles/master/install.sh | bash -s -- --minimal
 
 # SSH with dotfiles
 ssh user@host 'bash -s' < install.sh --minimal
@@ -73,6 +73,8 @@ dotfiles/
 | `.gitignore_global` | `~/.config/git/ignore` | Global git ignores |
 | `.gnu_aliases` | `~/.gnu_aliases` | GNU coreutils aliases for macOS |
 | `.dircolors` | `~/.dircolors` | Directory colors |
+| `common/git/hooks/*` | `~/.config/git/hooks/*` | Personal global Git hooks |
+| `common/ssh/config` | `~/.ssh/config.dotfiles` | Shared SSH defaults (Include'd from `~/.ssh/config`) |
 | `kitty.conf` | `~/.config/kitty/kitty.conf` | Kitty terminal config |
 | `htoprc` | `~/.config/htop/htoprc` | htop configuration |
 
@@ -82,15 +84,17 @@ All shell functions are installed to `~/.config/shell-functions/`:
 
 | File | Purpose | Key Commands |
 |------|---------|--------------|
-| `kubectl-aliases.sh` | Kubernetes shortcuts | `k get p`, `kgpw`, `kdp`, `kshp` |
-| `git-aliases.sh` | Git shortcuts | `g`, `gs`, `gaa`, `gcm`, `gp` |
-| `git.sh` | Git workflow functions | `git-ch()`, `git-log()`, `git-add()` |
-| `ssh.sh` | SSH helpers | `sshdot`, `sshconf`, `ssht` |
-| `docker.sh` | Docker helpers | `dex`, `dlog`, `dclean` |
-| `utils.sh` | Utilities | `mkcd`, `extract`, `backup` |
-| `fuzzy-vim.sh` | Vim/Neovim with fzf | `v` (fuzzy file open) |
 | `editor.sh` | Editor defaults | `vi`, `vim`, `vimdiff` use Neovim when available |
 | `which.sh` | Command lookup | Includes shell aliases and functions |
+| `sudo.sh` | GUI sudo prompts | Exports `SUDO_ASKPASS` (use `sudo -A`) |
+| `macos-clipboard.sh` | Clipboard parity | `pbcopy`/`pbpaste` on Linux (wl-clipboard) |
+| `kubectl-aliases.sh` | Kubernetes | `k` (kubectl); `kctx` lives in `.bashrc` |
+
+The remaining function files (`git.sh`, `git-aliases.sh`, `docker.sh`,
+`docker-aliases.sh`, `k8s.sh`, `ssh.sh`, `utils.sh`, `fuzzy-vim.sh`,
+`modern-tools-aliases.sh`, `secrets.sh`, `system-aliases.sh`) are currently
+**disabled stubs** - kept in place so they can be restored incrementally
+without breaking installs.
 
 ### Git Aliases (in .gitconfig)
 
@@ -107,18 +111,8 @@ git lg          # Pretty log with graph
 ### Kubectl Aliases
 
 ```bash
-# Quick shortcuts
 k               # kubectl
-kgp             # kubectl get pods
-kgpw            # kubectl get pods -o wide
-kdp             # kubectl describe pod
-klf             # kubectl logs -f
-
-# Functions
-kshp <pattern>  # Shell into first pod matching pattern
-klp <pattern>   # Logs from first pod matching pattern
 kctx            # Switch context with fzf
-kns             # Switch namespace with fzf
 ```
 
 ## 📦 Packages
@@ -215,10 +209,34 @@ The installer automatically detects:
 ## 🔧 Customization
 
 ### Local Overrides
-Create `~/.bashrc.local` or `~/.zshrc.local` for machine-specific configs.
+Machine-specific config lives outside the repo and survives reinstalls:
 
-### Memory Management
-The installer respects `CLAUDE.md` files for project-specific context.
+- `~/.bashrc.local` / `~/.zshrc.local` - sourced at the end of the shell configs
+- `~/.gitconfig.local` - included last by `.gitconfig`, so identity or
+  tool-appended blocks (e.g. git-ai) win over the shared config
+- `~/.ssh/config` - your own host entries stay first; the shared defaults are
+  pulled in via `Include ~/.ssh/config.dotfiles`
+
+### Personal Git Hooks
+
+The installed `.gitconfig` sets `core.hooksPath = ~/.config/git/hooks`.
+Installed hooks are intentionally general and local-only:
+
+- `pre-commit` runs repo hooks like `.husky/pre-commit` first, then blocks
+  likely secrets, conflict markers, and oversized files.
+- `pre-push` runs repo hooks first, then an explicit repo check when configured.
+
+```bash
+JM_GIT_HOOKS=0 git commit ...              # Skip personal hooks once
+git config jm.hooks.prePushCommand "make check"
+make install-git-hooks                     # Install only the hooks
+```
+
+### AI Context
+The installer copies `common/ai-context/` files into place:
+`~/.claude/CLAUDE.md`, `~/AGENTS.md`, and an OS-specific `~/MACHINE.md`.
+Machine state snapshots are generated on demand with
+`scripts/refresh-machine-state.sh`.
 
 ## 📚 Requirements
 

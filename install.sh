@@ -372,6 +372,30 @@ install_git_hooks() {
     fi
 }
 
+# Install shared SSH config without clobbering machine-local host entries:
+# the shared file lands at ~/.ssh/config.dotfiles and is Include'd from
+# ~/.ssh/config, so per-machine hosts keep precedence.
+install_ssh_config() {
+    local src="$DOTFILES_DIR/common/ssh/config"
+    [[ -f "$src" ]] || return 0
+
+    log_step "Installing shared SSH config..."
+    if [[ "$DRY_RUN" == "false" ]]; then
+        mkdir -p "$HOME/.ssh"
+        chmod 700 "$HOME/.ssh"
+        install_file "$src" "$HOME/.ssh/config.dotfiles"
+        chmod 600 "$HOME/.ssh/config.dotfiles"
+        if [[ ! -f "$HOME/.ssh/config" ]] || ! grep -q 'config\.dotfiles' "$HOME/.ssh/config"; then
+            backup_file "$HOME/.ssh/config"
+            printf '\n# Shared dotfiles SSH defaults (machine-local entries above take precedence)\nInclude ~/.ssh/config.dotfiles\n' >> "$HOME/.ssh/config"
+            chmod 600 "$HOME/.ssh/config"
+            audit_action "append" "$src" "$HOME/.ssh/config" "Include directive"
+        fi
+    else
+        log_info "Would copy: common/ssh/config -> ~/.ssh/config.dotfiles (Include'd from ~/.ssh/config)"
+    fi
+}
+
 # Install shell functions
 install_shell_functions() {
     log_step "Installing shell functions..."
@@ -686,6 +710,7 @@ main() {
     install_shell_configs      # 1. Shell configs (.bashrc, .zshrc) - foundation
     install_git_config         # 2. Git configuration (.gitconfig)
     install_git_hooks           # 2b. Personal global Git hooks
+    install_ssh_config          # 2c. Shared SSH defaults (via Include)
     install_shell_functions     # 3. Shell functions (depends on shell configs)
     install_terminal_config     # 4. Terminal configs (kitty, htop)
     install_desktop_configs     # 5. Linux desktop configs (sway/waybar/gtk) - arch only
@@ -715,8 +740,7 @@ main() {
         echo "  git ch          # Fuzzy branch checkout"
         echo "  git fadd        # Interactive file staging"
         echo "  git flog        # Browse commits"
-        echo "  k get p         # kubectl get pods"
-        echo "  sshdot user@host # SSH with dotfiles"
+        echo "  kctx            # Switch kubectl context with fzf"
     fi
 }
 

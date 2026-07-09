@@ -217,3 +217,6 @@ kctx() {
 # Source local secrets (if exists)
 [ -f ~/.env.secrets ] && source ~/.env.secrets
 [ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
+
+# Machine-local overrides - kept out of the repo, survives reinstalls
+[ -f "$HOME/.bashrc.local" ] && . "$HOME/.bashrc.local"

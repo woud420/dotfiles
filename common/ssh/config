@@ -1,3 +1,6 @@
+# IgnoreUnknown keeps macOS-only options harmless on Linux openssh
+IgnoreUnknown UseKeychain
+
 Host *
   AddKeysToAgent yes
   UseKeychain yes

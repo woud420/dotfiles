@@ -86,3 +86,7 @@
 	required = true
 [core]
 	hooksPath = ~/.config/git/hooks
+# Machine-local overrides (identity, tool-appended blocks like git-ai trace2).
+# Values here win because git reads includes last.
+[include]
+	path = ~/.gitconfig.local

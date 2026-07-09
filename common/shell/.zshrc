@@ -181,3 +181,6 @@ if [[ -d "$HOME/.bun" ]]; then
   path_prepend "$BUN_INSTALL/bin"
   [[ -s "$BUN_INSTALL/_bun" ]] && source "$BUN_INSTALL/_bun"
 fi
+
+# Machine-local overrides - kept out of the repo, survives reinstalls
+[[ -f "$HOME/.zshrc.local" ]] && . "$HOME/.zshrc.local"
