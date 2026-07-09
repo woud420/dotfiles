@@ -183,4 +183,6 @@ if [[ -d "$HOME/.bun" ]]; then
 fi
 
 # Machine-local overrides - kept out of the repo, survives reinstalls
-[[ -f "$HOME/.zshrc.local" ]] && . "$HOME/.zshrc.local"
+if [[ -f "$HOME/.zshrc.local" ]]; then
+  . "$HOME/.zshrc.local"
+fi
