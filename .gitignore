@@ -38,3 +38,6 @@ __pycache__/
 
 # Cursor generated configuration
 .config/cursor/generated/
+
+# Generated AI context (machine-specific, not versioned)
+**/ai-context/machine-state.md

@@ -115,7 +115,7 @@ build_prompt() {
     local GIT_INFO=$(parse_git_branch)
     # Note: In bash, we need to escape the $ in the function call
     PS1="⭐ ${MAUVE}[${ROSEWATER}\u${MAUVE}@${TEAL}\$(pretty_pwd)${MAUVE}]${PEACH}${GIT_INFO}${RESET} ➔ "
-    
+
     # Optional: Add time to right side of prompt (requires special handling in bash)
     # For simpler setup, we'll skip the right prompt
 }
@@ -155,6 +155,21 @@ if [ -d ~/.config/shell-functions ]; then
     done
 fi
 
+# PATH helper - prevents duplicates
+path_prepend() {
+    local dir
+    for dir in "$@"; do
+        [[ -d "$dir" ]] || continue
+        case ":$PATH:" in
+            *":$dir:"*) ;;
+            *) PATH="$dir:$PATH" ;;
+        esac
+    done
+}
+
+path_prepend "/usr/local/bin" "/usr/local/sbin" "$HOME/bin" "$HOME/.local/bin" "$HOME/.cargo/bin"
+export PATH
+
 # Enable color support for ls and grep
 if [ -x /usr/bin/dircolors ]; then
     test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
@@ -177,6 +192,28 @@ alias mv='mv -i'
 # Make less more friendly for non-text input files
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
+# mise (version manager for Python, Node, etc.)
+if command -v mise >/dev/null 2>&1; then
+    eval "$(mise activate bash)"
+fi
+
+# kubectl context switcher with fzf
+kctx() {
+    local selected
+    selected=$(kubectl config get-contexts -o name | \
+        fzf --prompt="Select context > " \
+            --height=40% \
+            --layout=reverse \
+            --border \
+            --ansi)
+
+    if [[ -n "$selected" ]]; then
+        kubectl config use-context "$selected"
+    else
+        echo "No context selected."
+    fi
+}
+
 # Source local secrets (if exists)
 [ -f ~/.env.secrets ] && source ~/.env.secrets
-. "$HOME/.local/bin/env"
+[ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"

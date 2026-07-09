@@ -162,7 +162,7 @@ detect_os() {
         OS="unknown"
         DISTRO="unknown"
     fi
-    
+
     log_info "Detected OS: $OS, Distribution: $DISTRO"
 }
 
@@ -170,8 +170,12 @@ detect_os() {
 detect_environment() {
     if [[ -f /.dockerenv ]] || [[ -n "$CONTAINER" ]]; then
         ENVIRONMENT="container"
-        MINIMAL_MODE=true
-        log_info "Container environment detected, enabling minimal mode"
+        if [[ -n "${DOTFILES_FULL_INSTALL:-}" ]]; then
+            log_info "Container detected, but DOTFILES_FULL_INSTALL is set; keeping full install"
+        else
+            MINIMAL_MODE=true
+            log_info "Container environment detected, enabling minimal mode"
+        fi
     elif [[ -n "$SSH_CONNECTION" ]] || [[ -n "$SSH_CLIENT" ]]; then
         ENVIRONMENT="remote"
         log_info "Remote SSH session detected"
@@ -191,7 +195,7 @@ install_packages_macos() {
             log_info "Would install Homebrew"
         fi
     fi
-    
+
     log_step "Installing packages from Brewfile..."
     if [[ "$DRY_RUN" == "false" ]]; then
         brew bundle --file="$DOTFILES_DIR/darwin/Brewfile" || log_warning "Some packages failed to install"
@@ -202,7 +206,7 @@ install_packages_macos() {
 
 install_packages_linux() {
     local package_list=""
-    
+
     case "$DISTRO" in
         ubuntu|debian)
             package_list="$DOTFILES_DIR/linux/debian/packages.list"
@@ -281,7 +285,7 @@ install_file() {
     local source="$1"
     local target="$2"
     local target_dir="$(dirname "$target")"
-    
+
     if [[ "$DRY_RUN" == "false" ]]; then
         # Create target directory if it doesn't exist
         mkdir -p "$target_dir"
@@ -305,7 +309,7 @@ install_file() {
 # Install shell configurations
 install_shell_configs() {
     log_step "Installing shell configurations..."
-    
+
     # Determine which shell config to use
     if [[ "$MINIMAL_MODE" == "true" ]]; then
         backup_file "$HOME/.bashrc"
@@ -320,7 +324,7 @@ install_shell_configs() {
         install_file "$DOTFILES_DIR/common/shell/.zshrc" "$HOME/.zshrc"
         install_file "$DOTFILES_DIR/common/shell/.bash_profile" "$HOME/.bash_profile"
     fi
-    
+
     # GNU aliases and dircolors
     backup_file "$HOME/.gnu_aliases"
     backup_file "$HOME/.dircolors"
@@ -331,7 +335,7 @@ install_shell_configs() {
 # Install git configuration
 install_git_config() {
     log_step "Installing git configuration..."
-    
+
     backup_file "$HOME/.gitconfig"
     install_file "$DOTFILES_DIR/common/git/.gitconfig" "$HOME/.gitconfig"
     
@@ -364,7 +368,7 @@ install_shell_functions() {
 # Install terminal configuration
 install_terminal_config() {
     log_step "Installing terminal configuration..."
-    
+
     # Kitty config based on OS (using hard copies for kitty to work properly)
     mkdir -p "$HOME/.config/kitty"
     if [[ "$DRY_RUN" == "false" ]]; then
@@ -377,7 +381,7 @@ install_terminal_config() {
         else
             install_file "$DOTFILES_DIR/linux/common/kitty.conf" "$HOME/.config/kitty/kitty.conf"
         fi
-        
+
         # Copy themes
         for theme_file in "$DOTFILES_DIR/common/themes/"*.conf; do
             if [[ -f "$theme_file" ]]; then
@@ -404,7 +408,7 @@ install_terminal_config() {
             log_info "Would apply Arch kitty overrides from linux/arch/.config/kitty/ to ~/.config/kitty/"
         fi
     fi
-    
+
     # htop config
     mkdir -p "$HOME/.config/htop"
     install_file "$DOTFILES_DIR/common/htop/htoprc" "$HOME/.config/htop/htoprc"
@@ -538,9 +542,9 @@ install_optional_tools() {
         log_info "Minimal mode: Skipping optional tools"
         return
     fi
-    
+
     log_step "Installing optional tools..."
-    
+
     # FZF
     if ! command -v fzf >/dev/null 2>&1; then
         log_info "Installing fzf..."
@@ -553,6 +557,49 @@ install_optional_tools() {
     fi
 }
 
+# Install AI context files (CLAUDE.md, MACHINE.md, AGENTS.md)
+install_ai_context() {
+    log_step "Installing AI context files..."
+
+    local claude_src="$DOTFILES_DIR/common/ai-context/CLAUDE.md"
+    if [[ -f "$claude_src" ]]; then
+        install_file "$claude_src" "$HOME/.claude/CLAUDE.md"
+    fi
+
+    # AGENTS.md -> ~/AGENTS.md (for Codex/Copilot compatibility)
+    local agents_src="$DOTFILES_DIR/common/ai-context/AGENTS.md"
+    if [[ -f "$agents_src" ]]; then
+        install_file "$agents_src" "$HOME/AGENTS.md"
+    fi
+
+    # OS-specific machine.md -> ~/MACHINE.md
+    local machine_src=""
+    case "$DISTRO" in
+        arch|manjaro)
+            machine_src="$DOTFILES_DIR/linux/arch/ai-context/machine.md"
+            ;;
+        ubuntu|debian)
+            machine_src="$DOTFILES_DIR/linux/debian/ai-context/machine.md"
+            ;;
+        fedora)
+            machine_src="$DOTFILES_DIR/linux/fedora/ai-context/machine.md"
+            ;;
+        alpine)
+            machine_src="$DOTFILES_DIR/linux/alpine/ai-context/machine.md"
+            ;;
+        darwin|macos)
+            machine_src="$DOTFILES_DIR/darwin/ai-context/machine.md"
+            ;;
+    esac
+
+    if [[ -n "$machine_src" && -f "$machine_src" ]]; then
+        install_file "$machine_src" "$HOME/MACHINE.md"
+    fi
+
+    # Machine state snapshots are generated on demand, not at install time:
+    # DOTFILES_DIR=$DOTFILES_DIR scripts/refresh-machine-state.sh
+}
+
 # Main installation function
 main() {
     echo -e "${CYAN}"
@@ -561,14 +608,14 @@ main() {
     echo "║              Universal Unix/Linux/macOS                     ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
-    
+
     detect_os
     detect_environment
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_warning "DRY RUN MODE - No changes will be made"
     fi
-    
+
     # Install packages if requested
     if [[ "$INSTALL_PACKAGES" == "true" ]] && [[ "$MINIMAL_MODE" == "false" ]]; then
         case "$OS" in
@@ -585,7 +632,7 @@ main() {
     else
         log_info "Skipping package installation"
     fi
-    
+
     # Install configurations in dependency order
     install_shell_configs      # 1. Shell configs (.bashrc, .zshrc) - foundation
     install_git_config         # 2. Git configuration (.gitconfig)
@@ -595,22 +642,23 @@ main() {
     install_vim_config          # 6. Vim setup (plugins, settings, CoC compilation)
     install_neovim_config       # 7. Neovim bridge to Vim config
     install_optional_tools      # 8. Optional tools (fzf, etc.) - last
+    install_ai_context          # 9. AI context files (CLAUDE.md, AGENTS.md, MACHINE.md)
     
     echo -e "${GREEN}"
     echo "╔══════════════════════════════════════════════════════════════╗"
     echo "║                   Installation Complete!                    ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
-    
+
     if [[ -d "$BACKUP_DIR" ]]; then
         log_info "Backups saved to: $BACKUP_DIR"
         if [[ -n "$AUDIT_LOG" ]]; then
             log_info "Audit log: $AUDIT_LOG"
         fi
     fi
-    
+
     log_info "Please run: source ~/.bashrc  (or source ~/.zshrc)"
-    
+
     if [[ "$MINIMAL_MODE" == "false" ]]; then
         echo
         log_info "Try these new commands:"
