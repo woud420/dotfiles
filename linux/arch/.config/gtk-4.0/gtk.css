@@ -1,0 +1,126 @@
+/*
+ * GTK4 companion to the GTK3 Sway/kitty/mako polish.
+ * The Firefox portal file chooser is GTK3 today, but these variables keep
+ * newer GTK apps visually aligned.
+ */
+
+@define-color jm_bg #221820;
+@define-color jm_bg_deep #18121a;
+@define-color jm_bg_soft #2a1e2e;
+@define-color jm_surface #332635;
+@define-color jm_surface_raised #4a3844;
+@define-color jm_accent #9d5a7f;
+@define-color jm_accent_soft #6b4456;
+@define-color jm_text #d0d0d0;
+@define-color jm_text_bright #cdd6f4;
+@define-color jm_muted #8a8a8a;
+@define-color jm_urgent #d68787;
+
+window,
+dialog,
+filechooser,
+dialog.background,
+filechooser.background {
+  background: @jm_bg_soft;
+  color: @jm_text;
+}
+
+headerbar,
+.titlebar {
+  background: @jm_bg;
+  color: @jm_text_bright;
+  border-bottom: 1px solid @jm_accent_soft;
+  box-shadow: none;
+}
+
+entry,
+searchbar entry,
+spinbutton,
+dropdown button {
+  background: @jm_bg_deep;
+  color: @jm_text_bright;
+  border: 1px solid @jm_accent_soft;
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+entry:focus,
+spinbutton:focus {
+  border-color: @jm_accent;
+  box-shadow: 0 0 0 1px alpha(@jm_accent, 0.65);
+}
+
+dialog button,
+filechooser button,
+popover button,
+headerbar button,
+.titlebar button {
+  background: @jm_surface;
+  color: @jm_text;
+  border: 1px solid @jm_accent_soft;
+  border-radius: 6px;
+  box-shadow: none;
+  text-shadow: none;
+}
+
+dialog button:hover,
+filechooser button:hover,
+popover button:hover,
+headerbar button:hover,
+.titlebar button:hover {
+  background: @jm_surface_raised;
+  color: @jm_text_bright;
+  border-color: @jm_accent;
+}
+
+dialog button:checked,
+dialog button:active,
+dialog button.suggested-action,
+filechooser button:checked,
+filechooser button:active,
+filechooser button.suggested-action {
+  background: @jm_accent;
+  color: @jm_text_bright;
+  border-color: @jm_accent;
+}
+
+list,
+listview,
+columnview,
+treeexpander,
+row,
+placessidebar {
+  background: @jm_bg;
+  color: @jm_text;
+}
+
+row:hover {
+  background: @jm_surface;
+  color: @jm_text_bright;
+}
+
+row:selected {
+  background: @jm_accent_soft;
+  color: @jm_text_bright;
+}
+
+scrollbar trough {
+  background: @jm_bg;
+}
+
+scrollbar slider {
+  background: @jm_accent_soft;
+  border-radius: 6px;
+}
+
+scrollbar slider:hover {
+  background: @jm_accent;
+}
+
+popover,
+popover contents,
+tooltip {
+  background: @jm_bg;
+  color: @jm_text;
+  border-color: @jm_accent_soft;
+}

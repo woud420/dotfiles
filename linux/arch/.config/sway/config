@@ -1,0 +1,314 @@
+set $mod Mod4
+
+input * {
+    xkb_layout us,ca
+    xkb_options altwin:super_win
+}
+
+# Home row direction keys, like vim
+set $left h
+set $down j
+set $up k
+set $right l
+# Your preferred terminal emulator
+set $term kitty
+# Your preferred application launcher
+# Note: pass the final command to swaymsg so that the resulting window can be opened
+# on the original workspace that the command was run on.
+#set $menu wofi --hide-scroll --show run | xargs swaymsg exec --
+#set $menu wofi -c ~/.config/wofi/config -s ~/.config/wofi/style.css -I
+set $menu rofi -show drun
+set $ssh-menu rofi -show ssh
+### Output configuration
+#
+# Default wallpaper (more resolutions are available in @datadir@/backgrounds/sway/)
+#output * bg @datadir@/backgrounds/sway/Sway_Wallpaper_Blue_1920x1080.png fill
+set $wallpaper ~/.config/sway/assets/beautiful-morning-4k-3840x2160.jpg
+output * mode 3440x1440@165Hz bg $wallpaper fill
+#
+# Example configuration:
+#
+#   output * resolution 1920x1080 position 0,0
+#
+# You can get the names of your outputs by running: swaymsg -t get_outputs
+
+### Idle configuration
+#
+# Example configuration:
+#
+# exec swayidle -w \
+         # timeout 300 'swaylock --clock --datestr "%d.%m.%Y" --indicator -ef -i "assets/beautiful-morning-4k-3840x2160.jpg"'  \
+         # timeout 600 'swaymsg "output * dpms off"' resume 'swaymsg "output * dpms on"' \
+
+### Input configuration
+#
+# Example configuration:
+#
+#   input "2:14:SynPS/2_Synaptics_TouchPad" {
+#       dwt enabled
+#       tap enabled
+#       natural_scroll enabled
+#       middle_emulation enabled
+#   }
+#
+# You can get the names of your inputs by running: swaymsg -t get_inputs
+# Read `man 5 sway-input` for more information about this section.
+
+### Key bindings
+#
+# Basics:
+#
+    # Start a terminal
+    bindsym --to-code $mod+Return workspace number 1, exec $term
+    bindsym --to-code $mod+KP_Enter workspace number 1, exec $term
+
+    # Kill focused window
+    bindsym $mod+q kill
+
+    # Screenshot
+    bindsym $mod+Ctrl+Shift+3 exec sshot
+
+    # Start your launcher
+    bindsym $mod+space exec $menu
+    bindsym $mod+Ctrl+d exec $menu
+
+    # Window switcher (like macOS Cmd+Tab)
+    bindsym $mod+Tab exec rofi -show window
+
+    # Clipboard history
+    bindsym $mod+Ctrl+p exec cliphist list | rofi -dmenu | cliphist decode | wl-copy
+
+    # macOS-style app editing shortcuts
+    bindsym --no-repeat $mod+c exec ~/.config/sway/scripts/macos-edit copy
+    bindsym --no-repeat $mod+v exec ~/.config/sway/scripts/macos-edit paste
+
+    # SSH windows
+    bindsym $mod+Shift+q exec $ssh-menu
+
+    # Volume controls
+    bindsym XF86AudioRaiseVolume exec pactl set-sink-volume @DEFAULT_SINK@ +5%
+    bindsym XF86AudioLowerVolume exec pactl set-sink-volume @DEFAULT_SINK@ -5%
+    bindsym XF86AudioMute exec pactl set-sink-mute @DEFAULT_SINK@ toggle
+    bindsym XF86AudioMicMute exec pactl set-source-mute @DEFAULT_SOURCE@ toggle
+
+    # Media controls
+    bindsym XF86AudioPlay exec playerctl play-pause
+    bindsym XF86AudioNext exec playerctl next
+    bindsym XF86AudioPrev exec playerctl previous
+
+    # Drag floating windows by holding down $mod and left mouse button.
+    # Resize them with right mouse button + $mod.
+    # Despite the name, also works for non-floating windows.
+    # Change normal to inverse to use left mouse button for resizing and right
+    # mouse button for dragging.
+    floating_modifier $mod normal
+
+    # Prevent accidental wheel-click paste while scrolling.
+    bindsym --whole-window button2 nop
+    bindsym --whole-window --release button2 nop
+
+    # Reload the configuration file
+    bindsym $mod+Shift+c reload
+
+
+    # Exit sway (logs you out of your Wayland session)
+    bindsym $mod+Shift+e exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'
+#
+# Moving around:
+#
+    # Move your focus around
+    bindsym $mod+$left focus left
+    bindsym $mod+$down focus down
+    bindsym $mod+$up focus up
+    bindsym $mod+$right focus right
+    # Or use $mod+[up|down|left|right]
+    bindsym $mod+Left focus left
+    bindsym $mod+Down focus down
+    bindsym $mod+Up focus up
+    bindsym $mod+Right focus right
+
+    # Move the focused window with the same, but add Shift
+    bindsym $mod+Shift+$left move left
+    bindsym $mod+Shift+$down move down
+    bindsym $mod+Shift+$up move up
+    bindsym $mod+Shift+$right move right
+    # Ditto, with arrow keys
+    bindsym $mod+Shift+Left move left
+    bindsym $mod+Shift+Down move down
+    bindsym $mod+Shift+Up move up
+    bindsym $mod+Shift+Right move right
+#
+# Workspaces:
+#
+set $ws1 "1"
+set $ws2 "2"
+set $ws3 "3"
+set $ws4 "4"
+set $ws5 "5"
+
+    # Switch to workspace
+    bindsym --to-code $mod+1 workspace number $ws1
+    bindsym --to-code $mod+2 workspace number $ws2
+    bindsym --to-code $mod+3 workspace number $ws3
+    bindsym --to-code $mod+4 workspace number $ws4
+    bindsym --to-code $mod+5 workspace number $ws5
+    # Move focused container to workspace
+    bindsym --to-code $mod+Shift+1 move container to workspace number $ws1
+    bindsym --to-code $mod+Shift+2 move container to workspace number $ws2
+    bindsym --to-code $mod+Shift+3 move container to workspace number $ws3
+    bindsym --to-code $mod+Shift+4 move container to workspace number $ws4
+    bindsym --to-code $mod+Shift+5 move container to workspace number $ws5
+    # Note: workspaces can have any name you want, not just numbers.
+    # We just use 1-10 as the default.
+#
+# Layout stuff:
+#
+    # You can "split" the current object of your focus with
+    # $mod+b or $mod+Shift+v, for horizontal and vertical splits
+    # respectively.
+    bindsym $mod+Shift+b splith
+    bindsym $mod+Shift+v splitv
+
+    # Switch the current container between different layout styles
+    bindsym $mod+Ctrl+s layout stacking
+    bindsym $mod+Ctrl+w layout tabbed
+    # bindsym $mod+e layout toggle split  # Disabled - using for file manager
+
+    # Make the current focus fullscreen
+    bindsym $mod+Ctrl+f fullscreen
+
+    # File managers
+    bindsym $mod+e exec thunar
+    bindsym $mod+Shift+r exec kitty ranger
+
+    # Toggle the current focus between tiling and floating mode
+    bindsym $mod+Shift+space floating toggle
+
+    # Swap focus between the tiling area and the floating area
+    bindsym $mod+Ctrl+space focus mode_toggle
+
+    # Move focus to the parent container
+    bindsym $mod+Ctrl+a focus parent
+#
+# Scratchpad:
+#
+    # Sway has a "scratchpad", which is a bag of holding for windows.
+    # You can send windows there and get them back later.
+
+    # Move the currently focused window to the scratchpad
+    bindsym $mod+Ctrl+Shift+minus move scratchpad
+
+    # Show the next scratchpad window or hide the focused scratchpad window.
+    # If there are multiple scratchpad windows, this command cycles through them.
+    bindsym $mod+Ctrl+minus scratchpad show
+#
+# Resizing containers:
+#
+mode "resize" {
+    # left will shrink the containers width
+    # right will grow the containers width
+    # up will shrink the containers height
+    # down will grow the containers height
+    bindsym $left resize shrink width 10px
+    bindsym $down resize grow height 10px
+    bindsym $up resize shrink height 10px
+    bindsym $right resize grow width 10px
+
+    # Ditto, with arrow keys
+    bindsym Left resize shrink width 10px
+    bindsym Down resize grow height 10px
+    bindsym Up resize shrink height 10px
+    bindsym Right resize grow width 10px
+
+    # Return to default mode
+    bindsym Return mode "default"
+    bindsym Escape mode "default"
+}
+bindsym $mod+Ctrl+r mode "resize"
+
+# Assignment of apps
+bindsym $mod+Shift+f exec firefox
+bindsym $mod+Shift+s exec steam
+
+# Workspace assignments
+assign [app_id="firefox"] $ws2
+assign [class="^Firefox$"] $ws2
+assign [class="^Slack$"] $ws3
+assign [class="^Steam$"] $ws4
+
+# pavucontrol floating
+for_window [app_id="pavucontrol" title=".*"] floating enabled, resize set width 1000px height 400px, move position 750 px 750 px
+
+# GTK portal file pickers, e.g. Firefox open/save dialogs
+for_window [app_id="xdg-desktop-portal-gtk"] floating enabled, resize set width 1400px height 900px, move position center, opacity 0.96
+
+# Unity Assign
+for_window [class="^Unity$" title="^Starting Unity...$"] floating enabled
+for_window [class="^Unity$" title="^Hold On$"] floating enabled
+for_window [class="^Unity$" title="^Preparing Package$"] floating enabled
+for_window [class="^Unity$" title="^Importing Package$"] floating enabled
+
+# opacity terminals
+# for_window [app_id="Alacritty"] opacity 75%
+
+# https://github.com/ValveSoftware/steam-for-linux/issues/1040
+for_window [class="^Steam$" title=".*"] floating enabled
+for_window [class="^Steam$" title="^Friends$"] floating enabled
+for_window [class="^Steam$" title="Steam - News"] floating enabled
+for_window [class="^Steam$" title=".* - Chat"] floating enabled
+for_window [class="^Steam$" title="^Settings$"] floating enabled
+for_window [class="^Steam$" title=".* - event started"] floating enabled
+for_window [class="^Steam$" title=".* CD key"] floating enabled
+for_window [class="^Steam$" title="^Steam - Self Updater$"] floating enabled
+for_window [class="^Steam$" title="^Screenshot Uploader$"] floating enabled
+for_window [class="^Steam$" title="^Steam Guard - Computer Authorization Required$"] floating enabled
+for_window [class="^Steam$" title="^Friends$"] floating enabled
+for_window [title="^Steam Keyboard$"] floating enabled
+
+# font
+font pango:Noto Mono Regular 9
+
+gaps inner 28
+gaps outer -8
+
+# Window borders
+default_border pixel 4
+default_floating_border pixel 4
+hide_edge_borders none
+
+# Border colors (softer purple accent)
+# class                 border    background text      indicator child_border
+client.focused          #9d5a7f   #9d5a7f    #d0d0d0   #9d5a7f   #9d5a7f
+client.focused_inactive #626262   #1c1c1c    #626262   #1c1c1c   #1c1c1c
+client.unfocused        #4a3844   #4a3844    #8a8a8a   #4a3844   #4a3844
+client.urgent           #d68787   #d68787    #1c1c1c   #d68787   #d68787
+
+# SwayFX effects
+corner_radius 10
+shadows enable
+shadow_blur_radius 20
+shadow_color #00000099
+layer_effects "waybar" blur enable; shadows enable; corner_radius 10
+
+# Dim inactive windows slightly
+default_dim_inactive 0.15
+dim_inactive_colors.unfocused #000000FF
+dim_inactive_colors.urgent #900000FF
+
+# sway-borders (disabled - package removed)
+# border_images.focused ~/.config/sway/assets/focused.png
+# border_images.focused_inactive ~/.config/sway/assets/focused_inactive.png
+# border_images.unfocused ~/.config/sway/assets/unfocused.png
+# border_images.urgent ~/.config/sway/assets/urgent.png
+
+# XWayland configuration for GPU access
+xwayland enable
+
+# Autostart
+exec_always systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE
+exec_always dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE
+exec mako
+exec_always ~/.config/waybar/waybar.sh
+exec wl-paste --watch cliphist store
+
+include @sysconfdir@/sway/config.d/*

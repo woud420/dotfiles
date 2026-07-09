@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ===== Universal Dotfiles Installer =====
 # Works on macOS, Linux (Ubuntu/Debian, Arch, RHEL/CentOS, Alpine)
-# Usage: ./install.sh [--minimal] [--no-packages] [--dry-run] [--copy]
+# Usage: ./install.sh [--minimal] [--no-packages] [--dry-run] [--symlink]
 #
 # Installation Order:
 # 1. OS Detection & Environment Setup
@@ -253,10 +253,12 @@ install_packages_linux() {
     esac
 }
 
-# Backup existing files
+# Backup existing files (path-preserving: mirrors directory structure under BACKUP_DIR)
 backup_file() {
     local file="$1"
     if [[ -f "$file" ]] || [[ -L "$file" ]]; then
+        local rel_path="${file#$HOME/}"
+        local backup_dest="$BACKUP_DIR/$rel_path"
         if [[ "$DRY_RUN" == "false" ]]; then
             local backup_path
             backup_path="$(backup_path_for "$file")"
@@ -269,7 +271,7 @@ backup_file() {
                 log_info "Backed up $file to $backup_path"
             fi
         else
-            log_info "Would backup: $file"
+            log_info "Would backup: $file -> $backup_dest"
         fi
     fi
 }
@@ -300,26 +302,6 @@ install_file() {
     fi
 }
 
-copy_file() {
-    local source="$1"
-    local target="$2"
-    local target_dir
-    target_dir="$(dirname "$target")"
-
-    if [[ "$DRY_RUN" == "false" ]]; then
-        mkdir -p "$target_dir"
-        audit_action "mkdir" "" "$target_dir" "ensure target directory"
-        if [[ -e "$target" ]] || [[ -L "$target" ]]; then
-            backup_file "$target"
-        fi
-        cp -f "$source" "$target"
-        audit_action "copy" "$source" "$target" "copy file"
-        log_success "Copied $source -> $target"
-    else
-        log_info "Would copy: $source -> $target"
-    fi
-}
-
 # Install shell configurations
 install_shell_configs() {
     log_step "Installing shell configurations..."
@@ -342,8 +324,8 @@ install_shell_configs() {
     # GNU aliases and dircolors
     backup_file "$HOME/.gnu_aliases"
     backup_file "$HOME/.dircolors"
-    copy_file "$DOTFILES_DIR/common/shell/.gnu_aliases" "$HOME/.gnu_aliases"
-    copy_file "$DOTFILES_DIR/common/shell/.dircolors" "$HOME/.dircolors"
+    install_file "$DOTFILES_DIR/common/shell/.gnu_aliases" "$HOME/.gnu_aliases"
+    install_file "$DOTFILES_DIR/common/shell/.dircolors" "$HOME/.dircolors"
 }
 
 # Install git configuration
@@ -362,17 +344,20 @@ install_git_config() {
 # Install shell functions
 install_shell_functions() {
     log_step "Installing shell functions..."
-    
+
     if [[ "$DRY_RUN" == "false" ]]; then
         mkdir -p "$HOME/.config/shell-functions"
-        # Copy all shell function files
         for func_file in "$DOTFILES_DIR/common/shell-functions/"*.sh; do
             if [[ -f "$func_file" ]]; then
-                copy_file "$func_file" "$HOME/.config/shell-functions/$(basename "$func_file")"
+                install_file "$func_file" "$HOME/.config/shell-functions/$(basename "$func_file")"
             fi
         done
     else
-        log_info "Would install shell functions to ~/.config/shell-functions/"
+        for func_file in "$DOTFILES_DIR/common/shell-functions/"*.sh; do
+            if [[ -f "$func_file" ]]; then
+                log_info "Would copy: $func_file -> ~/.config/shell-functions/$(basename "$func_file")"
+            fi
+        done
     fi
 }
 
@@ -388,17 +373,26 @@ install_terminal_config() {
     
     if [[ "$DRY_RUN" == "false" ]]; then
         if [[ "$OS" == "macos" ]]; then
-            copy_file "$DOTFILES_DIR/darwin/kitty.conf" "$HOME/.config/kitty/kitty.conf"
+            install_file "$DOTFILES_DIR/darwin/kitty.conf" "$HOME/.config/kitty/kitty.conf"
         else
-            copy_file "$DOTFILES_DIR/linux/common/kitty.conf" "$HOME/.config/kitty/kitty.conf"
+            install_file "$DOTFILES_DIR/linux/common/kitty.conf" "$HOME/.config/kitty/kitty.conf"
         fi
         
         # Copy themes
         for theme_file in "$DOTFILES_DIR/common/themes/"*.conf; do
             if [[ -f "$theme_file" ]]; then
-                copy_file "$theme_file" "$HOME/.config/kitty/$(basename "$theme_file")"
+                install_file "$theme_file" "$HOME/.config/kitty/$(basename "$theme_file")"
             fi
         done
+
+        # Arch-specific theme overrides (e.g. personal-pink plum background)
+        if [[ "$DISTRO" == "arch" ]]; then
+            for theme_file in "$DOTFILES_DIR/linux/arch/.config/kitty/"*.conf; do
+                [[ -f "$theme_file" ]] || continue
+                cp "$theme_file" "$HOME/.config/kitty/$(basename "$theme_file")"
+                log_success "Applied Arch kitty override: $(basename "$theme_file")"
+            done
+        fi
     else
         if [[ "$OS" == "macos" ]]; then
             log_info "Would copy: darwin/kitty.conf -> ~/.config/kitty/kitty.conf"
@@ -406,6 +400,9 @@ install_terminal_config() {
             log_info "Would copy: linux/common/kitty.conf -> ~/.config/kitty/kitty.conf"
         fi
         log_info "Would copy kitty themes to ~/.config/kitty/"
+        if [[ "$DISTRO" == "arch" ]]; then
+            log_info "Would apply Arch kitty overrides from linux/arch/.config/kitty/ to ~/.config/kitty/"
+        fi
     fi
     
     # htop config
@@ -413,21 +410,21 @@ install_terminal_config() {
     install_file "$DOTFILES_DIR/common/htop/htoprc" "$HOME/.config/htop/htoprc"
 }
 
-# Install vim configuration
+# Install vim + nvim configuration
 install_vim_config() {
     log_step "Installing vim configuration..."
-    
+
     # Create .vim directory and copy config files
     if [[ "$DRY_RUN" == "false" ]]; then
         mkdir -p "$HOME/.vim/settings"
-        
+
         # Link vim configuration files
         install_file "$DOTFILES_DIR/.vim/vimrc" "$HOME/.vim/vimrc"
         install_file "$DOTFILES_DIR/.vim/plugins.vim" "$HOME/.vim/plugins.vim"
         install_file "$DOTFILES_DIR/.vim/mappings.vim" "$HOME/.vim/mappings.vim"
         install_file "$DOTFILES_DIR/.vim/settings.vim" "$HOME/.vim/settings.vim"
         install_file "$DOTFILES_DIR/.vim/coc-settings.json" "$HOME/.vim/coc-settings.json"
-        
+
         # Link settings directory files
         for settings_file in "$DOTFILES_DIR/.vim/settings/"*.vim; do
             if [[ -f "$settings_file" ]]; then
@@ -435,17 +432,23 @@ install_vim_config() {
             fi
         done
     else
-        log_info "Would install vim configuration"
-        return
+        log_info "Would copy: .vim/vimrc -> ~/.vim/vimrc"
+        log_info "Would copy: .vim/plugins.vim -> ~/.vim/plugins.vim"
+        log_info "Would copy: .vim/mappings.vim -> ~/.vim/mappings.vim"
+        log_info "Would copy: .vim/coc-settings.json -> ~/.vim/coc-settings.json"
+        for settings_file in "$DOTFILES_DIR/.vim/settings/"*.vim; do
+            if [[ -f "$settings_file" ]]; then
+                log_info "Would copy: .vim/settings/$(basename "$settings_file") -> ~/.vim/settings/$(basename "$settings_file")"
+            fi
+        done
     fi
-    
+
     # Install vim plugins if vim is available
     if command -v vim >/dev/null 2>&1; then
         log_step "Installing vim plugins..."
         if [[ "$DRY_RUN" == "false" ]]; then
             vim +PlugInstall +qall
-            
-            # Compile CoC.nvim if it was installed
+
             if [[ -d "$HOME/.vim/plugged/coc.nvim" ]]; then
                 log_step "Compiling CoC.nvim..."
                 if command -v npm >/dev/null 2>&1; then
@@ -458,8 +461,19 @@ install_vim_config() {
         else
             log_info "Would install vim plugins and compile CoC.nvim"
         fi
+    fi
+
+    log_step "Installing nvim configuration..."
+
+    if [[ -f "$DOTFILES_DIR/common/nvim/init.vim" ]]; then
+        if [[ "$DRY_RUN" == "false" ]]; then
+            mkdir -p "$HOME/.config/nvim"
+            install_file "$DOTFILES_DIR/common/nvim/init.vim" "$HOME/.config/nvim/init.vim"
+        else
+            log_info "Would copy: common/nvim/init.vim -> ~/.config/nvim/init.vim"
+        fi
     else
-        log_warning "vim not found. Skipping plugin installation."
+        log_warning "common/nvim/init.vim not found, skipping nvim config"
     fi
 }
 

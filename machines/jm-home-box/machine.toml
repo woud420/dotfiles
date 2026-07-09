@@ -1,0 +1,48 @@
+name = "jm-home-box"
+profile = "personal"
+os = "arch"
+shell = "zsh"
+terminal = "kitty"
+editor = "nvim"
+style = "personal-pink"
+sshd = true
+
+[paths]
+workspace = "~/workspace"
+
+[packages]
+pacman = [
+  "bash",
+  "fzf",
+  "git",
+  "kitty",
+  "neovim",
+  "openssh",
+  "python",
+  "ripgrep",
+  "zsh",
+]
+aur = [
+  "yay-bin",
+  "1password",
+  "1password-cli",
+  "amf-amdgpu-pro",
+  "lib32-vulkan-amdgpu-pro",
+  "vulkan-amdgpu-pro",
+  "opencl-amd",
+  "nordic-theme",
+  "nordic-darker-theme",
+  "nordic-darker-standard-buttons-theme",
+  "nordic-bluish-accent-theme",
+  "nordic-bluish-accent-standard-buttons-theme",
+  "nordic-standard-buttons-theme",
+  "swayfx",
+  "wshowkeys-git",
+  "ttf-meslo",
+  "ttf-monaco",
+  "openvpn-update-systemd-resolved",
+  "slack-desktop",
+  "spotify",
+  "zoom",
+  "exodus",
+]
