@@ -78,8 +78,8 @@ jobs:
           echo "testuser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
       - name: Run install.sh
+        shell: bash
         run: |
-          set -o pipefail
           cp -r "$GITHUB_WORKSPACE" /home/testuser/dotfiles
           chown -R testuser:testuser /home/testuser/dotfiles
           su testuser -c "cd /home/testuser/dotfiles && DOTFILES_FULL_INSTALL=1 ./install.sh --no-packages 2>&1" | tee /tmp/install.log
@@ -170,6 +170,7 @@ jobs:
         if: always()
         run: |
           mkdir -p /tmp/evidence
+          chmod 777 /tmp/evidence
           cp /tmp/install.log /tmp/evidence/ 2>/dev/null || true
           su testuser -c '
             ls -la ~/.bashrc ~/.zshrc ~/.gitconfig 2>&1 > /tmp/evidence/report.txt
@@ -203,8 +204,8 @@ jobs:
           echo "testuser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
       - name: Run install.sh
+        shell: bash
         run: |
-          set -o pipefail
           cp -r "$GITHUB_WORKSPACE" /home/testuser/dotfiles
           chown -R testuser:testuser /home/testuser/dotfiles
           su testuser -c "cd /home/testuser/dotfiles && DOTFILES_FULL_INSTALL=1 ./install.sh --no-packages 2>&1" | tee /tmp/install.log
@@ -260,6 +261,7 @@ jobs:
         if: always()
         run: |
           mkdir -p /tmp/evidence
+          chmod 777 /tmp/evidence
           cp /tmp/install.log /tmp/evidence/ 2>/dev/null || true
           su testuser -c '
             ls -la ~/.bashrc ~/.zshrc ~/.gitconfig 2>&1 > /tmp/evidence/report.txt
@@ -283,8 +285,8 @@ jobs:
         run: brew install vim
 
       - name: Run install.sh
+        shell: bash
         run: |
-          set -o pipefail
           ./install.sh --no-packages 2>&1 | tee /tmp/install.log
 
       - name: Verify file deployments (copies, never symlinks)
