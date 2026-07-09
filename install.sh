@@ -410,6 +410,26 @@ install_terminal_config() {
     install_file "$DOTFILES_DIR/common/htop/htoprc" "$HOME/.config/htop/htoprc"
 }
 
+# Install Linux desktop configurations (sway, waybar, gtk, rofi, mako, ...)
+# Copies everything under linux/arch/.config/ into ~/.config/ preserving
+# relative paths, so new tool configs are picked up without listing them here.
+install_desktop_configs() {
+    if [[ "$DISTRO" != "arch" ]] || [[ "$MINIMAL_MODE" == "true" ]]; then
+        return 0
+    fi
+
+    log_step "Installing Arch desktop configurations..."
+
+    local desktop_root="$DOTFILES_DIR/linux/arch/.config"
+    local src rel
+    while IFS= read -r -d '' src; do
+        rel="${src#$desktop_root/}"
+        # kitty files are applied as theme overlays by install_terminal_config
+        [[ "$rel" == kitty/* ]] && continue
+        install_file "$src" "$HOME/.config/$rel"
+    done < <(find "$desktop_root" -type f -print0 | sort -z)
+}
+
 # Install vim + nvim configuration
 install_vim_config() {
     log_step "Installing vim configuration..."
@@ -571,9 +591,10 @@ main() {
     install_git_config         # 2. Git configuration (.gitconfig)
     install_shell_functions     # 3. Shell functions (depends on shell configs)
     install_terminal_config     # 4. Terminal configs (kitty, htop)
-    install_vim_config          # 5. Vim setup (plugins, settings, CoC compilation)
-    install_neovim_config       # 6. Neovim bridge to Vim config
-    install_optional_tools      # 7. Optional tools (fzf, etc.) - last
+    install_desktop_configs     # 5. Linux desktop configs (sway/waybar/gtk) - arch only
+    install_vim_config          # 6. Vim setup (plugins, settings, CoC compilation)
+    install_neovim_config       # 7. Neovim bridge to Vim config
+    install_optional_tools      # 8. Optional tools (fzf, etc.) - last
     
     echo -e "${GREEN}"
     echo "╔══════════════════════════════════════════════════════════════╗"

@@ -1,4 +1,4 @@
-.PHONY: all help install install-minimal install-no-packages backup-bash brew-sync clean-backup legacy check test-install check-editor dotfiles-doctor dotfiles-dry-run dotfiles-install dotfiles-diff-live dotfiles-backup
+.PHONY: all help install install-minimal install-no-packages backup-bash brew-sync clean-backup legacy check test-install check-editor
 .ONESHELL:
 
 SHELL		= /bin/bash
@@ -32,21 +32,6 @@ test-install:
 
 check-editor:
 	$(DOTFILE_DIR)/scripts/check-editor-parity.sh
-
-dotfiles-doctor:
-	$(DOTFILE_DIR)/scripts/dotfiles.py doctor
-
-dotfiles-dry-run:
-	$(DOTFILE_DIR)/scripts/dotfiles.py install --dry-run
-
-dotfiles-install:
-	$(DOTFILE_DIR)/scripts/dotfiles.py install
-
-dotfiles-diff-live:
-	$(DOTFILE_DIR)/scripts/dotfiles.py diff-live
-
-dotfiles-backup:
-	$(DOTFILE_DIR)/scripts/dotfiles.py backup
 
 # Legacy OS-specific targets (kept for compatibility)
 legacy: $(OS)

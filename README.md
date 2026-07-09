@@ -179,28 +179,22 @@ To clean old backups (30+ days):
 make clean-backup
 ```
 
-## 🧭 Machine Convergence Workflow
+## 🧭 Machine Convergence
 
-The copy-based convergence workflow is being introduced alongside the legacy
-installer. It is intended for personal machines where configs should be copied
-into place, tracked with a manifest, and checked for drift.
+`install.sh` is the single entry point for every machine. It detects the OS
+and distribution and installs the right layer on top of `common/`:
 
-```bash
-make dotfiles-doctor     # Check required/preferred tools for this machine
-make dotfiles-dry-run    # Preview managed copies without changing files
-make dotfiles-backup     # Back up managed live files
-make dotfiles-install    # Copy managed files and write install manifest
-make dotfiles-diff-live  # Report live files that drift from the repo
-```
+- macOS: `darwin/` (Brewfile, kitty)
+- Linux: `linux/<distro>/` packages plus, on Arch, the full desktop
+  configuration under `linux/arch/.config/` (Sway, Waybar, GTK, kitty theme
+  overlays)
 
-Machine profiles live in `machines/<hostname>/machine.toml`. The current Arch
-profile is `machines/jm-home-box/machine.toml`.
+Installs are always copies (never symlinks) with path-preserving backups and
+an audit log. Preview any run with `./install.sh --dry-run`.
 
-This path keeps Bash available as a fallback, but converges personal interactive
-machines on Zsh, Kitty, and Neovim.
-
-The active convergence plan is tracked in
-`docs/machine-convergence-plan.md`.
+This converges personal interactive machines on Zsh, Kitty, and Neovim while
+keeping Bash available as a fallback. The history of this effort is recorded
+in `docs/machine-convergence-plan.md`.
 
 ## 🐳 Container Usage
 
