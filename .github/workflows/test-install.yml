@@ -33,7 +33,7 @@ jobs:
 
       - name: Zsh syntax check
         run: |
-          sudo apt-get install -y zsh
+          sudo apt-get update && sudo apt-get install -y zsh
           zsh -n common/shell/.zshrc && echo "PASS: .zshrc"
 
       - name: ShellCheck
@@ -52,7 +52,8 @@ jobs:
           python3 -c "import json; json.load(open('.vim/coc-settings.json'))" && echo "PASS: coc-settings.json"
 
       - name: install.sh syntax check
-        run: bash -n install.sh && echo "PASS: install.sh"
+        run: |
+          bash -n install.sh && echo "PASS: install.sh"
 
       - name: Installer smoke test (temp HOME)
         run: ./scripts/test-install.sh
@@ -78,6 +79,7 @@ jobs:
 
       - name: Run install.sh
         run: |
+          set -o pipefail
           cp -r "$GITHUB_WORKSPACE" /home/testuser/dotfiles
           chown -R testuser:testuser /home/testuser/dotfiles
           su testuser -c "cd /home/testuser/dotfiles && DOTFILES_FULL_INSTALL=1 ./install.sh --no-packages 2>&1" | tee /tmp/install.log
@@ -132,7 +134,7 @@ jobs:
       - name: Verify Arch kitty theme is personal-pink overlay
         run: |
           su testuser -c '
-            grep -q "personal-pink" ~/.config/kitty/current-theme.conf && echo "PASS: personal-pink overlay applied"
+            grep -q "personal-pink" ~/.config/kitty/current-theme.conf && echo "PASS: personal-pink overlay applied" || { echo "FAIL: personal-pink marker missing"; exit 1; }
             grep -qi "background[^_]*#2A1E2E" ~/.config/kitty/current-theme.conf && echo "PASS: plum background" || { echo "FAIL: expected #2A1E2E background"; exit 1; }
           '
 
@@ -202,6 +204,7 @@ jobs:
 
       - name: Run install.sh
         run: |
+          set -o pipefail
           cp -r "$GITHUB_WORKSPACE" /home/testuser/dotfiles
           chown -R testuser:testuser /home/testuser/dotfiles
           su testuser -c "cd /home/testuser/dotfiles && DOTFILES_FULL_INSTALL=1 ./install.sh --no-packages 2>&1" | tee /tmp/install.log
@@ -222,6 +225,10 @@ jobs:
 
             echo "=== No desktop configs on non-arch ==="
             ! test -e ~/.config/sway && echo "PASS: sway config not installed"
+
+            echo "=== AI context ==="
+            test -f ~/AGENTS.md && echo "PASS: AGENTS.md"
+            test -f ~/MACHINE.md && echo "PASS: MACHINE.md"
           '
 
       - name: Validate shell configs
@@ -276,7 +283,9 @@ jobs:
         run: brew install vim
 
       - name: Run install.sh
-        run: ./install.sh --no-packages 2>&1 | tee /tmp/install.log
+        run: |
+          set -o pipefail
+          ./install.sh --no-packages 2>&1 | tee /tmp/install.log
 
       - name: Verify file deployments (copies, never symlinks)
         run: |
@@ -291,6 +300,10 @@ jobs:
           grep -q "Catppuccin-Mocha" ~/.config/kitty/current-theme.conf && echo "PASS: macOS Catppuccin Mocha theme"
           ! grep -q "personal-pink" ~/.config/kitty/current-theme.conf && echo "PASS: no personal-pink leak on macOS"
           grep -q "FiraCode" ~/.config/kitty/kitty.conf && echo "PASS: FiraCode font (macOS)"
+
+          echo "=== AI context ==="
+          test -f ~/AGENTS.md && echo "PASS: AGENTS.md"
+          test -f ~/MACHINE.md && echo "PASS: MACHINE.md"
 
       - name: Validate Vim config
         run: |

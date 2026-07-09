@@ -25,7 +25,10 @@ run_repo_hook() {
     fi
 }
 
-mapfile -d '' staged_files < <(git diff --cached --name-only -z --diff-filter=ACMR)
+staged_files=()
+while IFS= read -r -d '' f; do
+    staged_files+=("$f")
+done < <(git diff --cached --name-only -z --diff-filter=ACMR)
 if [[ "${#staged_files[@]}" -eq 0 ]]; then
     exit 0
 fi
@@ -64,10 +67,14 @@ is_generated_blob() {
 
 has_conflict_markers() {
     local path="$1"
+    # Require a real <<<<<<< marker; bare ======= lines are common as
+    # heading underlines in plain text and only mean a conflict alongside one.
     git show ":$path" 2>/dev/null \
         | grep -Iq . \
         && git show ":$path" 2>/dev/null \
-        | grep -nE '^(<<<<<<<|=======|>>>>>>>)'
+        | grep -qE '^<<<<<<< ' \
+        && git show ":$path" 2>/dev/null \
+        | grep -nE '^(<<<<<<< |=======$|>>>>>>> )'
 }
 
 for file in "${staged_files[@]}"; do

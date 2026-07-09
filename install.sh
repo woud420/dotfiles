@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ===== Universal Dotfiles Installer =====
 # Works on macOS, Linux (Ubuntu/Debian, Arch, RHEL/CentOS, Alpine)
-# Usage: ./install.sh [--minimal] [--no-packages] [--dry-run] [--symlink]
+# Usage: ./install.sh [--minimal] [--no-packages] [--dry-run] [--copy]
 #
 # Installation Order:
 # 1. OS Detection & Environment Setup
@@ -261,8 +261,6 @@ install_packages_linux() {
 backup_file() {
     local file="$1"
     if [[ -f "$file" ]] || [[ -L "$file" ]]; then
-        local rel_path="${file#$HOME/}"
-        local backup_dest="$BACKUP_DIR/$rel_path"
         if [[ "$DRY_RUN" == "false" ]]; then
             local backup_path
             backup_path="$(backup_path_for "$file")"
@@ -275,7 +273,7 @@ backup_file() {
                 log_info "Backed up $file to $backup_path"
             fi
         else
-            log_info "Would backup: $file -> $backup_dest"
+            log_info "Would backup: $file -> $(backup_path_for "$file")"
         fi
     fi
 }
@@ -340,7 +338,6 @@ install_git_config() {
     install_file "$DOTFILES_DIR/common/git/.gitconfig" "$HOME/.gitconfig"
     
     # Global gitignore
-    mkdir -p "$HOME/.config/git"
     install_file "$DOTFILES_DIR/common/git/.gitignore_global" "$HOME/.config/git/ignore"
     install_file "$DOTFILES_DIR/common/git/commit-template.md" "$HOME/.config/git/commit-template.md"
 }
@@ -387,9 +384,15 @@ install_ssh_config() {
         chmod 600 "$HOME/.ssh/config.dotfiles"
         if [[ ! -f "$HOME/.ssh/config" ]] || ! grep -q 'config\.dotfiles' "$HOME/.ssh/config"; then
             backup_file "$HOME/.ssh/config"
-            printf '\n# Shared dotfiles SSH defaults (machine-local entries above take precedence)\nInclude ~/.ssh/config.dotfiles\n' >> "$HOME/.ssh/config"
+            # Prepend: an Include after a Host block would only apply to that
+            # host, and IgnoreUnknown must be parsed before any UseKeychain.
+            {
+                printf '# Shared dotfiles SSH defaults\nInclude ~/.ssh/config.dotfiles\n\n'
+                [[ -f "$HOME/.ssh/config" ]] && cat "$HOME/.ssh/config"
+            } > "$HOME/.ssh/config.tmp$$"
+            mv "$HOME/.ssh/config.tmp$$" "$HOME/.ssh/config"
             chmod 600 "$HOME/.ssh/config"
-            audit_action "append" "$src" "$HOME/.ssh/config" "Include directive"
+            audit_action "prepend" "$src" "$HOME/.ssh/config" "Include directive"
         fi
     else
         log_info "Would copy: common/ssh/config -> ~/.ssh/config.dotfiles (Include'd from ~/.ssh/config)"
@@ -429,7 +432,6 @@ install_terminal_config() {
     log_step "Installing terminal configuration..."
 
     # Kitty config based on OS (using hard copies for kitty to work properly)
-    mkdir -p "$HOME/.config/kitty"
     if [[ "$DRY_RUN" == "false" ]]; then
         audit_action "mkdir" "" "$HOME/.config/kitty" "ensure kitty config directory"
     fi
@@ -469,7 +471,6 @@ install_terminal_config() {
     fi
 
     # htop config
-    mkdir -p "$HOME/.config/htop"
     install_file "$DOTFILES_DIR/common/htop/htoprc" "$HOME/.config/htop/htoprc"
 }
 
@@ -503,8 +504,8 @@ compile_coc_nvim() {
         return 0
     fi
 
-    (
-        set +e  # don't kill the whole install on a coc build failure
+    # The subshell is the if-condition so a build failure cannot trip set -e
+    if (
         cd "$HOME/.vim/plugged/coc.nvim" || exit 0
 
         if [[ -f package-lock.json || -f npm-shrinkwrap.json ]]; then
@@ -515,8 +516,7 @@ compile_coc_nvim() {
             echo "No package.json / lockfile found in coc.nvim, skipping build"
             exit 0
         fi
-    )
-    if [[ $? -eq 0 ]]; then
+    ); then
         log_success "CoC.nvim compiled successfully"
     else
         log_warning "CoC.nvim compilation failed. Retry manually: cd ~/.vim/plugged/coc.nvim && npm install"
@@ -527,58 +527,40 @@ compile_coc_nvim() {
 install_vim_config() {
     log_step "Installing vim configuration..."
 
-    # Create .vim directory and copy config files
     if [[ "$DRY_RUN" == "false" ]]; then
         mkdir -p "$HOME/.vim/settings"
+    fi
 
-        # Link vim configuration files
-        install_file "$DOTFILES_DIR/.vim/vimrc" "$HOME/.vim/vimrc"
-        install_file "$DOTFILES_DIR/.vim/plugins.vim" "$HOME/.vim/plugins.vim"
-        install_file "$DOTFILES_DIR/.vim/mappings.vim" "$HOME/.vim/mappings.vim"
-        install_file "$DOTFILES_DIR/.vim/settings.vim" "$HOME/.vim/settings.vim"
-        install_file "$DOTFILES_DIR/.vim/coc-settings.json" "$HOME/.vim/coc-settings.json"
+    # install_file handles dry-run logging itself
+    install_file "$DOTFILES_DIR/.vim/vimrc" "$HOME/.vim/vimrc"
+    install_file "$DOTFILES_DIR/.vim/plugins.vim" "$HOME/.vim/plugins.vim"
+    install_file "$DOTFILES_DIR/.vim/mappings.vim" "$HOME/.vim/mappings.vim"
+    install_file "$DOTFILES_DIR/.vim/settings.vim" "$HOME/.vim/settings.vim"
+    install_file "$DOTFILES_DIR/.vim/coc-settings.json" "$HOME/.vim/coc-settings.json"
 
-        # Link settings directory files
-        for settings_file in "$DOTFILES_DIR/.vim/settings/"*.vim; do
-            if [[ -f "$settings_file" ]]; then
-                install_file "$settings_file" "$HOME/.vim/settings/$(basename "$settings_file")"
-            fi
-        done
-    else
-        log_info "Would copy: .vim/vimrc -> ~/.vim/vimrc"
-        log_info "Would copy: .vim/plugins.vim -> ~/.vim/plugins.vim"
-        log_info "Would copy: .vim/mappings.vim -> ~/.vim/mappings.vim"
-        log_info "Would copy: .vim/coc-settings.json -> ~/.vim/coc-settings.json"
-        for settings_file in "$DOTFILES_DIR/.vim/settings/"*.vim; do
-            if [[ -f "$settings_file" ]]; then
-                log_info "Would copy: .vim/settings/$(basename "$settings_file") -> ~/.vim/settings/$(basename "$settings_file")"
-            fi
-        done
+    for settings_file in "$DOTFILES_DIR/.vim/settings/"*.vim; do
+        if [[ -f "$settings_file" ]]; then
+            install_file "$settings_file" "$HOME/.vim/settings/$(basename "$settings_file")"
+        fi
+    done
+
+    if [[ "$MINIMAL_MODE" == "true" ]]; then
+        log_info "Minimal mode: skipping vim plugin installation"
+        return 0
     fi
 
     # Install vim plugins if vim is available
     if command -v vim >/dev/null 2>&1; then
         log_step "Installing vim plugins..."
         if [[ "$DRY_RUN" == "false" ]]; then
-            vim +PlugInstall +qall
+            # </dev/null prevents hangs at press-ENTER prompts on first run;
+            # the guard keeps a plugin failure from aborting the whole install
+            vim +PlugInstall +qall </dev/null || log_warning "vim plugin install failed; run :PlugInstall manually"
 
             compile_coc_nvim
         else
             log_info "Would install vim plugins and compile CoC.nvim"
         fi
-    fi
-
-    log_step "Installing nvim configuration..."
-
-    if [[ -f "$DOTFILES_DIR/common/nvim/init.vim" ]]; then
-        if [[ "$DRY_RUN" == "false" ]]; then
-            mkdir -p "$HOME/.config/nvim"
-            install_file "$DOTFILES_DIR/common/nvim/init.vim" "$HOME/.config/nvim/init.vim"
-        else
-            log_info "Would copy: common/nvim/init.vim -> ~/.config/nvim/init.vim"
-        fi
-    else
-        log_warning "common/nvim/init.vim not found, skipping nvim config"
     fi
 }
 
@@ -599,9 +581,14 @@ install_neovim_config() {
         return
     fi
 
+    if [[ "$MINIMAL_MODE" == "true" ]]; then
+        log_info "Minimal mode: skipping neovim plugin installation"
+        return 0
+    fi
+
     if command -v nvim >/dev/null 2>&1; then
         log_step "Installing neovim plugins..."
-        nvim --headless +PlugInstall +qall
+        nvim --headless +PlugInstall +qall </dev/null || log_warning "nvim plugin install failed; run :PlugInstall manually"
 
         compile_coc_nvim
     else
@@ -619,11 +606,14 @@ install_optional_tools() {
     log_step "Installing optional tools..."
 
     # FZF
-    if ! command -v fzf >/dev/null 2>&1; then
+    if ! command -v fzf >/dev/null 2>&1 && [[ ! -d "$HOME/.fzf" ]]; then
         log_info "Installing fzf..."
         if [[ "$DRY_RUN" == "false" ]]; then
-            git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
-            ~/.fzf/install --bin --no-update-rc --no-key-bindings --no-completion
+            if git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf; then
+                ~/.fzf/install --bin --no-update-rc --no-key-bindings --no-completion || log_warning "fzf install script failed"
+            else
+                log_warning "fzf clone failed; skipping"
+            fi
         else
             log_info "Would install fzf"
         fi

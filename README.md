@@ -31,11 +31,11 @@ make install-dry-run      # Preview changes
 ### Remote Installation
 
 ```bash
-# One-liner for remote servers
-curl -fsSL https://raw.githubusercontent.com/woud420/dotfiles/master/install.sh | bash -s -- --minimal
+# Minimal quick-install (fetches the few server configs it needs)
+curl -sSL https://raw.githubusercontent.com/woud420/dotfiles/master/scripts/quick-install.sh | bash
 
-# SSH with dotfiles
-ssh user@host 'bash -s' < install.sh --minimal
+# Or clone and run the full installer
+git clone https://github.com/woud420/dotfiles.git && cd dotfiles && ./install.sh --minimal
 ```
 
 ## 📁 Directory Structure
@@ -122,7 +122,7 @@ kctx            # Switch context with fzf
 Core tools: `awscli`, `bash`, `coreutils`, `git`, `fzf`, `fd`, `ripgrep`, `htop`, `neovim`, `tree`, `wget`
 Development: `node`, `python`, `rust`, `poetry`, `virtualenv`
 Kubernetes: `kubernetes-cli`, `helm`, `k9s`, `eksctl`, `minikube`
-Infrastructure: `terraform`, `terraformer`, `tflint`
+Infrastructure: `terraformer`, `tflint`
 Apps: `docker`, `docker-desktop`, `slack`, `spotify`
 
 ### Linux
@@ -148,11 +148,10 @@ Example prompt:
 ```
 
 ### Fuzzy Everything
-- **File search**: `v` to open files with vim-compatible editor config
 - **Git branches**: `git ch` for interactive checkout
 - **Git commits**: `git flog` to browse history
 - **Git staging**: `git fadd` to stage files
-- **Kubernetes**: `kctx`/`kns` for context/namespace switching
+- **Kubernetes**: `kctx` for context switching
 
 ### GNU Tools on macOS
 Automatically aliases GNU versions to replace BSD utilities:

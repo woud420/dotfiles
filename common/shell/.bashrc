@@ -114,7 +114,7 @@ dynamic_time_prompt() {
 build_prompt() {
     local GIT_INFO=$(parse_git_branch)
     # Note: In bash, we need to escape the $ in the function call
-    PS1="⭐ ${MAUVE}[${ROSEWATER}\u${MAUVE}@${TEAL}\$(pretty_pwd)${MAUVE}]${PEACH}${GIT_INFO}${RESET} ➔ "
+    PS1="⭐ \[${MAUVE}\][\[${ROSEWATER}\]\u\[${MAUVE}\]@\[${TEAL}\]\$(pretty_pwd)\[${MAUVE}\]]\[${PEACH}\]${GIT_INFO}\[${RESET}\] ➔ "
 
     # Optional: Add time to right side of prompt (requires special handling in bash)
     # For simpler setup, we'll skip the right prompt
@@ -141,20 +141,6 @@ export FZF_DEFAULT_OPTS="
 # Source FZF if available
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
-# Add local bin to PATH if exists
-[ -d /opt/homebrew/bin ] && PATH="/opt/homebrew/bin:$PATH"
-[ -d "$HOME/bin" ] && PATH="$HOME/bin:$PATH"
-[ -d "$HOME/.local/bin" ] && PATH="$HOME/.local/bin:$PATH"
-[ -d "$HOME/.git-ai/bin" ] && PATH="$HOME/.git-ai/bin:$PATH"
-export PATH
-
-# Load custom shell functions
-if [ -d ~/.config/shell-functions ]; then
-    for f in ~/.config/shell-functions/*.sh; do
-        [ -r "$f" ] && source "$f"
-    done
-fi
-
 # PATH helper - prevents duplicates
 path_prepend() {
     local dir
@@ -167,8 +153,16 @@ path_prepend() {
     done
 }
 
-path_prepend "/usr/local/bin" "/usr/local/sbin" "$HOME/bin" "$HOME/.local/bin" "$HOME/.cargo/bin"
+path_prepend "/usr/local/bin" "/usr/local/sbin" "/opt/homebrew/bin" \
+    "$HOME/bin" "$HOME/.local/bin" "$HOME/.cargo/bin" "$HOME/.git-ai/bin"
 export PATH
+
+# Load custom shell functions
+if [ -d ~/.config/shell-functions ]; then
+    for f in ~/.config/shell-functions/*.sh; do
+        [ -r "$f" ] && source "$f"
+    done
+fi
 
 # Enable color support for ls and grep
 if [ -x /usr/bin/dircolors ]; then

@@ -41,7 +41,7 @@ else
 fi
 
 # Simple prompt without emoji
-PS1="${GREEN}\u${RESET}@${BLUE}\h${RESET}:${CYAN}\w${RESET}${YELLOW}\$(parse_git_branch)${RESET}\$ "
+PS1="\[${GREEN}\]\u\[${RESET}\]@\[${BLUE}\]\h\[${RESET}\]:\[${CYAN}\]\w\[${RESET}\]\[${YELLOW}\]\$(parse_git_branch)\[${RESET}\]\$ "
 
 # Load GNU aliases if available
 if [ -f ~/.gnu_aliases ]; then

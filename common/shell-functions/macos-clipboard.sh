@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # macOS-compatible clipboard commands for Linux shells.
 # On macOS, leave the real pbcopy/pbpaste commands untouched.
 if [ "$(uname -s 2>/dev/null)" = "Linux" ]; then

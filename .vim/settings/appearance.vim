@@ -6,7 +6,7 @@ set laststatus=2
 
 " Catppuccin theme settings
 let g:catppuccin_flavour = 'mocha' " latte, frappe, macchiato, mocha
-colorscheme catppuccin_mocha
+silent! colorscheme catppuccin_mocha
 
 " let g:airline_extensions = ['branch']
 " let g:airline_extensions = ['branch', 'hunks', 'whitespace']

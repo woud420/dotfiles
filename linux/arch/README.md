@@ -8,7 +8,6 @@ This directory contains configuration files for my Arch Linux desktop setup.
 - **Terminal**: Kitty with FiraCode Nerd Font
 - **Launcher**: Rofi
 - **Notifications**: Mako
-- **GPU**: AMD Radeon RX 5700 XT (RADV driver)
 - **Theme**: Purple/dark color scheme
 
 ## What's Included
@@ -20,7 +19,6 @@ This directory contains configuration files for my Arch Linux desktop setup.
   - Window shadows and blur effects
   - 4px purple borders (#9d5a7f)
   - 28px inner gaps, -8px outer gaps
-  - GPU configuration for AMD RX 5700 XT
   - Workspace assignments (Firefox→2, Slack→3, Steam→4)
   - Custom keybindings
 
@@ -36,12 +34,13 @@ This directory contains configuration files for my Arch Linux desktop setup.
 - **Font**: FiraCode Nerd Font 10px for tooltips
 
 ### Kitty Terminal
-- **Location**: `.config/kitty/kitty.conf`
-- **Settings**:
-  - Font: FiraCode Nerd Font 12.5
-  - Background: #221820 (pink-gray tint)
-  - 85% opacity with tint
-  - Matching purple theme
+- **Location**: `.config/kitty/current-theme.conf` (Arch-only theme overlay)
+- The base config comes from `linux/common/kitty.conf` (installed to
+  `~/.config/kitty/kitty.conf`); this overlay applies the personal-pink
+  palette on top:
+  - Background: #2A1E2E (plum)
+  - Accent: #9d5a7f
+  - Font: FiraCode Nerd Font
 
 ### Rofi Launcher
 - **Location**: `.config/rofi/theme.rasi`
@@ -62,21 +61,13 @@ This directory contains configuration files for my Arch Linux desktop setup.
                   firefox slack-desktop spotify-launcher steam
    ```
 
-2. **Link configs** (from dotfiles root):
+2. **Install configs** (from the dotfiles root - configs are copied, never
+   symlinked; packages come from `linux/arch/packages.list`):
    ```bash
-   ln -sf $(pwd)/linux/arch/.config/sway ~/.config/sway
-   ln -sf $(pwd)/linux/arch/.config/waybar ~/.config/waybar
-   ln -sf $(pwd)/linux/arch/.config/kitty ~/.config/kitty
-   ln -sf $(pwd)/linux/arch/.config/rofi ~/.config/rofi
-   ln -sf $(pwd)/linux/arch/.config/mako ~/.config/mako
+   ./install.sh
    ```
 
-3. **Make waybar modules executable**:
-   ```bash
-   chmod +x ~/.config/waybar/modules/*.{sh,py}
-   ```
-
-4. **Reload Sway**:
+3. **Reload Sway**:
    ```bash
    swaymsg reload
    ```
@@ -93,5 +84,4 @@ This directory contains configuration files for my Arch Linux desktop setup.
 
 - Waybar tooltips use FiraCode Nerd Font for consistency
 - Docker and Kubernetes modules require respective CLIs installed
-- Sway config includes GPU-specific settings for AMD RX 5700 XT
 - All configs use rounded corners (10-16px) for visual consistency

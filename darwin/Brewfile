@@ -1,4 +1,3 @@
-tap "hashicorp/tap"
 brew "argon2"
 brew "awscli"
 brew "python@3.13"
