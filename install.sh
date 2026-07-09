@@ -345,6 +345,33 @@ install_git_config() {
     install_file "$DOTFILES_DIR/common/git/commit-template.md" "$HOME/.config/git/commit-template.md"
 }
 
+# Install personal global Git hooks
+install_git_hooks() {
+    log_step "Installing personal git hooks..."
+
+    local hooks_src="$DOTFILES_DIR/common/git/hooks"
+    local hooks_dest="$HOME/.config/git/hooks"
+
+    if [[ ! -d "$hooks_src" ]]; then
+        log_warning "Git hooks source not found: $hooks_src"
+        return
+    fi
+
+    if [[ "$DRY_RUN" == "false" ]]; then
+        mkdir -p "$hooks_dest"
+        for hook_file in "$hooks_src"/*; do
+            if [[ -f "$hook_file" && "$(basename "$hook_file")" != "README.md" ]]; then
+                install_file "$hook_file" "$hooks_dest/$(basename "$hook_file")"
+                chmod +x "$hooks_dest/$(basename "$hook_file")"
+            fi
+        done
+        # core.hooksPath is set by the installed ~/.gitconfig
+        log_success "Installed git hooks to $hooks_dest"
+    else
+        log_info "Would install hooks from $hooks_src to $hooks_dest"
+    fi
+}
+
 # Install shell functions
 install_shell_functions() {
     log_step "Installing shell functions..."
@@ -362,6 +389,14 @@ install_shell_functions() {
                 log_info "Would copy: $func_file -> ~/.config/shell-functions/$(basename "$func_file")"
             fi
         done
+    fi
+
+    # GUI sudo askpass helper at a stable path (sudo.sh points SUDO_ASKPASS here)
+    if [[ "$DRY_RUN" == "false" ]]; then
+        install_file "$DOTFILES_DIR/scripts/sudo-askpass.sh" "$HOME/.local/bin/sudo-askpass"
+        chmod +x "$HOME/.local/bin/sudo-askpass"
+    else
+        log_info "Would copy: scripts/sudo-askpass.sh -> ~/.local/bin/sudo-askpass"
     fi
 }
 
@@ -434,6 +469,36 @@ install_desktop_configs() {
     done < <(find "$desktop_root" -type f -print0 | sort -z)
 }
 
+# Compile CoC.nvim after plugin installation (shared by vim + nvim paths)
+compile_coc_nvim() {
+    [[ -d "$HOME/.vim/plugged/coc.nvim" ]] || return 0
+
+    log_step "Compiling CoC.nvim..."
+    if ! command -v npm >/dev/null 2>&1; then
+        log_warning "npm not found. CoC.nvim needs manual compilation: cd ~/.vim/plugged/coc.nvim && npm install"
+        return 0
+    fi
+
+    (
+        set +e  # don't kill the whole install on a coc build failure
+        cd "$HOME/.vim/plugged/coc.nvim" || exit 0
+
+        if [[ -f package-lock.json || -f npm-shrinkwrap.json ]]; then
+            npm ci
+        elif [[ -f package.json ]]; then
+            npm install
+        else
+            echo "No package.json / lockfile found in coc.nvim, skipping build"
+            exit 0
+        fi
+    )
+    if [[ $? -eq 0 ]]; then
+        log_success "CoC.nvim compiled successfully"
+    else
+        log_warning "CoC.nvim compilation failed. Retry manually: cd ~/.vim/plugged/coc.nvim && npm install"
+    fi
+}
+
 # Install vim + nvim configuration
 install_vim_config() {
     log_step "Installing vim configuration..."
@@ -473,15 +538,7 @@ install_vim_config() {
         if [[ "$DRY_RUN" == "false" ]]; then
             vim +PlugInstall +qall
 
-            if [[ -d "$HOME/.vim/plugged/coc.nvim" ]]; then
-                log_step "Compiling CoC.nvim..."
-                if command -v npm >/dev/null 2>&1; then
-                    (cd "$HOME/.vim/plugged/coc.nvim" && npm ci)
-                    log_success "CoC.nvim compiled successfully"
-                else
-                    log_warning "npm not found. CoC.nvim needs manual compilation: cd ~/.vim/plugged/coc.nvim && npm ci"
-                fi
-            fi
+            compile_coc_nvim
         else
             log_info "Would install vim plugins and compile CoC.nvim"
         fi
@@ -522,15 +579,7 @@ install_neovim_config() {
         log_step "Installing neovim plugins..."
         nvim --headless +PlugInstall +qall
 
-        if [[ -d "$HOME/.vim/plugged/coc.nvim" ]]; then
-            log_step "Compiling CoC.nvim for neovim..."
-            if command -v npm >/dev/null 2>&1; then
-                (cd "$HOME/.vim/plugged/coc.nvim" && npm ci)
-                log_success "CoC.nvim compiled successfully"
-            else
-                log_warning "npm not found. CoC.nvim needs manual compilation: cd ~/.vim/plugged/coc.nvim && npm ci"
-            fi
-        fi
+        compile_coc_nvim
     else
         log_warning "nvim not found. Skipping neovim plugin installation."
     fi
@@ -636,6 +685,7 @@ main() {
     # Install configurations in dependency order
     install_shell_configs      # 1. Shell configs (.bashrc, .zshrc) - foundation
     install_git_config         # 2. Git configuration (.gitconfig)
+    install_git_hooks           # 2b. Personal global Git hooks
     install_shell_functions     # 3. Shell functions (depends on shell configs)
     install_terminal_config     # 4. Terminal configs (kitty, htop)
     install_desktop_configs     # 5. Linux desktop configs (sway/waybar/gtk) - arch only

@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "${JM_GIT_HOOKS:-1}" == "0" || "${SKIP_JM_HOOKS:-0}" == "1" ]]; then
+    echo "[jm-hooks] pre-push skipped by environment"
+    exit 0
+fi
+
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [[ -z "$repo_root" ]]; then
+    exit 0
+fi
+
+cd "$repo_root"
+
+run_repo_hook() {
+    local hook_path="$1"
+    shift
+    if [[ -f "$hook_path" ]]; then
+        echo "[jm-hooks] running repo hook: $hook_path"
+        if [[ -x "$hook_path" ]]; then
+            "$hook_path" "$@"
+        else
+            bash "$hook_path" "$@"
+        fi
+        return 0
+    fi
+    return 1
+}
+
+# Preserve common repo-local hook systems even when global core.hooksPath is set.
+if [[ -f ".husky/pre-push" ]]; then
+    run_repo_hook ".husky/pre-push" "$@"
+fi
+if [[ -f ".githooks/pre-push" ]]; then
+    run_repo_hook ".githooks/pre-push" "$@"
+fi
+if [[ -f ".git/hooks/pre-push.local" ]]; then
+    run_repo_hook ".git/hooks/pre-push.local" "$@"
+fi
+
+configured_command="$(git config --get jm.hooks.prePushCommand || true)"
+if [[ -n "$configured_command" ]]; then
+    echo "[jm-hooks] running configured pre-push command: $configured_command"
+    bash -lc "$configured_command"
+    exit 0
+fi
+
+if [[ -x "scripts/pre-push-check" ]]; then
+    echo "[jm-hooks] running scripts/pre-push-check"
+    scripts/pre-push-check
+    exit 0
+fi
+
+if [[ "${JM_GIT_HOOKS_AUTO_PRE_PUSH:-0}" == "1" ]]; then
+    if [[ -f Makefile ]] && grep -Eq '^check:' Makefile; then
+        echo "[jm-hooks] running make check"
+        make check
+        exit 0
+    fi
+
+    if [[ -f package.json ]] && command -v python3 >/dev/null 2>&1; then
+        script_name="$(python3 - <<'PY'
+import json
+from pathlib import Path
+
+try:
+    package = json.loads(Path("package.json").read_text())
+except Exception:
+    raise SystemExit(0)
+
+scripts = package.get("scripts", {})
+for name in ("ci", "check", "test"):
+    if name in scripts:
+        print(name)
+        break
+PY
+)"
+        if [[ -n "$script_name" ]]; then
+            if command -v bun >/dev/null 2>&1 && [[ -f bun.lock || -f bun.lockb ]]; then
+                echo "[jm-hooks] running bun run $script_name"
+                bun run "$script_name"
+                exit 0
+            elif command -v npm >/dev/null 2>&1; then
+                echo "[jm-hooks] running npm run $script_name"
+                npm run "$script_name"
+                exit 0
+            fi
+        fi
+    fi
+fi
+
+echo "[jm-hooks] pre-push passed; no repo-specific check configured"
+echo "           Set 'git config jm.hooks.prePushCommand \"make check\"' or JM_GIT_HOOKS_AUTO_PRE_PUSH=1 to run checks."

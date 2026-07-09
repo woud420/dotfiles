@@ -1,4 +1,4 @@
-.PHONY: all help install install-minimal install-no-packages backup-bash brew-sync clean-backup legacy check test-install check-editor
+.PHONY: all help install install-minimal install-no-packages install-git-hooks backup-bash brew-sync clean-backup legacy check test-install check-editor
 .ONESHELL:
 
 SHELL		= /bin/bash
@@ -32,6 +32,16 @@ test-install:
 
 check-editor:
 	$(DOTFILE_DIR)/scripts/check-editor-parity.sh
+
+install-git-hooks:
+	mkdir -p $(HOME)/.config/git/hooks
+	for hook in $(DOTFILE_DIR)/common/git/hooks/*; do \
+		if [[ -f "$$hook" && "$$(basename "$$hook")" != "README.md" ]]; then \
+			cp -f "$$hook" "$(HOME)/.config/git/hooks/$$(basename "$$hook")"; \
+			chmod +x "$(HOME)/.config/git/hooks/$$(basename "$$hook")"; \
+		fi; \
+	done
+	git config --global core.hooksPath "~/.config/git/hooks"
 
 # Legacy OS-specific targets (kept for compatibility)
 legacy: $(OS)

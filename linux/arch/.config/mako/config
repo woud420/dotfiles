@@ -1,0 +1,33 @@
+# Mako notification daemon config - Purple theme
+
+# General appearance
+font=FiraCode Nerd Font 10
+background-color=#221820
+text-color=#d0d0d0
+border-size=2
+border-radius=16
+padding=15
+margin=10
+
+# Position and behavior
+sort=-time
+layer=overlay
+default-timeout=5000
+ignore-timeout=1
+width=400
+height=150
+
+# Icons
+icon-path=/usr/share/icons/Adwaita
+max-icon-size=48
+
+# Urgency levels
+[urgency=low]
+border-color=#626262
+
+[urgency=normal]
+border-color=#9d5a7f
+
+[urgency=high]
+border-color=#d68787
+default-timeout=0
