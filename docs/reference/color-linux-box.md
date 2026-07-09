@@ -1,3 +1,7 @@
+> **Status (2026-07):** historical example of container-based theme derivation.
+> `scripts/dotfiles.py` and `machines/` were removed; the shipped theme is the
+> Arch-only overlay in `linux/arch/.config/kitty/` (#2A1E2E).
+
 # Terminal background proposal — jm-home-box
 
 ## Color recommendation

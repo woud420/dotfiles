@@ -13,10 +13,20 @@ fi
 
 cd "$repo_root"
 
+# See pre-commit: disable repo-hook delegation for untrusted clones with
+#   git config jm.hooks.runRepoHooks false
+repo_hooks_trusted() {
+    [[ "$(git config --get jm.hooks.runRepoHooks || echo true)" != "false" ]]
+}
+
 run_repo_hook() {
     local hook_path="$1"
     shift
     if [[ -f "$hook_path" ]]; then
+        if ! repo_hooks_trusted; then
+            echo "[jm-hooks] skipping repo hook (jm.hooks.runRepoHooks=false): $hook_path"
+            return 0
+        fi
         echo "[jm-hooks] running repo hook: $hook_path"
         if [[ -x "$hook_path" ]]; then
             "$hook_path" "$@"

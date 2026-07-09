@@ -4,9 +4,10 @@
 
 Two files describe the current machine:
 - `~/MACHINE.md` — static: what this machine is *for*, preferences, paths
-- `~/MACHINE-STATE.md` — generated: what's actually installed, versions, recent packages
+- a generated state snapshot in the dotfiles repo under `<os>/ai-context/machine-state.md`
+  (refresh with `scripts/refresh-machine-state.sh`)
 
-If you need current system info, check MACHINE-STATE.md or run commands directly.
+If you need current system info, run commands directly or refresh the snapshot.
 
 ## General Preferences
 
@@ -38,4 +39,4 @@ I work across multiple organizations. Treat each project independently — don't
 
 ## Dotfiles
 
-My dotfiles are at `~/workspace/dotfiles`. If you need to understand my shell setup, git aliases, or tooling, look there.
+My dotfiles repo is github.com/woud420/dotfiles (checked out under `~/workspace/`, exact path varies per machine). If you need to understand my shell setup, git aliases, or tooling, look there.

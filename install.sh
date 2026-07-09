@@ -224,7 +224,7 @@ install_packages_linux() {
             if [[ "$DRY_RUN" == "false" ]]; then
                 log_step "Installing packages from $package_list..."
                 # Filter comments and empty lines, then install
-                grep -v '^#' "$package_list" | grep -v '^$' | xargs sudo pacman -S --noconfirm
+                grep -v '^#' "$package_list" | grep -v '^$' | xargs sudo pacman -S --needed --noconfirm || log_warning "Some packages failed to install"
             else
                 log_info "Would install packages from $package_list with pacman"
             fi
@@ -451,11 +451,10 @@ install_terminal_config() {
         done
 
         # Arch-specific theme overrides (e.g. personal-pink plum background)
-        if [[ "$DISTRO" == "arch" ]]; then
+        if [[ "$DISTRO" == "arch" || "$DISTRO" == "manjaro" ]]; then
             for theme_file in "$DOTFILES_DIR/linux/arch/.config/kitty/"*.conf; do
                 [[ -f "$theme_file" ]] || continue
-                cp "$theme_file" "$HOME/.config/kitty/$(basename "$theme_file")"
-                log_success "Applied Arch kitty override: $(basename "$theme_file")"
+                install_file "$theme_file" "$HOME/.config/kitty/$(basename "$theme_file")"
             done
         fi
     else
@@ -465,7 +464,7 @@ install_terminal_config() {
             log_info "Would copy: linux/common/kitty.conf -> ~/.config/kitty/kitty.conf"
         fi
         log_info "Would copy kitty themes to ~/.config/kitty/"
-        if [[ "$DISTRO" == "arch" ]]; then
+        if [[ "$DISTRO" == "arch" || "$DISTRO" == "manjaro" ]]; then
             log_info "Would apply Arch kitty overrides from linux/arch/.config/kitty/ to ~/.config/kitty/"
         fi
     fi
@@ -478,7 +477,7 @@ install_terminal_config() {
 # Copies everything under linux/arch/.config/ into ~/.config/ preserving
 # relative paths, so new tool configs are picked up without listing them here.
 install_desktop_configs() {
-    if [[ "$DISTRO" != "arch" ]] || [[ "$MINIMAL_MODE" == "true" ]]; then
+    if [[ "$DISTRO" != "arch" && "$DISTRO" != "manjaro" ]] || [[ "$MINIMAL_MODE" == "true" ]]; then
         return 0
     fi
 
@@ -498,6 +497,11 @@ install_desktop_configs() {
 compile_coc_nvim() {
     [[ -d "$HOME/.vim/plugged/coc.nvim" ]] || return 0
 
+    if [[ ! -f "$HOME/.vim/plugged/coc.nvim/package.json" ]]; then
+        log_warning "coc.nvim present but incomplete (no package.json); rerun :PlugInstall"
+        return 0
+    fi
+
     log_step "Compiling CoC.nvim..."
     if ! command -v npm >/dev/null 2>&1; then
         log_warning "npm not found. CoC.nvim needs manual compilation: cd ~/.vim/plugged/coc.nvim && npm install"
@@ -510,11 +514,8 @@ compile_coc_nvim() {
 
         if [[ -f package-lock.json || -f npm-shrinkwrap.json ]]; then
             npm ci
-        elif [[ -f package.json ]]; then
-            npm install
         else
-            echo "No package.json / lockfile found in coc.nvim, skipping build"
-            exit 0
+            npm install
         fi
     ); then
         log_success "CoC.nvim compiled successfully"
@@ -553,9 +554,21 @@ install_vim_config() {
     if command -v vim >/dev/null 2>&1; then
         log_step "Installing vim plugins..."
         if [[ "$DRY_RUN" == "false" ]]; then
-            # </dev/null prevents hangs at press-ENTER prompts on first run;
-            # the guard keeps a plugin failure from aborting the whole install
-            vim +PlugInstall +qall </dev/null || log_warning "vim plugin install failed; run :PlugInstall manually"
+            # Pre-seed vim-plug: the vimrc's own auto-download breaks in ex mode
+            if [[ ! -f "$HOME/.vim/autoload/plug.vim" ]]; then
+                curl -fsLo "$HOME/.vim/autoload/plug.vim" --create-dirs \
+                    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim \
+                    || log_warning "could not download vim-plug"
+            fi
+            # Ex mode + --not-a-term is the only vim invocation that survives
+            # without a tty; plain +PlugInstall </dev/null dies reading input
+            vim -e -N -u "$HOME/.vim/vimrc" --not-a-term -c 'PlugInstall --sync' -c 'qa!' </dev/null \
+                || log_warning "vim plugin install failed; run :PlugInstall manually"
+            if [[ -d "$HOME/.vim/plugged" ]] && [[ -n "$(ls -A "$HOME/.vim/plugged" 2>/dev/null)" ]]; then
+                log_success "vim plugins installed"
+            else
+                log_warning "no vim plugins present after install; run :PlugInstall manually"
+            fi
 
             compile_coc_nvim
         else

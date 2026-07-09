@@ -18,6 +18,8 @@ detect_os() {
                 echo "debian"
             elif [[ -f /etc/fedora-release ]]; then
                 echo "fedora"
+            elif [[ -f /etc/alpine-release ]]; then
+                echo "alpine"
             else
                 echo "linux"
             fi

@@ -24,8 +24,11 @@ if [ "$(uname -s)" = "Darwin" ]; then
   safe_alias make 'gmake' fallback 'make'
   safe_alias dircolors 'gdircolors' fallback 'dircolors'
 
-  # If dircolors is available, eval LS_COLORS
-  if command -v dircolors >/dev/null 2>&1; then
+  # If a real dircolors binary is available, eval LS_COLORS (command -v would
+  # match the alias above even when no binary exists on macOS)
+  if command -v gdircolors >/dev/null 2>&1; then
+    eval "$(gdircolors -b ~/.dircolors)"
+  elif [ -x /usr/bin/dircolors ] || [ -x /bin/dircolors ]; then
     eval "$(dircolors -b ~/.dircolors)"
   fi
 fi

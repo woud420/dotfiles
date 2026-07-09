@@ -31,7 +31,7 @@ make install-dry-run      # Preview changes
 ### Remote Installation
 
 ```bash
-# Minimal quick-install (fetches the few server configs it needs)
+# Minimal quick-install (shallow-clones the repo and copies server configs)
 curl -sSL https://raw.githubusercontent.com/woud420/dotfiles/master/scripts/quick-install.sh | bash
 
 # Or clone and run the full installer
@@ -214,7 +214,9 @@ Machine-specific config lives outside the repo and survives reinstalls:
 - `~/.gitconfig.local` - included last by `.gitconfig`, so identity or
   tool-appended blocks (e.g. git-ai) win over the shared config
 - `~/.ssh/config` - your own host entries stay first; the shared defaults are
-  pulled in via `Include ~/.ssh/config.dotfiles`
+  pulled in via `Include ~/.ssh/config.dotfiles`. Note the shared defaults set
+  `ForwardAgent yes` globally - convenient across personal machines, but scope
+  it per-host in a local block if you ssh to hosts you don't control.
 
 ### Personal Git Hooks
 

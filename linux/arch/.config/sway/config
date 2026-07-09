@@ -311,4 +311,4 @@ exec mako
 exec_always ~/.config/waybar/waybar.sh
 exec wl-paste --watch cliphist store
 
-include @sysconfdir@/sway/config.d/*
+include /etc/sway/config.d/*

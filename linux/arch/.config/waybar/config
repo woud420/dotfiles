@@ -168,15 +168,17 @@
     "custom/docker": {
         "format": "{}",
         "return-type": "json",
-        "interval": 10,
+        "interval": 30,
         "exec": "~/.config/waybar/modules/docker.py",
+        "exec-if": "pgrep -x dockerd",
         "tooltip": true
     },
     "custom/k8s": {
         "format": "{}",
         "return-type": "json",
-        "interval": 10,
+        "interval": 30,
         "exec": "~/.config/waybar/modules/k8s.py",
+        "exec-if": "sh -c 'command -v kubectl >/dev/null && kubectl config current-context >/dev/null 2>&1'",
         "tooltip": true
     }
 }

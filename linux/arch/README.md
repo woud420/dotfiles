@@ -72,6 +72,13 @@ This directory contains configuration files for my Arch Linux desktop setup.
    swaymsg reload
    ```
 
+4. **(Optional) auto-refresh the AI machine-state snapshot on package changes**
+   (the installer deliberately does not enable this; it writes into the repo):
+   ```bash
+   sed "s|__DOTFILES_DIR__|$PWD|" linux/arch/hooks/90-refresh-ai-context.hook \
+     | sudo tee /etc/pacman.d/hooks/90-refresh-ai-context.hook
+   ```
+
 ## Color Scheme
 
 - **Primary Purple**: `#9d5a7f` (borders, accents)

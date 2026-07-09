@@ -151,7 +151,7 @@ export FZF_DEFAULT_OPTS="
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 # Load custom shell functions
-for f in ~/.config/shell-functions/*.sh; do
+for f in ~/.config/shell-functions/*.sh(N); do
   [[ -r "$f" ]] && source "$f"
 done
 
