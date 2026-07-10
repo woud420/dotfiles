@@ -292,14 +292,16 @@ materialize_target_dir() {
         chain+=("$ancestor")
         ancestor="$(dirname "$ancestor")"
     done
-    # Check from the top down so the outermost symlink is replaced first
-    local i seg resolved
+    # Check from the top down so the outermost symlink is replaced first.
+    # Compare physical paths: DOTFILES_DIR may itself contain symlinks.
+    local i seg resolved repo_real
+    repo_real="$(cd "$DOTFILES_DIR" 2>/dev/null && pwd -P || printf '%s' "$DOTFILES_DIR")"
     for (( i=${#chain[@]}-1; i>=0; i-- )); do
         seg="${chain[$i]}"
         if [[ -L "$seg" ]]; then
             resolved="$(cd "$seg" 2>/dev/null && pwd -P || true)"
             case "$resolved" in
-                "$DOTFILES_DIR"|"$DOTFILES_DIR"/*)
+                "$repo_real"|"$repo_real"/*)
                     log_warning "Replacing legacy symlink into the repo: $seg -> $resolved"
                     rm -f "$seg"
                     mkdir -p "$seg"

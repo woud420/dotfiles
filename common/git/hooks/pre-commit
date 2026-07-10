@@ -18,7 +18,7 @@ cd "$repo_root"
 #   git config jm.hooks.runRepoHooks false   (or --global to flip the default)
 repo_hooks_trusted() {
     # --type=bool normalizes 0/no/off/false; unset or garbage stays trusted
-    [[ "$(git config --type=bool --get jm.hooks.runRepoHooks 2>/dev/null || echo true)" != "false" ]]
+    [[ "$(git config --bool --get jm.hooks.runRepoHooks 2>/dev/null || echo true)" != "false" ]]
 }
 
 run_repo_hook() {
