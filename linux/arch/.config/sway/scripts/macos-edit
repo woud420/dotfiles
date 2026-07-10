@@ -1,0 +1,25 @@
+#!/usr/bin/env sh
+
+focused_app=$(
+    swaymsg -t get_tree |
+        jq -r '.. | objects | select(.focused? == true) | .app_id // .window_properties.class // ""' |
+        head -n 1
+)
+
+case "$1:$focused_app" in
+    copy:kitty)
+        exec wtype -M ctrl -M shift -k c -m shift -m ctrl
+        ;;
+    paste:kitty)
+        exec wtype -M ctrl -M shift -k v -m shift -m ctrl
+        ;;
+    copy:*)
+        exec wtype -M ctrl -k c -m ctrl
+        ;;
+    paste:*)
+        exec wtype -M ctrl -k v -m ctrl
+        ;;
+    *)
+        exit 64
+        ;;
+esac

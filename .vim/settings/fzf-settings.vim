@@ -58,7 +58,7 @@ nnoremap <silent> <leader>g  :RG<CR>
 nnoremap <silent> <leader>G  :RG <C-R><C-W><CR>
 nnoremap <silent> <leader>/  :Lines<CR>
 
-" Vim operations  
+" Vim operations
 nnoremap <silent> <leader>c  :call FzfCommands()<CR>
 nnoremap <silent> <leader>h  :Helptags<CR>
 nnoremap <silent> <leader>m  :Marks<CR>
@@ -102,13 +102,13 @@ function! RipgrepFzf(query, fullscreen)
   " - Binary file exclusions from g:rg_binary_extensions
   " - Pipe through awk to shorten paths (keep last 2 components)
   let command_fmt = 'rg --column --line-number --no-heading --color=always --smart-case --binary -g "!*.{' . g:rg_binary_extensions . '}" -- %s | awk -F: ''{split($1,a,"/"); if(length(a)>2) $1="[..]/"a[length(a)-1]"/"a[length(a)]; else $1=$1; printf "%%s:%%s:%%s:%%s\n", $1, $2, $3, substr($0,index($0,$4))}'' || true'
-  
+
   " Start with empty results
   let initial_command = 'echo ""'
-  
+
   " Only run ripgrep when query is non-empty
   let reload_command = 'if [ -n "{q}" ]; then ' . printf(command_fmt, '{q}') . '; else echo ""; fi'
-  
+
   " FZF options:
   " --phony: Don't run initial command on every keystroke
   " --bind change:reload: Re-run command when input changes

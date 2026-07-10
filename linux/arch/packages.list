@@ -13,7 +13,21 @@ gzip
 htop
 jq
 kitty
+linux-headers
+nvidia-open
+nvidia-utils
+wl-clipboard
+wtype
+waybar
+ttf-firacode-nerd
+rofi
+mako
+grim
+slurp
+cliphist
+playerctl
 make
+neovim
 nodejs
 npm
 python
@@ -28,11 +42,14 @@ wget
 zsh
 # Modern alternatives
 bat
-exa
-delta
+eza
+git-delta
 dust
 procs
 bottom
 httpie
 yq
-neofetch
+
+# AUR (install with an AUR helper, e.g. paru -S; pacman cannot install these)
+# swayfx
+# nordic-theme (GTK theme referenced by gtk settings.ini)

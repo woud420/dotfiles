@@ -1,0 +1,335 @@
+name: Test install.sh
+
+on:
+  push:
+    branches: [master, "feature/*", "fix/*", "converge/*"]
+  pull_request:
+    branches: [master]
+
+jobs:
+  # Fast syntax/parse checks that don't need install.sh
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Shell syntax check (bash -n)
+        run: |
+          echo "=== Checking shell configs ==="
+          bash -n common/shell/.bashrc && echo "PASS: .bashrc"
+          bash -n common/shell/.bashrc.server && echo "PASS: .bashrc.server"
+
+          echo "=== Checking shell functions ==="
+          fail=0
+          for f in common/shell-functions/*.sh; do
+            bash -n "$f" && echo "PASS: $(basename $f)" || { echo "FAIL: $(basename $f)"; fail=1; }
+          done
+
+          echo "=== Checking scripts ==="
+          for f in scripts/*.sh; do
+            bash -n "$f" && echo "PASS: $(basename $f)" || { echo "FAIL: $(basename $f)"; fail=1; }
+          done
+          exit $fail
+
+      - name: Zsh syntax check
+        run: |
+          sudo apt-get update && sudo apt-get install -y zsh
+          zsh -n common/shell/.zshrc && echo "PASS: .zshrc"
+
+      - name: ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: ./common/shell-functions
+          severity: error
+
+      - name: Git config parse check
+        run: |
+          git config --file common/git/.gitconfig --list > /dev/null
+          echo "PASS: .gitconfig parses ($(git config --file common/git/.gitconfig --get-regexp '^alias\.' | wc -l) aliases found)"
+
+      - name: Vim CoC settings JSON validation
+        run: |
+          python3 -c "import json; json.load(open('.vim/coc-settings.json'))" && echo "PASS: coc-settings.json"
+
+      - name: install.sh syntax check
+        run: |
+          bash -n install.sh && echo "PASS: install.sh"
+
+      - name: Installer smoke test (temp HOME)
+        run: ./scripts/test-install.sh
+
+  test-arch:
+    runs-on: ubuntu-latest
+    needs: lint
+    container:
+      image: archlinux:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm base-devel git zsh vim fzf sudo kitty \
+            ttf-firacode-nerd python nodejs npm curl
+
+      - name: Create test user
+        run: |
+          useradd -m -s /bin/zsh testuser
+          echo "testuser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+      - name: Run install.sh
+        shell: bash
+        run: |
+          cp -r "$GITHUB_WORKSPACE" /home/testuser/dotfiles
+          chown -R testuser:testuser /home/testuser/dotfiles
+          su testuser -c "cd /home/testuser/dotfiles && DOTFILES_FULL_INSTALL=1 ./install.sh --no-packages 2>&1" | tee /tmp/install.log
+
+      - name: Verify file deployments (copies, never symlinks)
+        run: |
+          su testuser -c '
+            set -e
+            echo "=== Copied configs ==="
+            for f in .bashrc .zshrc .bash_profile .gitconfig .gnu_aliases .dircolors; do
+              test -f ~/$f && ! test -L ~/$f && echo "PASS: $f (copied)" || { echo "FAIL: $f"; exit 1; }
+            done
+            for f in .vim/vimrc .vim/plugins.vim .vim/mappings.vim .vim/settings.vim; do
+              test -f ~/$f && ! test -L ~/$f && echo "PASS: $f (copied)" || { echo "FAIL: $f"; exit 1; }
+            done
+            ls ~/.config/shell-functions/*.sh > /dev/null && echo "PASS: shell-functions deployed"
+
+            echo "=== Kitty ==="
+            test -f ~/.config/kitty/kitty.conf && echo "PASS: kitty.conf"
+            test -f ~/.config/kitty/current-theme.conf && echo "PASS: current-theme.conf"
+
+            echo "=== Arch desktop configs ==="
+            for f in .config/sway/config .config/waybar/config .config/gtk-3.0/settings.ini .config/gtk-4.0/settings.ini; do
+              test -f ~/$f && echo "PASS: $f" || { echo "FAIL: $f"; exit 1; }
+            done
+
+            echo "=== AI context ==="
+            test -f ~/AGENTS.md && echo "PASS: AGENTS.md"
+            test -f ~/MACHINE.md && echo "PASS: MACHINE.md"
+
+            echo "=== Audit log ==="
+            ls ~/.dotfiles-backup-*/install-audit.tsv > /dev/null && echo "PASS: install audit written"
+          '
+
+      - name: Validate Kitty config (headless parse)
+        run: |
+          su testuser -c '
+            kitty +runpy "
+          import sys
+          from kitty.config import load_config
+          bad = []
+          opts = load_config(\"$HOME/.config/kitty/kitty.conf\", accumulate_bad_lines=bad)
+          if bad:
+              for b in bad:
+                  print(f\"ERROR line {b.number}: {b.line!r} -> {b.exception}\")
+              sys.exit(1)
+          print(f\"PASS: kitty.conf parsed\")
+          print(f\"  font_family: {opts.font_family}\")
+          "
+          '
+
+      - name: Verify Arch kitty theme is personal-pink overlay
+        run: |
+          su testuser -c '
+            grep -q "personal-pink" ~/.config/kitty/current-theme.conf && echo "PASS: personal-pink overlay applied" || { echo "FAIL: personal-pink marker missing"; exit 1; }
+            grep -qi "background[^_]*#2A1E2E" ~/.config/kitty/current-theme.conf && echo "PASS: plum background" || { echo "FAIL: expected #2A1E2E background"; exit 1; }
+          '
+
+      - name: Verify font installed and resolved
+        run: |
+          fc-list -q "FiraCode Nerd Font" && echo "PASS: FiraCode Nerd Font installed" || { echo "FAIL: font not found"; exit 1; }
+
+      - name: Validate Vim config (headless load)
+        run: |
+          su testuser -c '
+            curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
+              https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+
+            output=$(vim -e -N -u ~/.vim/vimrc --not-a-term -c "qa!" 2>&1)
+            rc=$?
+            if [ $rc -eq 0 ]; then
+              echo "PASS: vimrc loaded without errors"
+            else
+              echo "FAIL: vimrc load errors:"
+              echo "$output"
+              exit 1
+            fi
+          '
+
+      - name: Validate git config
+        run: |
+          su testuser -c '
+            git config --file ~/.gitconfig --list > /dev/null 2>&1 && echo "PASS: .gitconfig" || { echo "FAIL: .gitconfig"; exit 1; }
+            echo "  $(git config --file ~/.gitconfig --get-regexp "^alias\." | wc -l) git aliases loaded"
+          '
+
+      - name: Collect evidence
+        if: always()
+        run: |
+          mkdir -p /tmp/evidence
+          chmod 777 /tmp/evidence
+          cp /tmp/install.log /tmp/evidence/ 2>/dev/null || true
+          su testuser -c '
+            ls -la ~/.bashrc ~/.zshrc ~/.gitconfig 2>&1 > /tmp/evidence/report.txt
+            head -10 ~/.config/kitty/current-theme.conf >> /tmp/evidence/report.txt 2>&1
+            ls ~/.config/sway ~/.config/waybar >> /tmp/evidence/report.txt 2>&1
+          '
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-arch
+          path: /tmp/evidence/
+
+  test-debian:
+    runs-on: ubuntu-latest
+    needs: lint
+    container:
+      image: debian:bookworm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y git zsh vim sudo curl python3 fontconfig
+
+      - name: Create test user
+        run: |
+          useradd -m -s /bin/zsh testuser
+          echo "testuser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+      - name: Run install.sh
+        shell: bash
+        run: |
+          cp -r "$GITHUB_WORKSPACE" /home/testuser/dotfiles
+          chown -R testuser:testuser /home/testuser/dotfiles
+          su testuser -c "cd /home/testuser/dotfiles && DOTFILES_FULL_INSTALL=1 ./install.sh --no-packages 2>&1" | tee /tmp/install.log
+
+      - name: Verify file deployments (copies, never symlinks)
+        run: |
+          su testuser -c '
+            set -e
+            for f in .bashrc .zshrc .gitconfig .gnu_aliases .dircolors; do
+              test -f ~/$f && ! test -L ~/$f && echo "PASS: $f (copied)" || { echo "FAIL: $f"; exit 1; }
+            done
+
+            echo "=== Kitty ==="
+            test -f ~/.config/kitty/kitty.conf && echo "PASS: kitty.conf"
+            test -f ~/.config/kitty/current-theme.conf && echo "PASS: current-theme.conf"
+            grep -q "Catppuccin-Mocha" ~/.config/kitty/current-theme.conf && echo "PASS: Catppuccin Mocha theme"
+            ! grep -q "personal-pink" ~/.config/kitty/current-theme.conf && echo "PASS: no personal-pink leak on non-arch"
+
+            echo "=== No desktop configs on non-arch ==="
+            ! test -e ~/.config/sway && echo "PASS: sway config not installed"
+
+            echo "=== AI context ==="
+            test -f ~/AGENTS.md && echo "PASS: AGENTS.md"
+            test -f ~/MACHINE.md && echo "PASS: MACHINE.md"
+          '
+
+      - name: Validate shell configs
+        run: |
+          su testuser -c '
+            bash -n ~/.bashrc && echo "PASS: .bashrc syntax"
+            zsh -n ~/.zshrc && echo "PASS: .zshrc syntax"
+            for f in ~/.config/shell-functions/*.sh; do
+              bash -n "$f" && echo "PASS: $(basename $f)" || { echo "FAIL: $(basename $f)"; exit 1; }
+            done
+          '
+
+      - name: Validate Vim config
+        run: |
+          su testuser -c '
+            curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
+              https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+            vim -e -N -u ~/.vim/vimrc --not-a-term -c "qa!" 2>&1
+            [ $? -eq 0 ] && echo "PASS: vimrc loaded" || { echo "FAIL: vimrc errors"; exit 1; }
+          '
+
+      - name: Validate git config
+        run: |
+          su testuser -c '
+            git config --file ~/.gitconfig --list > /dev/null 2>&1 && echo "PASS: .gitconfig" || { echo "FAIL"; exit 1; }
+          '
+
+      - name: Collect evidence
+        if: always()
+        run: |
+          mkdir -p /tmp/evidence
+          chmod 777 /tmp/evidence
+          cp /tmp/install.log /tmp/evidence/ 2>/dev/null || true
+          su testuser -c '
+            ls -la ~/.bashrc ~/.zshrc ~/.gitconfig 2>&1 > /tmp/evidence/report.txt
+            head -10 ~/.config/kitty/current-theme.conf >> /tmp/evidence/report.txt 2>&1
+          '
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-debian
+          path: /tmp/evidence/
+
+  test-macos:
+    runs-on: macos-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: brew install vim
+
+      - name: Run install.sh
+        shell: bash
+        run: |
+          ./install.sh --no-packages 2>&1 | tee /tmp/install.log
+
+      - name: Verify file deployments (copies, never symlinks)
+        run: |
+          set -e
+          for f in .bashrc .zshrc .gitconfig .gnu_aliases .dircolors; do
+            test -f ~/$f && ! test -L ~/$f && echo "PASS: $f (copied)" || { echo "FAIL: $f"; exit 1; }
+          done
+
+          echo "=== Kitty ==="
+          test -f ~/.config/kitty/kitty.conf && echo "PASS: kitty.conf"
+          test -f ~/.config/kitty/current-theme.conf && echo "PASS: current-theme.conf"
+          grep -q "Catppuccin-Mocha" ~/.config/kitty/current-theme.conf && echo "PASS: macOS Catppuccin Mocha theme"
+          ! grep -q "personal-pink" ~/.config/kitty/current-theme.conf && echo "PASS: no personal-pink leak on macOS"
+          grep -q "FiraCode" ~/.config/kitty/kitty.conf && echo "PASS: FiraCode font (macOS)"
+
+          echo "=== AI context ==="
+          test -f ~/AGENTS.md && echo "PASS: AGENTS.md"
+          test -f ~/MACHINE.md && echo "PASS: MACHINE.md"
+
+      - name: Validate Vim config
+        run: |
+          curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
+            https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+          output=$(vim -e -N -u ~/.vim/vimrc --not-a-term -c "qa!" 2>&1)
+          [ $? -eq 0 ] && echo "PASS: vimrc loaded" || { echo "FAIL: $output"; exit 1; }
+
+      - name: Validate git config
+        run: |
+          git config --file ~/.gitconfig --list > /dev/null 2>&1 && echo "PASS: .gitconfig" || { echo "FAIL"; exit 1; }
+          echo "  $(git config --file ~/.gitconfig --get-regexp '^alias\.' | wc -l) git aliases loaded"
+
+      - name: Collect evidence
+        if: always()
+        run: |
+          mkdir -p /tmp/evidence
+          cp /tmp/install.log /tmp/evidence/ 2>/dev/null || true
+          ls -la ~/.bashrc ~/.zshrc ~/.gitconfig > /tmp/evidence/report.txt 2>&1
+          head -10 ~/.config/kitty/current-theme.conf >> /tmp/evidence/report.txt 2>&1
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-macos
+          path: /tmp/evidence/

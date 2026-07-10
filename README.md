@@ -6,7 +6,7 @@ Personal dotfiles for macOS and Linux with modular shell functions, git workflow
 
 ```bash
 # Clone and install
-git clone https://github.com/yourusername/dotfiles.git ~/workspace/projects/dotfiles
+git clone https://github.com/woud420/dotfiles.git ~/workspace/projects/dotfiles
 cd ~/workspace/projects/dotfiles
 ./install.sh
 
@@ -31,11 +31,11 @@ make install-dry-run      # Preview changes
 ### Remote Installation
 
 ```bash
-# One-liner for remote servers
-curl -fsSL https://raw.githubusercontent.com/yourusername/dotfiles/main/install.sh | bash -s -- --minimal
+# Minimal quick-install (shallow-clones the repo and copies server configs)
+curl -sSL https://raw.githubusercontent.com/woud420/dotfiles/master/scripts/quick-install.sh | bash
 
-# SSH with dotfiles
-ssh user@host 'bash -s' < install.sh --minimal
+# Or clone and run the full installer
+git clone https://github.com/woud420/dotfiles.git && cd dotfiles && ./install.sh --minimal
 ```
 
 ## 📁 Directory Structure
@@ -69,11 +69,18 @@ dotfiles/
 | `.bash_profile` | `~/.bash_profile` | Bash profile (sources .bashrc) |
 | `.bashrc.server` | `~/.bashrc` | Conservative bash config for servers (minimal mode) |
 | `.gitconfig` | `~/.gitconfig` | Git aliases and fuzzy commands |
+| `commit-template.md` | `~/.config/git/commit-template.md` | Default structured git commit template |
 | `.gitignore_global` | `~/.config/git/ignore` | Global git ignores |
 | `.gnu_aliases` | `~/.gnu_aliases` | GNU coreutils aliases for macOS |
 | `.dircolors` | `~/.dircolors` | Directory colors |
+| `common/git/hooks/*` | `~/.config/git/hooks/*` | Personal global Git hooks |
+| `common/ssh/config` | `~/.ssh/config.dotfiles` | Shared SSH defaults (Include'd from `~/.ssh/config`) |
 | `kitty.conf` | `~/.config/kitty/kitty.conf` | Kitty terminal config |
 | `htoprc` | `~/.config/htop/htoprc` | htop configuration |
+| `.vim/*` | `~/.vim/` | Vim config, settings, and CoC settings |
+| `common/nvim/init.vim` | `~/.config/nvim/init.vim` | Neovim bridge to the Vim config |
+| `.vim/coc-settings.json` | `~/.vim/` and `~/.config/nvim/` | CoC LSP settings (both editors) |
+| `scripts/sudo-askpass.sh` | `~/.local/bin/sudo-askpass` | GUI sudo prompt helper |
 
 ### Shell Functions
 
@@ -81,13 +88,17 @@ All shell functions are installed to `~/.config/shell-functions/`:
 
 | File | Purpose | Key Commands |
 |------|---------|--------------|
-| `kubectl-aliases.sh` | Kubernetes shortcuts | `k get p`, `kgpw`, `kdp`, `kshp` |
-| `git-aliases.sh` | Git shortcuts | `g`, `gs`, `gaa`, `gcm`, `gp` |
-| `git.sh` | Git workflow functions | `git-ch()`, `git-log()`, `git-add()` |
-| `ssh.sh` | SSH helpers | `sshdot`, `sshconf`, `ssht` |
-| `docker.sh` | Docker helpers | `dex`, `dlog`, `dclean` |
-| `utils.sh` | Utilities | `mkcd`, `extract`, `backup` |
-| `fuzzy-vim.sh` | Vim with fzf | `v` (fuzzy file open) |
+| `editor.sh` | Editor defaults | `vi`, `vim`, `vimdiff` use Neovim when available |
+| `which.sh` | Command lookup | Includes shell aliases and functions |
+| `sudo.sh` | GUI sudo prompts | Exports `SUDO_ASKPASS` (use `sudo -A`) |
+| `macos-clipboard.sh` | Clipboard parity | `pbcopy`/`pbpaste` on Linux (wl-clipboard) |
+| `kubectl-aliases.sh` | Kubernetes | `k` (kubectl); `kctx` lives in the shell rc files |
+
+The remaining function files (`git.sh`, `git-aliases.sh`, `docker.sh`,
+`docker-aliases.sh`, `k8s.sh`, `ssh.sh`, `utils.sh`, `fuzzy-vim.sh`,
+`modern-tools-aliases.sh`, `secrets.sh`, `system-aliases.sh`) are currently
+**disabled stubs** - kept in place so they can be restored incrementally
+without breaking installs.
 
 ### Git Aliases (in .gitconfig)
 
@@ -104,29 +115,19 @@ git lg          # Pretty log with graph
 ### Kubectl Aliases
 
 ```bash
-# Quick shortcuts
 k               # kubectl
-kgp             # kubectl get pods
-kgpw            # kubectl get pods -o wide
-kdp             # kubectl describe pod
-klf             # kubectl logs -f
-
-# Functions
-kshp <pattern>  # Shell into first pod matching pattern
-klp <pattern>   # Logs from first pod matching pattern
 kctx            # Switch context with fzf
-kns             # Switch namespace with fzf
 ```
 
 ## 📦 Packages
 
 ### macOS (Homebrew)
 
-Core tools: `awscli`, `bash`, `coreutils`, `git`, `fzf`, `fd`, `ripgrep`, `htop`, `tree`, `wget`
+Core tools: `awscli`, `bash`, `coreutils`, `git`, `fzf`, `fd`, `ripgrep`, `htop`, `neovim`, `tree`, `wget`
 Development: `node`, `python`, `rust`, `poetry`, `virtualenv`
 Kubernetes: `kubernetes-cli`, `helm`, `k9s`, `eksctl`, `minikube`
-Infrastructure: `terraform`, `terraformer`, `tflint`
-Apps: `docker`, `docker-desktop`, `slack`, `spotify`
+Infrastructure: `terraformer`, `tflint`
+Apps: `docker-desktop` (bundles the docker CLI), `slack`, `spotify`
 
 ### Linux
 
@@ -151,11 +152,10 @@ Example prompt:
 ```
 
 ### Fuzzy Everything
-- **File search**: `v` to open files with vim
 - **Git branches**: `git ch` for interactive checkout
 - **Git commits**: `git flog` to browse history
 - **Git staging**: `git fadd` to stage files
-- **Kubernetes**: `kctx`/`kns` for context/namespace switching
+- **Kubernetes**: `kctx` for context switching
 
 ### GNU Tools on macOS
 Automatically aliases GNU versions to replace BSD utilities:
@@ -176,6 +176,23 @@ To clean old backups (30+ days):
 make clean-backup
 ```
 
+## 🧭 Machine Convergence
+
+`install.sh` is the single entry point for every machine. It detects the OS
+and distribution and installs the right layer on top of `common/`:
+
+- macOS: `darwin/` (Brewfile, kitty)
+- Linux: `linux/<distro>/` packages plus, on Arch, the full desktop
+  configuration under `linux/arch/.config/` (Sway, Waybar, GTK, kitty theme
+  overlays)
+
+Installs are always copies (never symlinks) with path-preserving backups and
+an audit log. Preview any run with `./install.sh --dry-run`.
+
+This converges personal interactive machines on Zsh, Kitty, and Neovim while
+keeping Bash available as a fallback. The history of this effort is recorded
+in `docs/machine-convergence-plan.md`.
+
 ## 🐳 Container Usage
 
 The installer auto-detects container environments and uses minimal mode:
@@ -195,10 +212,45 @@ The installer automatically detects:
 ## 🔧 Customization
 
 ### Local Overrides
-Create `~/.bashrc.local` or `~/.zshrc.local` for machine-specific configs.
+Machine-specific config lives outside the repo and survives reinstalls:
 
-### Memory Management
-The installer respects `CLAUDE.md` files for project-specific context.
+- `~/.bashrc.local` / `~/.zshrc.local` - sourced at the end of the shell configs
+- `~/.gitconfig.local` - included last by `.gitconfig`, so identity or
+  tool-appended blocks (e.g. git-ai) win over the shared config
+- `~/.ssh/config` - your own host entries stay first; the shared defaults are
+  pulled in via `Include ~/.ssh/config.dotfiles`. Note the shared defaults set
+  `ForwardAgent yes` globally - convenient across personal machines, but scope
+  it per-host in a local block if you ssh to hosts you don't control.
+
+### Personal Git Hooks
+
+The installed `.gitconfig` sets `core.hooksPath = ~/.config/git/hooks`.
+Installed hooks are intentionally general and local-only:
+
+- `pre-commit` runs repo hooks like `.husky/pre-commit` first, then blocks
+  likely secrets, conflict markers, oversized files, and generated-looking
+  files (lockfiles allowlisted; override with `JM_ALLOW_GENERATED_EDITS=1`).
+- `pre-push` runs repo hooks first, then an explicit repo check when configured.
+
+```bash
+JM_GIT_HOOKS=0 git commit ...              # Skip personal hooks once
+git config jm.hooks.runRepoHooks false     # Don't run repo-controlled hooks in an untrusted clone
+git config jm.hooks.prePushCommand "make check"
+make install-git-hooks                     # Install only the hooks
+```
+
+### Minimal mode
+`--minimal` (auto-enabled in containers) installs the server bashrc and core
+configs only: it skips packages, vim/nvim plugins, desktop configs, the
+sudo-askpass helper, and AI context files, but still installs terminal
+(kitty/htop) configs.
+
+### AI Context
+The installer copies `common/ai-context/` files into place:
+`~/AGENTS.md` and an OS-specific `~/MACHINE.md`; `~/.claude/CLAUDE.md` is
+only seeded when absent (an existing customized one is left alone).
+Machine state snapshots are generated on demand with
+`scripts/refresh-machine-state.sh`.
 
 ## 📚 Requirements
 
@@ -221,4 +273,3 @@ The installer respects `CLAUDE.md` files for project-specific context.
 # View installer help
 ./install.sh --help
 ```
-

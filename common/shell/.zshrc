@@ -5,10 +5,11 @@ compinit
 # Load colors
 autoload -Uz colors && colors
 setopt prompt_subst
+PROMPT_EOL_MARK=''
 
 # Git branch info setup
 autoload -Uz vcs_info
-precmd() { 
+precmd() {
   vcs_info
   # Set tab title to show current directory (last 2 path components)
   print -Pn "\e]0;%2~\a"
@@ -39,7 +40,7 @@ function kube_prompt() {
     echo "(k8s:$context)"
   fi
 }
- 
+
 function pretty_git() {
   # Don't forget the space at the end of the echo
   [[ -n "${vcs_info_msg_0_}" ]] && echo "${vcs_info_msg_0_} "
@@ -129,14 +130,11 @@ path_prepend() {
   done
 }
 
-path_prepend "/usr/local/bin" "/usr/local/sbin" "$HOME/bin" "$HOME/.cargo/bin"
+path_prepend "/opt/homebrew/bin" "/usr/local/bin" "/usr/local/sbin" "$HOME/bin" "$HOME/.local/bin" "$HOME/.cargo/bin" "$HOME/.git-ai/bin"
 
-if [[ -d "$HOME/.pyenv" ]]; then
-  export PYENV_ROOT="$HOME/.pyenv"
-  path_prepend "$PYENV_ROOT/bin"
-  if command -v pyenv >/dev/null 2>&1; then
-    eval "$(pyenv init -)"
-  fi
+# mise (version manager for Python, Node, etc.)
+if command -v mise >/dev/null 2>&1; then
+  eval "$(mise activate zsh)"
 fi
 
 [[ -r "$HOME/.gnu_aliases" ]] && source "$HOME/.gnu_aliases"
@@ -153,7 +151,7 @@ export FZF_DEFAULT_OPTS="
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 # Load custom shell functions
-for f in ~/.config/shell-functions/*.sh; do
+for f in ~/.config/shell-functions/*.sh(N); do
   [[ -r "$f" ]] && source "$f"
 done
 
@@ -176,5 +174,15 @@ function kctx() {
 # Source local secrets (if exists)
 [[ -f ~/.env.secrets ]] && source ~/.env.secrets
 
-export PATH="/opt/homebrew/bin:$PATH"
-. "$HOME/.local/bin/env"
+[[ -f "$HOME/.local/bin/env" ]] && . "$HOME/.local/bin/env"
+
+if [[ -d "$HOME/.bun" ]]; then
+  export BUN_INSTALL="$HOME/.bun"
+  path_prepend "$BUN_INSTALL/bin"
+  [[ -s "$BUN_INSTALL/_bun" ]] && source "$BUN_INSTALL/_bun"
+fi
+
+# Machine-local overrides - kept out of the repo, survives reinstalls
+if [[ -f "$HOME/.zshrc.local" ]]; then
+  . "$HOME/.zshrc.local"
+fi

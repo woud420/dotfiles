@@ -21,9 +21,12 @@ fi
 
 cd "$DOTFILES_DIR"
 
-# Detect if we're in a container or minimal environment
+# Detect if we're in a container, SSH session, or minimal environment
 if [ -f /.dockerenv ] || [ -n "$CONTAINER" ]; then
     echo "Container environment detected, using minimal setup..."
+    MINIMAL=1
+elif [ -n "$SSH_CONNECTION" ] || [ -n "$SSH_CLIENT" ]; then
+    echo "Remote SSH session detected, using server configs..."
     MINIMAL=1
 else
     MINIMAL=0
@@ -35,16 +38,27 @@ echo "Installing common configurations..."
 # Bash configs
 [ -f "$HOME/.bashrc" ] && mv "$HOME/.bashrc" "$HOME/.bashrc.backup"
 if [ "$MINIMAL" = "1" ]; then
-    ln -sf "$DOTFILES_DIR/common/shell/.bashrc.server" "$HOME/.bashrc"
+    cp -f "$DOTFILES_DIR/common/shell/.bashrc.server" "$HOME/.bashrc"
 else
-    ln -sf "$DOTFILES_DIR/common/shell/.bashrc" "$HOME/.bashrc"
+    cp -f "$DOTFILES_DIR/common/shell/.bashrc" "$HOME/.bashrc"
 fi
-ln -sf "$DOTFILES_DIR/common/shell/.bash_profile" "$HOME/.bash_profile"
+cp -f "$DOTFILES_DIR/common/shell/.bash_profile" "$HOME/.bash_profile"
 
 # Git config
-ln -sf "$DOTFILES_DIR/common/git/.gitconfig" "$HOME/.gitconfig"
+cp -f "$DOTFILES_DIR/common/git/.gitconfig" "$HOME/.gitconfig"
 mkdir -p "$HOME/.config/git"
-ln -sf "$DOTFILES_DIR/common/git/.gitignore_global" "$HOME/.config/git/ignore"
+cp -f "$DOTFILES_DIR/common/git/.gitignore_global" "$HOME/.config/git/ignore"
+cp -f "$DOTFILES_DIR/common/git/commit-template.md" "$HOME/.config/git/commit-template.md"
+
+# Git hooks: the gitconfig above sets core.hooksPath, so the hooks must exist
+# or git stops running ANY hooks (including repo-local ones like husky)
+mkdir -p "$HOME/.config/git/hooks"
+for hook in "$DOTFILES_DIR/common/git/hooks/"*; do
+    base="$(basename "$hook")"
+    [ -f "$hook" ] && [ "$base" != "README.md" ] || continue
+    cp -f "$hook" "$HOME/.config/git/hooks/$base"
+    chmod +x "$HOME/.config/git/hooks/$base"
+done
 
 # GNU aliases (copy to avoid symlink on targets)
 cp -f "$DOTFILES_DIR/common/shell/.gnu_aliases" "$HOME/.gnu_aliases"

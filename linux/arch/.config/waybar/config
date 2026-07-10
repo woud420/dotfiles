@@ -1,0 +1,184 @@
+{
+    "layer": "bottom",
+    "position": "top",
+    "height": 54,
+
+    "modules-left": ["custom/app-launcher", "sway/workspaces", "sway/mode"],
+    
+    "modules-center": ["custom/launch-firefox",
+        "custom/launch-slack",
+        "custom/launch-spotify",
+        "custom/launch-steam"
+    ],
+    
+    "modules-right": ["tray", "pulseaudio", "custom/system-graph", "custom/storage", "custom/storage-workspace", "custom/docker", "custom/k8s", "clock"],
+    
+    "sway/mode": {
+        "format": " {}"
+    },
+    
+    "sway/workspaces": {
+        "all-outputs": false,
+        "disable-scroll": true,
+        "format": "<span font='14'>{icon}</span>",
+        "format-icons": {
+            "1": "",
+            "2": "",
+            "3": "  ",
+            "4": "",
+        },
+        "persistent-workspaces" : {
+            "1" : [],
+            "2" : [],
+            "3" : [],
+            "4" : [],
+        }
+    },
+    "sway/window": {
+        "max-length": 80,
+        "tooltip": false
+    },
+    "cpu": {
+        "interval": 10,
+        "format": "{load} {usage}%"
+    },
+    "memory": {
+        "interval": 30,
+        "format": "{}% ",
+        "max-length": 10
+    },
+    "clock": {
+        "format": "{:%a %d %b %H:%M}",
+        "tooltip": false
+    },
+    "network": {
+        "format": "{icon}",
+        "format-alt": "{ipaddr}/{cidr} {icon}",
+        "format-alt-click": "click-right",
+        "format-icons": {
+            "wifi": ["", "" ,""],
+            "ethernet": ["NET"],
+            "disconnected": [""]
+        },
+        "on-click": "notify-send `nmcli device` --icon=dialog-information",
+    "tooltip": false
+    },
+    "custom/app-launcher": {
+        "format":  "<span font='20'>     </span>",
+        "on-click": "rofi -show drun -eh 2 &"
+    },
+    "custom/launch-firefox": {
+        "format":  "<span font='14'></span>",
+        "on-click": "firefox",
+        "tooltip": false
+    },
+    "custom/launch-spotify": {
+        "format":  "<span font='14'></span>",
+        "on-click": "spotify",
+        "tooltip": false
+    },
+    "custom/launch-slack": {
+        "format":  "<span font='14'></span>",
+        "on-click": "slack -s",
+        "tooltip": false
+    },
+    "custom/launch-steam": {
+        "format":  "<span font='14'></span>",
+        "on-click": "steam",
+        "tooltip": false
+    },
+    "custom/launch-thunderbird": {
+        "format":  "<span font='14'></span>",
+        "on-click": "thunderbird"
+    },
+    "pulseaudio": {
+        "format": "{icon}",
+        "format-alt": "{volume} {icon}",
+        "format-alt-click": "click-right",
+        "format-muted": "",
+        "format-icons": {
+            "phone": [" ", " ", " ", " "],
+            "default": ["", "", "", ""]
+        },
+        "scroll-step": 10,
+        "on-click": "if pgrep pavucontrol ; then pkill pavucontrol; else pavucontrol; fi",
+        "tooltip": false
+    },
+    "custom/spotify": {
+        "interval": 1,
+        "return-type": "json",
+        "exec": "~/.config/waybar/modules/spotify.sh",
+        "exec-if": "pgrep spotify",
+        "escape": true
+    },
+    "custom/storage": {
+        "format": "{} ",
+        "format-alt": "{percentage}% ",
+        "format-alt-click": "click-right",
+        "return-type": "json",
+        "interval": 60,
+        "exec": "~/.config/waybar/modules/storage.sh"
+    },
+    "custom/weather": {
+        "format": "{}",
+        "format-alt": "{alt}: {}",
+        "format-alt-click": "click-right",
+        "interval": 1800,
+        "return-type": "json",
+        "exec": "~/.config/waybar/modules/weather.sh",
+        "exec-if": "ping wttr.in -c1"
+    },
+    "idle_inhibitor": {
+        "format": "{icon}",
+        "format-icons": {
+            "activated": "",
+            "deactivated": ""
+        },
+        "tooltip": false
+    },
+    "custom/mail": {
+        "format": "",
+        "format-alt": "{alt} ",
+        "format-alt-click": "click-right",
+        "interval": 60,
+        "return-type": "json",
+        "exec": "~/.config/waybar/modules/mail.py",
+        "tooltip": false
+    },
+    "tray": {
+        "icon-size": 16,
+        "spacing": 10
+    },
+    "custom/storage-workspace": {
+        "format": "🗄️ {}",
+        "format-alt": "🗄️ {percentage}%",
+        "format-alt-click": "click-right",
+        "return-type": "json",
+        "interval": 60,
+        "exec": "~/.config/waybar/modules/storage-workspace.sh",
+        "tooltip": true
+    },
+    "custom/system-graph": {
+        "format": "{}",
+        "return-type": "json",
+        "interval": 2,
+        "exec": "~/.config/waybar/modules/system-graph.sh",
+        "tooltip": true
+    },
+    "custom/docker": {
+        "format": "{}",
+        "return-type": "json",
+        "interval": 30,
+        "exec": "~/.config/waybar/modules/docker.py",
+        "exec-if": "pgrep -x dockerd",
+        "tooltip": true
+    },
+    "custom/k8s": {
+        "format": "{}",
+        "return-type": "json",
+        "interval": 30,
+        "exec": "~/.config/waybar/modules/k8s.py",
+        "exec-if": "sh -c 'command -v kubectl >/dev/null && kubectl config current-context >/dev/null 2>&1'",
+        "tooltip": true
+    }
+}

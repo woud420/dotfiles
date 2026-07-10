@@ -1,29 +1,14 @@
-# SSH config with automatic dotfile deployment
+# IgnoreUnknown keeps macOS-only options harmless on Linux openssh
+IgnoreUnknown UseKeychain
 
-# Example host with automatic dotfile setup
-# Host myserver
-#     HostName example.com
-#     User myuser
-#     RemoteCommand bash -c "curl -sSL https://raw.githubusercontent.com/woud420/dotfiles/master/scripts/quick-install.sh | bash && exec bash"
-#     RequestTTY yes
-
-# For all hosts - send local environment variables
 Host *
-    # Send your local terminal type
-    SendEnv TERM
-    SendEnv LANG LC_*
-    
-    # Keep connections alive
-    ServerAliveInterval 60
-    ServerAliveCountMax 3
-    
-    # Reuse connections
-    ControlMaster auto
-    ControlPath ~/.ssh/sockets/%r@%h:%p
-    ControlPersist 600
-    
-    # Faster connections
-    Compression yes
-    
-    # Forward agent for git operations
-    ForwardAgent yes
+  AddKeysToAgent yes
+  UseKeychain yes
+  ForwardAgent yes
+  ServerAliveInterval 60
+  ServerAliveCountMax 5
+
+Host github.com
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/github-id-rsa

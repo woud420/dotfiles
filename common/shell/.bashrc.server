@@ -41,7 +41,7 @@ else
 fi
 
 # Simple prompt without emoji
-PS1="${GREEN}\u${RESET}@${BLUE}\h${RESET}:${CYAN}\w${RESET}${YELLOW}\$(parse_git_branch)${RESET}\$ "
+PS1="\[${GREEN}\]\u\[${RESET}\]@\[${BLUE}\]\h\[${RESET}\]:\[${CYAN}\]\w\[${RESET}\]\[${YELLOW}\]\$(parse_git_branch)\[${RESET}\]\$ "
 
 # Load GNU aliases if available
 if [ -f ~/.gnu_aliases ]; then
@@ -100,8 +100,16 @@ alias ....='cd ../../..'
 export PATH
 
 # Set default editor
-export EDITOR=vim
-export VISUAL=vim
+if command -v nvim >/dev/null 2>&1; then
+    export EDITOR=nvim
+    export VISUAL=nvim
+    alias vi='nvim'
+    alias vim='nvim'
+    alias vimdiff='nvim -d'
+else
+    export EDITOR=vim
+    export VISUAL=vim
+fi
 
 # Enable programmable completion features
 if ! shopt -oq posix; then
@@ -110,4 +118,9 @@ if ! shopt -oq posix; then
     elif [ -f /etc/bash_completion ]; then
         . /etc/bash_completion
     fi
+fi
+
+# Machine-local overrides - kept out of the repo, survives reinstalls
+if [ -f "$HOME/.bashrc.local" ]; then
+  . "$HOME/.bashrc.local"
 fi

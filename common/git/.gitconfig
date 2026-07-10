@@ -5,6 +5,10 @@
 	user=woud420
 [color]
 	ui = auto
+[commit]
+	template = ~/.config/git/commit-template.md
+[url "git@github.com:"]
+	insteadOf = https://github.com/
 [alias]
 	st = status -sb
 	lg = log --stat
@@ -75,3 +79,14 @@
 			git log --oneline; \
 		fi; \
 	}; f"
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+[core]
+	hooksPath = ~/.config/git/hooks
+# Machine-local overrides (identity, tool-appended blocks like git-ai trace2).
+# Values here win because git reads includes last.
+[include]
+	path = ~/.gitconfig.local

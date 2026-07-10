@@ -5,7 +5,9 @@
 " Essential encoding settings (must be first)
 set encoding=utf-8
 set fileencoding=utf-8
-set termencoding=utf-8
+if exists('+termencoding')
+  set termencoding=utf-8
+endif
 set termguicolors
 
 " 1. Plugins - Load all plugins first (includes plugin-specific settings)
@@ -17,23 +19,32 @@ source ~/.vim/settings/appearance.vim
 " 3. Performance - Speed optimizations (early for best effect)
 source ~/.vim/settings/performance.vim
 
-" 4. Key mappings - Basic vim keybindings
+" 4. Neovim-only syntax engine support
+if has('nvim') && filereadable(expand('~/.vim/settings/treesitter.vim'))
+  source ~/.vim/settings/treesitter.vim
+endif
+
+" 5. Key mappings - Basic vim keybindings
 source ~/.vim/mappings.vim
 
-" 5. Extra keybindings - Leader key and custom bindings
+" 6. Extra keybindings - Leader key and custom bindings
 source ~/.vim/settings/keybindings.vim
 
-" 6. CoC LSP - Language server configuration (after basic settings)
+" 6b. UI features - popups etc. (self-guarded for vim/nvim differences)
+if filereadable(expand('~/.vim/settings/ui-features.vim'))
+  source ~/.vim/settings/ui-features.vim
+endif
+
+" 7. CoC LSP - Language server configuration (after basic settings)
 source ~/.vim/settings/coc-settings.vim
 
-" 7. FZF - Fuzzy finder configuration (after keybindings)
+" 8. FZF - Fuzzy finder configuration (after keybindings)
 source ~/.vim/settings/fzf-settings.vim
 
-" 8. General settings - Search, behavior, etc. (loaded last)
+" 9. General settings - Search, behavior, etc. (loaded last)
 source ~/.vim/settings.vim
 
 " Give the highlighter more time but cap per-line work
 set redrawtime=10000
 set synmaxcol=300          " don't try to highlight beyond column 300
 syntax sync minlines=128   " don't rescan the entire file from top
-
