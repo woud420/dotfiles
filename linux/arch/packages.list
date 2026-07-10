@@ -22,9 +22,12 @@ waybar
 ttf-firacode-nerd
 rofi
 mako
+grim
+slurp
 cliphist
 playerctl
 make
+neovim
 nodejs
 npm
 python
@@ -49,3 +52,4 @@ yq
 
 # AUR (install with an AUR helper, e.g. paru -S; pacman cannot install these)
 # swayfx
+# nordic-theme (GTK theme referenced by gtk settings.ini)

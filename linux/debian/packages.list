@@ -23,5 +23,6 @@ ripgrep
 tmux
 tree
 vim
+neovim
 wget
 zsh

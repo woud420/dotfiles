@@ -57,8 +57,11 @@ This directory contains configuration files for my Arch Linux desktop setup.
 
 1. **Prerequisites**:
    ```bash
-   sudo pacman -S swayfx waybar kitty rofi mako \
-                  firefox slack-desktop spotify-launcher steam
+   sudo pacman -S waybar kitty rofi mako grim slurp \
+                  firefox spotify-launcher steam
+
+   # AUR (pacman cannot install these; use an AUR helper)
+   paru -S swayfx slack-desktop nordic-theme
    ```
 
 2. **Install configs** (from the dotfiles root - configs are copied, never
@@ -75,7 +78,8 @@ This directory contains configuration files for my Arch Linux desktop setup.
 4. **(Optional) auto-refresh the AI machine-state snapshot on package changes**
    (the installer deliberately does not enable this; it writes into the repo):
    ```bash
-   sed "s|__DOTFILES_DIR__|$PWD|" linux/arch/hooks/90-refresh-ai-context.hook \
+   sed -e "s|__DOTFILES_DIR__|$PWD|" -e "s|__DOTFILES_USER__|$USER|" \
+       linux/arch/hooks/90-refresh-ai-context.hook \
      | sudo tee /etc/pacman.d/hooks/90-refresh-ai-context.hook
    ```
 

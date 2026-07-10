@@ -9,7 +9,8 @@ These are personal, global Git hooks installed through `core.hooksPath`.
   - blocks likely secret files;
   - blocks large staged files over 10 MiB by default;
   - blocks conflict markers;
-  - blocks generated-looking files unless `JM_ALLOW_GENERATED_EDITS=1`.
+  - blocks generated-looking files unless `JM_ALLOW_GENERATED_EDITS=1`
+    (common lockfiles like `Cargo.lock`/`yarn.lock` are allowlisted).
 
 - `pre-push`
   - preserves repo-local `.husky/pre-push`, `.githooks/pre-push`, and `.git/hooks/pre-push.local`;
@@ -19,6 +20,9 @@ These are personal, global Git hooks installed through `core.hooksPath`.
 
 ## Escapes
 
+- Repo-hook delegation runs repo-controlled code; disable it for untrusted
+  clones with `git config jm.hooks.runRepoHooks false` (add `--global` to
+  flip the default and re-enable per trusted repo).
 - Disable all personal hooks for one command: `JM_GIT_HOOKS=0 git commit ...`
 - Alternate skip flag: `SKIP_JM_HOOKS=1 git commit ...`
 - Allow intentional generated output: `JM_ALLOW_GENERATED_EDITS=1 git commit ...`

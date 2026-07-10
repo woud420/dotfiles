@@ -119,3 +119,8 @@ if ! shopt -oq posix; then
         . /etc/bash_completion
     fi
 fi
+
+# Machine-local overrides - kept out of the repo, survives reinstalls
+if [ -f "$HOME/.bashrc.local" ]; then
+  . "$HOME/.bashrc.local"
+fi

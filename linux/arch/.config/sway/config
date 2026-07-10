@@ -66,7 +66,7 @@ output * mode 3440x1440@165Hz bg $wallpaper fill
     bindsym $mod+q kill
 
     # Screenshot
-    bindsym $mod+Ctrl+Shift+3 exec sshot
+    bindsym $mod+Ctrl+Shift+3 exec sh -c 'grim -g "$(slurp)" - | wl-copy'
 
     # Start your launcher
     bindsym $mod+space exec $menu

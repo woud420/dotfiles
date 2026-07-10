@@ -63,9 +63,13 @@ mkdir -p "$(dirname "$OUTPUT_FILE")"
 # Helper: get version if command exists
 version_of() {
     local cmd="$1"
-    local flag="${2:---version}"
+    shift
     if command -v "$cmd" &>/dev/null; then
-        "$cmd" $flag 2>/dev/null | head -n1
+        if [[ $# -gt 0 ]]; then
+            "$cmd" "$@" 2>/dev/null | head -n1
+        else
+            "$cmd" --version 2>/dev/null | head -n1
+        fi
     else
         echo "not installed"
     fi

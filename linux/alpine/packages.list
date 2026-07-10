@@ -15,5 +15,6 @@ py3-virtualenv
 tmux
 tree
 vim
+neovim
 wget
 zsh

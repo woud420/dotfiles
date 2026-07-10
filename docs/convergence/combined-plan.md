@@ -1,3 +1,9 @@
+> **Status (2026-07):** historical/archived. This is the negotiated two-agent
+> plan that the convergence executed; the decisions that superseded parts of it
+> are listed in the status header of `docs/machine-convergence-plan.md`. The
+> planned backup-restore deliverable was descoped - restores are manual from
+> the path-preserving `~/.dotfiles-backup-*` directories using the audit log.
+
 # Combined Dotfiles Convergence Plan
 
 ## Agreement

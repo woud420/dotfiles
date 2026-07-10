@@ -8,4 +8,4 @@ Target = *
 [Action]
 Description = Refreshing AI context machine state...
 When = PostTransaction
-Exec = __DOTFILES_DIR__/scripts/refresh-machine-state.sh
+Exec = /usr/bin/runuser -u __DOTFILES_USER__ -- __DOTFILES_DIR__/scripts/refresh-machine-state.sh

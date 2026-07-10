@@ -77,6 +77,10 @@ dotfiles/
 | `common/ssh/config` | `~/.ssh/config.dotfiles` | Shared SSH defaults (Include'd from `~/.ssh/config`) |
 | `kitty.conf` | `~/.config/kitty/kitty.conf` | Kitty terminal config |
 | `htoprc` | `~/.config/htop/htoprc` | htop configuration |
+| `.vim/*` | `~/.vim/` | Vim config, settings, and CoC settings |
+| `common/nvim/init.vim` | `~/.config/nvim/init.vim` | Neovim bridge to the Vim config |
+| `.vim/coc-settings.json` | `~/.vim/` and `~/.config/nvim/` | CoC LSP settings (both editors) |
+| `scripts/sudo-askpass.sh` | `~/.local/bin/sudo-askpass` | GUI sudo prompt helper |
 
 ### Shell Functions
 
@@ -88,7 +92,7 @@ All shell functions are installed to `~/.config/shell-functions/`:
 | `which.sh` | Command lookup | Includes shell aliases and functions |
 | `sudo.sh` | GUI sudo prompts | Exports `SUDO_ASKPASS` (use `sudo -A`) |
 | `macos-clipboard.sh` | Clipboard parity | `pbcopy`/`pbpaste` on Linux (wl-clipboard) |
-| `kubectl-aliases.sh` | Kubernetes | `k` (kubectl); `kctx` lives in `.bashrc` |
+| `kubectl-aliases.sh` | Kubernetes | `k` (kubectl); `kctx` lives in the shell rc files |
 
 The remaining function files (`git.sh`, `git-aliases.sh`, `docker.sh`,
 `docker-aliases.sh`, `k8s.sh`, `ssh.sh`, `utils.sh`, `fuzzy-vim.sh`,
@@ -123,7 +127,7 @@ Core tools: `awscli`, `bash`, `coreutils`, `git`, `fzf`, `fd`, `ripgrep`, `htop`
 Development: `node`, `python`, `rust`, `poetry`, `virtualenv`
 Kubernetes: `kubernetes-cli`, `helm`, `k9s`, `eksctl`, `minikube`
 Infrastructure: `terraformer`, `tflint`
-Apps: `docker`, `docker-desktop`, `slack`, `spotify`
+Apps: `docker-desktop` (bundles the docker CLI), `slack`, `spotify`
 
 ### Linux
 
@@ -224,18 +228,27 @@ The installed `.gitconfig` sets `core.hooksPath = ~/.config/git/hooks`.
 Installed hooks are intentionally general and local-only:
 
 - `pre-commit` runs repo hooks like `.husky/pre-commit` first, then blocks
-  likely secrets, conflict markers, and oversized files.
+  likely secrets, conflict markers, oversized files, and generated-looking
+  files (lockfiles allowlisted; override with `JM_ALLOW_GENERATED_EDITS=1`).
 - `pre-push` runs repo hooks first, then an explicit repo check when configured.
 
 ```bash
 JM_GIT_HOOKS=0 git commit ...              # Skip personal hooks once
+git config jm.hooks.runRepoHooks false     # Don't run repo-controlled hooks in an untrusted clone
 git config jm.hooks.prePushCommand "make check"
 make install-git-hooks                     # Install only the hooks
 ```
 
+### Minimal mode
+`--minimal` (auto-enabled in containers) installs the server bashrc and core
+configs only: it skips packages, vim/nvim plugins, desktop configs, the
+sudo-askpass helper, and AI context files, but still installs terminal
+(kitty/htop) configs.
+
 ### AI Context
 The installer copies `common/ai-context/` files into place:
-`~/.claude/CLAUDE.md`, `~/AGENTS.md`, and an OS-specific `~/MACHINE.md`.
+`~/AGENTS.md` and an OS-specific `~/MACHINE.md`; `~/.claude/CLAUDE.md` is
+only seeded when absent (an existing customized one is left alone).
 Machine state snapshots are generated on demand with
 `scripts/refresh-machine-state.sh`.
 

@@ -25,6 +25,7 @@ cargo
 tmux
 tree
 vim
+neovim
 wget
 zsh
 # Modern alternatives

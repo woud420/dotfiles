@@ -30,6 +30,11 @@ source ~/.vim/mappings.vim
 " 6. Extra keybindings - Leader key and custom bindings
 source ~/.vim/settings/keybindings.vim
 
+" 6b. UI features - popups etc. (self-guarded for vim/nvim differences)
+if filereadable(expand('~/.vim/settings/ui-features.vim'))
+  source ~/.vim/settings/ui-features.vim
+endif
+
 " 7. CoC LSP - Language server configuration (after basic settings)
 source ~/.vim/settings/coc-settings.vim
 

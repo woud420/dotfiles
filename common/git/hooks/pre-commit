@@ -17,7 +17,8 @@ cd "$repo_root"
 # like husky keep working, but can be disabled for untrusted clones with
 #   git config jm.hooks.runRepoHooks false   (or --global to flip the default)
 repo_hooks_trusted() {
-    [[ "$(git config --get jm.hooks.runRepoHooks || echo true)" != "false" ]]
+    # --type=bool normalizes 0/no/off/false; unset or garbage stays trusted
+    [[ "$(git config --type=bool --get jm.hooks.runRepoHooks 2>/dev/null || echo true)" != "false" ]]
 }
 
 run_repo_hook() {

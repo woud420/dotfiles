@@ -71,7 +71,8 @@ grep -q $'\tcopy\t' "$AUDIT_LOG" || fail "audit log has no copy action"
 ! grep -q $'\tlink\t' "$AUDIT_LOG" || fail "audit log must not contain link actions"
 grep -q "$ROOT_DIR/common/nvim/init.vim" "$AUDIT_LOG" || fail "audit log does not include neovim init"
 
-grep -q '^vim -e -N -u .*PlugInstall --sync.*qa!$' "$STUB_LOG" || fail "vim plugin install was not invoked"
+# vim step defers to nvim when nvim exists (stubbed here), so no vim invocation
+! grep -q '^vim ' "$STUB_LOG" || fail "vim should not be invoked when nvim is present"
 grep -q '^nvim --headless +PlugInstall +qall$' "$STUB_LOG" || fail "nvim plugin install was not invoked"
 
 printf 'Installer test passed.\n'

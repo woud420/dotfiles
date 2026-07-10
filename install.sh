@@ -8,18 +8,20 @@
 # 2. Package Installation (optional)
 # 3. Configuration Installation:
 #    - Shell configs (foundation)
-#    - Git configuration
-#    - Shell functions & aliases
+#    - Git configuration + personal git hooks
+#    - Shared SSH defaults (via Include)
+#    - Shell functions & sudo-askpass helper
 #    - Terminal configs (kitty, htop)
-#    - Vim/Neovim setup (plugins, LSP, themes)
+#    - Linux desktop configs (sway/waybar/gtk, arch only)
+#    - Vim/Neovim setup (plugins, CoC compilation)
 #    - Optional tools (fzf, etc.)
+#    - AI context files (CLAUDE.md, AGENTS.md, MACHINE.md)
 #
 # Features:
 # - Auto-detects OS and environment (local/remote/container)
-# - Creates backups before changes
+# - Creates backups before changes (path-preserving, with an audit log)
 # - Installs regular file copies, not symlinks
 # - Compiles CoC.nvim automatically
-# - Installs language servers and tools
 
 set -e
 
@@ -278,6 +280,36 @@ backup_file() {
     fi
 }
 
+# Replace any symlinked ancestor of a target path that resolves into the
+# repo checkout with a real directory. Without this, a legacy symlink like
+# ~/.vim -> repo/.vim would make install_file delete the REPO's file and
+# then copy the source onto itself.
+materialize_target_dir() {
+    local dir="$1"
+    local ancestor="$dir"
+    local chain=()
+    while [[ "$ancestor" != "$HOME" && "$ancestor" != "/" && -n "$ancestor" ]]; do
+        chain+=("$ancestor")
+        ancestor="$(dirname "$ancestor")"
+    done
+    # Check from the top down so the outermost symlink is replaced first
+    local i seg resolved
+    for (( i=${#chain[@]}-1; i>=0; i-- )); do
+        seg="${chain[$i]}"
+        if [[ -L "$seg" ]]; then
+            resolved="$(cd "$seg" 2>/dev/null && pwd -P || true)"
+            case "$resolved" in
+                "$DOTFILES_DIR"|"$DOTFILES_DIR"/*)
+                    log_warning "Replacing legacy symlink into the repo: $seg -> $resolved"
+                    rm -f "$seg"
+                    mkdir -p "$seg"
+                    audit_action "unlink" "$resolved" "$seg" "replaced repo symlink with real directory"
+                    ;;
+            esac
+        fi
+    done
+}
+
 # Install a regular copied file
 install_file() {
     local source="$1"
@@ -286,6 +318,7 @@ install_file() {
 
     if [[ "$DRY_RUN" == "false" ]]; then
         # Create target directory if it doesn't exist
+        materialize_target_dir "$target_dir"
         mkdir -p "$target_dir"
         audit_action "mkdir" "" "$target_dir" "ensure target directory"
 
@@ -419,7 +452,9 @@ install_shell_functions() {
     fi
 
     # GUI sudo askpass helper at a stable path (sudo.sh points SUDO_ASKPASS here)
-    if [[ "$DRY_RUN" == "false" ]]; then
+    if [[ "$MINIMAL_MODE" == "true" ]]; then
+        log_info "Minimal mode: skipping sudo-askpass helper"
+    elif [[ "$DRY_RUN" == "false" ]]; then
         install_file "$DOTFILES_DIR/scripts/sudo-askpass.sh" "$HOME/.local/bin/sudo-askpass"
         chmod +x "$HOME/.local/bin/sudo-askpass"
     else
@@ -495,7 +530,12 @@ install_desktop_configs() {
 
 # Compile CoC.nvim after plugin installation (shared by vim + nvim paths)
 compile_coc_nvim() {
-    [[ -d "$HOME/.vim/plugged/coc.nvim" ]] || return 0
+    if [[ ! -d "$HOME/.vim/plugged/coc.nvim" ]]; then
+        if grep -q "coc.nvim" "$HOME/.vim/plugins.vim" 2>/dev/null; then
+            log_warning "coc.nvim requested by plugins.vim but not installed; run :PlugInstall manually"
+        fi
+        return 0
+    fi
 
     if [[ ! -f "$HOME/.vim/plugged/coc.nvim/package.json" ]]; then
         log_warning "coc.nvim present but incomplete (no package.json); rerun :PlugInstall"
@@ -550,30 +590,68 @@ install_vim_config() {
         return 0
     fi
 
-    # Install vim plugins if vim is available
-    if command -v vim >/dev/null 2>&1; then
+    # Install vim plugins. When nvim is present the neovim step handles this
+    # (same ~/.vim/plugged); headless plain vim needs a pty to run vim-plug.
+    if command -v nvim >/dev/null 2>&1; then
+        log_info "nvim present; plugins are installed by the neovim step"
+    elif command -v vim >/dev/null 2>&1; then
         log_step "Installing vim plugins..."
         if [[ "$DRY_RUN" == "false" ]]; then
-            # Pre-seed vim-plug: the vimrc's own auto-download breaks in ex mode
-            if [[ ! -f "$HOME/.vim/autoload/plug.vim" ]]; then
-                curl -fsLo "$HOME/.vim/autoload/plug.vim" --create-dirs \
-                    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim \
-                    || log_warning "could not download vim-plug"
-            fi
-            # Ex mode + --not-a-term is the only vim invocation that survives
-            # without a tty; plain +PlugInstall </dev/null dies reading input
-            vim -e -N -u "$HOME/.vim/vimrc" --not-a-term -c 'PlugInstall --sync' -c 'qa!' </dev/null \
-                || log_warning "vim plugin install failed; run :PlugInstall manually"
-            if [[ -d "$HOME/.vim/plugged" ]] && [[ -n "$(ls -A "$HOME/.vim/plugged" 2>/dev/null)" ]]; then
-                log_success "vim plugins installed"
+            seed_vim_plug
+            # vim-plug needs a real terminal: ex mode (-e/-es) aborts with E31
+            # and installs nothing, so allocate a pty via script(1).
+            if command -v script >/dev/null 2>&1; then
+                run_vim_in_pty vim -N -u "$HOME/.vim/vimrc" -c 'PlugInstall --sync' -c 'qa!' \
+                    || log_warning "vim plugin install failed; run :PlugInstall manually"
             else
-                log_warning "no vim plugins present after install; run :PlugInstall manually"
+                vim -e -N -u "$HOME/.vim/vimrc" --not-a-term -c 'PlugInstall --sync' -c 'qa!' </dev/null \
+                    || log_warning "vim plugin install failed; run :PlugInstall manually"
             fi
-
+            report_plug_count
             compile_coc_nvim
         else
             log_info "Would install vim plugins and compile CoC.nvim"
         fi
+    fi
+}
+
+# Download vim-plug atomically; a partial file would otherwise block both this
+# pre-seed and the vimrc's own bootstrap forever.
+seed_vim_plug() {
+    if [[ ! -s "$HOME/.vim/autoload/plug.vim" ]]; then
+        rm -f "$HOME/.vim/autoload/plug.vim"
+        mkdir -p "$HOME/.vim/autoload"
+        local tmp="$HOME/.vim/autoload/.plug.vim.tmp$$"
+        if curl -fsLo "$tmp" https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim; then
+            mv "$tmp" "$HOME/.vim/autoload/plug.vim"
+        else
+            rm -f "$tmp"
+            log_warning "could not download vim-plug"
+        fi
+    fi
+}
+
+# Run an editor under a pty. BSD/macOS script(1) takes the command as args;
+# util-linux script(1) needs -c with a single string.
+run_vim_in_pty() {
+    if script --version >/dev/null 2>&1; then
+        local cmd
+        printf -v cmd '%q ' "$@"
+        script -qec "$cmd" /dev/null </dev/null >/dev/null 2>&1
+    else
+        script -q /dev/null "$@" </dev/null >/dev/null 2>&1
+    fi
+}
+
+# Compare installed plugin dirs against what plugins.vim declares.
+report_plug_count() {
+    local expected installed
+    expected="$(grep -c "^Plug '" "$HOME/.vim/plugins.vim" 2>/dev/null || echo 0)"
+    installed="$(ls -1 "$HOME/.vim/plugged" 2>/dev/null | wc -l | tr -d ' ')"
+    if [[ "$installed" -ge "$expected" && "$expected" -gt 0 ]]; then
+        log_success "vim plugins installed ($installed/$expected)"
+    else
+        log_warning "only $installed of $expected vim plugins installed; run :PlugInstall manually"
     fi
 }
 
@@ -590,7 +668,11 @@ install_neovim_config() {
         install_file "$DOTFILES_DIR/common/nvim/init.vim" "$HOME/.config/nvim/init.vim"
         install_file "$DOTFILES_DIR/.vim/coc-settings.json" "$HOME/.config/nvim/coc-settings.json"
     else
-        log_info "Would install neovim configuration"
+        log_info "Would copy: common/nvim/init.vim -> ~/.config/nvim/init.vim"
+        log_info "Would copy: .vim/coc-settings.json -> ~/.config/nvim/coc-settings.json"
+        if [[ "$MINIMAL_MODE" == "false" ]]; then
+            log_info "Would install neovim plugins and compile CoC.nvim"
+        fi
         return
     fi
 
@@ -601,7 +683,9 @@ install_neovim_config() {
 
     if command -v nvim >/dev/null 2>&1; then
         log_step "Installing neovim plugins..."
+        seed_vim_plug
         nvim --headless +PlugInstall +qall </dev/null || log_warning "nvim plugin install failed; run :PlugInstall manually"
+        report_plug_count
 
         compile_coc_nvim
     else
@@ -635,11 +719,22 @@ install_optional_tools() {
 
 # Install AI context files (CLAUDE.md, MACHINE.md, AGENTS.md)
 install_ai_context() {
+    if [[ "$MINIMAL_MODE" == "true" ]]; then
+        log_info "Minimal mode: skipping AI context files"
+        return 0
+    fi
+
     log_step "Installing AI context files..."
 
+    # ~/.claude/CLAUDE.md is often user-curated (e.g. custom includes);
+    # only seed it when absent instead of clobbering it on every install.
     local claude_src="$DOTFILES_DIR/common/ai-context/CLAUDE.md"
     if [[ -f "$claude_src" ]]; then
-        install_file "$claude_src" "$HOME/.claude/CLAUDE.md"
+        if [[ -f "$HOME/.claude/CLAUDE.md" ]] && ! cmp -s "$claude_src" "$HOME/.claude/CLAUDE.md"; then
+            log_info "Keeping existing ~/.claude/CLAUDE.md (differs from repo version; merge manually if wanted)"
+        else
+            install_file "$claude_src" "$HOME/.claude/CLAUDE.md"
+        fi
     fi
 
     # AGENTS.md -> ~/AGENTS.md (for Codex/Copilot compatibility)
@@ -657,7 +752,7 @@ install_ai_context() {
         ubuntu|debian)
             machine_src="$DOTFILES_DIR/linux/debian/ai-context/machine.md"
             ;;
-        fedora)
+        rhel|centos|fedora)
             machine_src="$DOTFILES_DIR/linux/fedora/ai-context/machine.md"
             ;;
         alpine)
