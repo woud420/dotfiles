@@ -1,0 +1,3 @@
+[submodule "private/skills"]
+	path = private/skills
+	url = git@github.com:woud420/skills.git

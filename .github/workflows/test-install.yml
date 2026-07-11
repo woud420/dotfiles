@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [master]
 
+env:
+  # Public CI intentionally never requests credentials for the private submodule.
+  DOTFILES_SKIP_PRIVATE_SKILLS: "1"
+
 jobs:
   # Fast syntax/parse checks that don't need install.sh
   lint:

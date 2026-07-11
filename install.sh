@@ -16,6 +16,7 @@
 #    - Vim/Neovim setup (plugins, CoC compilation)
 #    - Optional tools (fzf, etc.)
 #    - AI context files (CLAUDE.md, AGENTS.md, MACHINE.md)
+#    - Private agent skills (when the authenticated submodule is available)
 #
 # Features:
 # - Auto-detects OS and environment (local/remote/container)
@@ -1103,6 +1104,118 @@ install_ai_context() {
     # DOTFILES_DIR=$DOTFILES_DIR scripts/refresh-machine-state.sh
 }
 
+private_skill_dirs() {
+    local manifest="$1"
+    python3 - "$manifest" <<'PY'
+import json
+import sys
+from pathlib import PurePosixPath
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    manifest = json.load(handle)
+
+seen = set()
+for skill in manifest.get("skills", []):
+    if skill.get("status") not in {"active", "maintenance"}:
+        continue
+    path = PurePosixPath(skill.get("path", ""))
+    if path.is_absolute() or ".." in path.parts or path.name != "SKILL.md" or len(path.parts) < 2:
+        raise SystemExit(f"invalid skill path in manifest: {path}")
+    directory = str(path.parent)
+    if directory not in seen:
+        print(directory)
+        seen.add(directory)
+PY
+}
+
+prepare_private_skills_source() {
+    local source="$DOTFILES_DIR/private/skills"
+
+    if [[ "${DOTFILES_SKIP_PRIVATE_SKILLS:-0}" == "1" ]]; then
+        log_info "Skipping private agent skills"
+        return 1
+    fi
+
+    if [[ -e "$source/.git" && -f "$source/manifest.json" ]]; then
+        return 0
+    fi
+
+    if [[ -n "${CI:-}" ]]; then
+        log_info "Private skills submodule is unavailable in public CI; skipping"
+        return 1
+    fi
+
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_info "Would initialize private/skills and install active skills into ~/.agents/skills"
+        return 1
+    fi
+
+    if state_only_mode; then
+        if [[ "$CHECK_MODE" == "true" ]]; then
+            log_error "Private skills submodule is not initialized; run: git submodule update --init -- private/skills"
+            CHECK_FAILURES=$((CHECK_FAILURES + 1))
+        else
+            log_warning "Private skills submodule is not initialized; private skills were not backed up"
+        fi
+        return 1
+    fi
+
+    log_step "Initializing private skills submodule..."
+    if ! git -C "$DOTFILES_DIR" submodule update --init --checkout -- private/skills; then
+        log_warning "Could not initialize private skills; verify GitHub SSH access to woud420/skills"
+        return 1
+    fi
+
+    if [[ ! -e "$source/.git" || ! -f "$source/manifest.json" ]]; then
+        log_warning "Private skills submodule initialized without a usable manifest"
+        return 1
+    fi
+
+    return 0
+}
+
+install_private_skills() {
+    if [[ "$MINIMAL_MODE" == "true" ]]; then
+        log_info "Minimal mode: skipping private agent skills"
+        return 0
+    fi
+
+    if ! prepare_private_skills_source; then
+        return 0
+    fi
+
+    if ! command -v python3 >/dev/null 2>&1; then
+        if [[ "$CHECK_MODE" == "true" ]]; then
+            log_error "python3 is required to read the private skills manifest"
+            CHECK_FAILURES=$((CHECK_FAILURES + 1))
+        else
+            log_warning "python3 is required to install private agent skills"
+        fi
+        return 0
+    fi
+
+    local source="$DOTFILES_DIR/private/skills"
+    local skill_dirs
+    if ! skill_dirs="$(private_skill_dirs "$source/manifest.json")"; then
+        if [[ "$CHECK_MODE" == "true" ]]; then
+            log_error "Private skills manifest is invalid"
+            CHECK_FAILURES=$((CHECK_FAILURES + 1))
+        else
+            log_warning "Private skills manifest is invalid; skipping"
+        fi
+        return 0
+    fi
+
+    log_step "Installing active private agent skills..."
+    local skill_dir relative
+    while IFS= read -r skill_dir; do
+        [[ -n "$skill_dir" ]] || continue
+        while IFS= read -r -d '' relative; do
+            install_file "$source/$relative" "$HOME/.agents/skills/$relative"
+        done < <(git -C "$source" ls-files -z -- "$skill_dir")
+    done <<< "$skill_dirs"
+}
+
 backup_local_overrides() {
     [[ "$BACKUP_ONLY" == "true" ]] || return 0
 
@@ -1250,6 +1363,7 @@ main() {
     install_neovim_config       # 8. Neovim bridge to Vim config
     install_optional_tools      # 9. Optional tools (fzf, etc.) - last
     install_ai_context          # 10. AI context files (CLAUDE.md, AGENTS.md, MACHINE.md)
+    install_private_skills      # 11. Active skills from the authenticated private submodule
     backup_local_overrides
 
     if [[ "$CHECK_MODE" == "true" ]]; then

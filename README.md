@@ -61,6 +61,8 @@ dotfiles/
 │   ├── arch/              # Arch Linux packages
 │   ├── fedora/            # Fedora/RHEL packages
 │   └── alpine/            # Alpine Linux packages
+├── private/
+│   └── skills/             # Private agent skillpack submodule
 └── install.sh             # Universal installer
 ```
 
@@ -88,6 +90,7 @@ dotfiles/
 | `.vim/coc-settings.json` | `~/.vim/` and `~/.config/nvim/` | CoC LSP settings (both editors) |
 | `scripts/sudo-askpass.sh` | `~/.local/bin/sudo-askpass` | GUI sudo prompt helper |
 | `linux/arch/firefox/*` | Active Firefox profile | Desktop-matched browser chrome and settings pages |
+| `private/skills` active profile | `~/.agents/skills/` | Git-tracked private agent skills |
 
 ### Shell Functions
 
@@ -279,6 +282,31 @@ The installer copies `common/ai-context/` files into place:
 only seeded when absent (an existing customized one is left alone).
 Machine state snapshots are generated on demand with
 `scripts/refresh-machine-state.sh`.
+
+### Private Agent Skills
+
+`private/skills` is a submodule pinned to a commit in the private
+`woud420/skills` repository. The public dotfiles repository exposes the SSH
+URL and pinned commit ID, but no private skill contents or credentials.
+
+On a normal install, `install.sh` initializes the submodule when needed and
+copies only Git-tracked skills marked `active` or `maintenance` in its
+`manifest.json` into `~/.agents/skills/`. Candidate skills, untracked files,
+and repository metadata are not installed. Existing managed files are covered
+by the normal backup and `--check` behavior; target-only skills are left alone.
+
+Initialization requires GitHub SSH access to the private repository. Public CI
+sets `DOTFILES_SKIP_PRIVATE_SKILLS=1` and never requests private credentials.
+The same variable can explicitly skip private skills on another machine.
+
+```bash
+# Initialize manually or repair an unavailable private checkout
+git submodule update --init --checkout -- private/skills
+
+# Advance the pinned skillpack revision intentionally
+git submodule update --remote --checkout -- private/skills
+git add private/skills
+```
 
 ## 📚 Requirements
 

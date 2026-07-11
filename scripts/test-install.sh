@@ -79,6 +79,7 @@ run_installer() {
     HOME="$home" \
     PATH="$STUB_DIR:$PATH" \
     KITTY_PID='' \
+    DOTFILES_SKIP_PRIVATE_SKILLS="${DOTFILES_SKIP_PRIVATE_SKILLS:-1}" \
     DOTFILES_INSTALL_TEST_LOG="$STUB_LOG" \
     DOTFILES_BACKUP_DIR="$backup_dir" \
     DOTFILES_FULL_INSTALL=1 \
@@ -105,6 +106,15 @@ grep -q 'Include ~/.ssh/config.dotfiles' "$TEST_HOME/.ssh/config" || fail "share
 grep -q 'IdentityFile ~/.ssh/github_ed25519' "$TEST_HOME/.ssh/config" || fail "machine-local SSH identity was lost"
 ! grep -Eq '^[[:space:]]*IdentityFile[[:space:]]' "$TEST_HOME/.ssh/config.dotfiles" \
     || fail "shared SSH config must not select a machine-specific identity"
+
+if [[ "${DOTFILES_SKIP_PRIVATE_SKILLS:-1}" == "0" ]]; then
+    assert_regular_copy "$TEST_HOME/.agents/skills/autoresearch/SKILL.md" \
+        "$ROOT_DIR/private/skills/autoresearch/SKILL.md"
+    assert_regular_copy "$TEST_HOME/.agents/skills/skillpack-sync/SKILL.md" \
+        "$ROOT_DIR/private/skills/skillpack-sync/SKILL.md"
+    [[ ! -e "$TEST_HOME/.agents/skills/archive-triage" ]] \
+        || fail "candidate private skill was installed"
+fi
 
 AUDIT_LOG="$INSTALL_BACKUP/install-audit.tsv"
 [[ -f "$AUDIT_LOG" ]] || fail "audit log was not created"
