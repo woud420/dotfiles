@@ -1,0 +1,60 @@
+README.md
+  s_9acda3e46ac170::t_77f389a14f6f17 23-25,32-34,90,181-194,211-217
+linux/arch/README.md
+  s_9acda3e46ac170::t_79bdb1848834b7 66-67,70-71
+  s_9acda3e46ac170::t_77f389a14f6f17 56-61,69,80-81,87-93
+scripts/test-install.sh
+  s_9acda3e46ac170::t_dffe0f7e122db6 7,10-11,18-34,71-72,89-90,94-105,114-130,136-144
+  s_9acda3e46ac170::t_d153513fa79be1 106-113,131-135
+Makefile
+  s_9acda3e46ac170::t_e3b7ff58fa3c61 1,30-38,75,78,82
+linux/arch/packages-aur.list
+  s_9acda3e46ac170::t_1b00792b95255b 1-5
+linux/arch/packages.list
+  s_9acda3e46ac170::t_1b00792b95255b 23,30-45,70
+linux/arch/firefox/chrome/userChrome.css
+  s_9acda3e46ac170::t_9922b65e942fd5 1-189
+.github/workflows/test-install.yml
+  s_9acda3e46ac170::t_033b897dd81ea1 79-92,123-127,136-138
+  s_9acda3e46ac170::t_5e4c2f22110457 139
+install.sh
+  s_9acda3e46ac170::t_2937c82324427f 136-139,364,412-422,426-434
+  s_9acda3e46ac170::t_8a9c66873ffcfa 354
+  s_9acda3e46ac170::t_a12cfb01ba13a6 192,211,410-411,685,916
+  s_9acda3e46ac170::t_8363a7ac3c9a74 658-674,689
+  s_9acda3e46ac170::t_5fe80c5a024c88 249-276,317,320
+  s_9acda3e46ac170::t_b434e3c8938c37 277-296,316
+  s_9acda3e46ac170::t_105bdef8bf579d 423-425
+  s_9acda3e46ac170::t_08d209b7a489f8 833,850-853,929-933,969-972,1008-1010
+  s_9acda3e46ac170::t_613a13df74ba4e 39,45-50,68-82,92-94,106-113,141,162
+  s_9acda3e46ac170::t_16f05f71f764b5 507-513,536-545,571-577,595-596,610,614
+  s_9acda3e46ac170::t_01f8ea68c731c7 624-627
+  s_9acda3e46ac170::t_514732b9578d4a 51,690,1051-1106,1108-1146,1159-1163,1193-1213
+  s_9acda3e46ac170::t_1946153e8b170a 692-756,766-790
+  s_9acda3e46ac170::t_d208c0efe2b729 757-765
+  s_9acda3e46ac170::t_4ebc399a754c9b 1107
+  s_9acda3e46ac170::t_7d4126f54a02d6 114
+  s_9acda3e46ac170::t_eda531e9811728 691
+linux/arch/firefox/user.js
+  s_9acda3e46ac170::t_9922b65e942fd5 1-2
+linux/arch/.config/waybar/config
+  s_9acda3e46ac170::t_f2629cdb8e5813 142
+linux/arch/firefox/chrome/userContent.css
+  s_9acda3e46ac170::t_9922b65e942fd5 1-84
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "82416e9b39fdd22b50346400cfaa5dad9a952e66",
+  "prompts": {},
+  "sessions": {
+    "s_9acda3e46ac170": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ef243-83a4-7581-8d79-3dd1ac42c640",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Jean-Michel Bouchard <jim@polarcoordinates.org>"
+    }
+  }
+}
