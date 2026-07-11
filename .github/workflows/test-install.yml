@@ -76,6 +76,20 @@ jobs:
         run: |
           useradd -m -s /bin/zsh testuser
           echo "testuser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          install -d -o testuser -g testuser \
+            /home/testuser/.mozilla/firefox/test.default/chrome
+          printf '%s\n' \
+            '[InstallTest]' \
+            'Default=test.default' \
+            'Locked=1' \
+            '' \
+            '[Profile0]' \
+            'Name=default' \
+            'IsRelative=1' \
+            'Path=test.default' \
+            'Default=1' \
+            > /home/testuser/.mozilla/firefox/profiles.ini
+          chown testuser:testuser /home/testuser/.mozilla/firefox/profiles.ini
 
       - name: Run install.sh
         shell: bash
@@ -106,6 +120,11 @@ jobs:
               test -f ~/$f && echo "PASS: $f" || { echo "FAIL: $f"; exit 1; }
             done
 
+            echo "=== Firefox profile theme ==="
+            for f in .mozilla/firefox/test.default/user.js .mozilla/firefox/test.default/chrome/userChrome.css .mozilla/firefox/test.default/chrome/userContent.css; do
+              test -f ~/$f && ! test -L ~/$f && echo "PASS: $f (copied)" || { echo "FAIL: $f"; exit 1; }
+            done
+
             echo "=== AI context ==="
             test -f ~/AGENTS.md && echo "PASS: AGENTS.md"
             test -f ~/MACHINE.md && echo "PASS: MACHINE.md"
@@ -113,6 +132,10 @@ jobs:
             echo "=== Audit log ==="
             ls ~/.dotfiles-backup-*/install-audit.tsv > /dev/null && echo "PASS: install audit written"
           '
+
+      - name: Verify live files match the repository
+        run: |
+          su testuser -c "cd /home/testuser/dotfiles && DOTFILES_FULL_INSTALL=1 ./install.sh --check"
 
       - name: Validate Kitty config (headless parse)
         run: |

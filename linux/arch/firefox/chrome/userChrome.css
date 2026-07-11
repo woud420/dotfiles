@@ -1,0 +1,189 @@
+/*
+ * Desktop-matched Firefox chrome.
+ * Palette is pulled from the local Sway, Waybar, mako, and kitty configs.
+ */
+
+:root {
+  --jm-bg: #221820;
+  --jm-bg-deep: #18121a;
+  --jm-bg-soft: #2a1e2e;
+  --jm-surface: #332635;
+  --jm-surface-raised: #4a3844;
+  --jm-accent: #9d5a7f;
+  --jm-accent-strong: #cba6f7;
+  --jm-accent-soft: #6b4456;
+  --jm-text: #d0d0d0;
+  --jm-text-bright: #cdd6f4;
+  --jm-muted: #8a8a8a;
+  --jm-border: #626262;
+  --jm-urgent: #d68787;
+
+  --toolbar-bgcolor: var(--jm-bg) !important;
+  --toolbar-color: var(--jm-text) !important;
+  --lwt-accent-color: var(--jm-bg-deep) !important;
+  --lwt-text-color: var(--jm-text) !important;
+  --lwt-selected-tab-background-color: var(--jm-bg-soft) !important;
+  --lwt-toolbar-field-background-color: var(--jm-bg-deep) !important;
+  --lwt-toolbar-field-color: var(--jm-text-bright) !important;
+  --lwt-toolbar-field-border-color: var(--jm-accent-soft) !important;
+  --lwt-toolbar-field-focus: var(--jm-bg-deep) !important;
+  --lwt-toolbar-field-focus-color: var(--jm-text-bright) !important;
+  --lwt-toolbar-field-focus-border-color: var(--jm-accent) !important;
+  --lwt-toolbarbutton-icon-fill: var(--jm-text) !important;
+  --arrowpanel-background: var(--jm-bg) !important;
+  --arrowpanel-color: var(--jm-text) !important;
+  --arrowpanel-border-color: var(--jm-accent-soft) !important;
+  --button-bgcolor: color-mix(in srgb, var(--jm-surface) 86%, transparent) !important;
+  --button-hover-bgcolor: color-mix(in srgb, var(--jm-accent-soft) 80%, transparent) !important;
+  --button-active-bgcolor: var(--jm-accent) !important;
+
+  color-scheme: dark !important;
+}
+
+#navigator-toolbox {
+  background: var(--jm-bg) !important;
+  border-bottom: 1px solid var(--jm-accent-soft) !important;
+}
+
+#titlebar,
+#TabsToolbar,
+#nav-bar,
+#PersonalToolbar {
+  background: var(--jm-bg) !important;
+  color: var(--jm-text) !important;
+}
+
+#TabsToolbar {
+  --tab-min-height: 34px !important;
+}
+
+.tab-background {
+  border-radius: 6px 6px 0 0 !important;
+  margin-block: 4px 0 !important;
+  border: 1px solid transparent !important;
+}
+
+.tabbrowser-tab:hover > .tab-stack > .tab-background:not([selected]) {
+  background: var(--jm-surface) !important;
+  border-color: color-mix(in srgb, var(--jm-accent-soft) 70%, transparent) !important;
+}
+
+.tabbrowser-tab[selected] > .tab-stack > .tab-background {
+  background: var(--jm-bg-soft) !important;
+  border-color: var(--jm-accent) !important;
+  box-shadow: inset 0 2px 0 var(--jm-accent) !important;
+}
+
+.tab-label {
+  color: var(--jm-text) !important;
+}
+
+.tabbrowser-tab[selected] .tab-label {
+  color: var(--jm-text-bright) !important;
+}
+
+.tab-close-button:hover,
+.toolbarbutton-1:hover > .toolbarbutton-icon,
+.toolbarbutton-1:hover > .toolbarbutton-badge-stack,
+.toolbarbutton-1[open] > .toolbarbutton-icon,
+.toolbarbutton-1[open] > .toolbarbutton-badge-stack {
+  background-color: var(--jm-accent-soft) !important;
+}
+
+#urlbar-background,
+#searchbar {
+  background: var(--jm-bg-deep) !important;
+  border: 1px solid var(--jm-accent-soft) !important;
+  box-shadow: none !important;
+}
+
+#urlbar[focused] #urlbar-background {
+  border-color: var(--jm-accent) !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--jm-accent) 70%, transparent) !important;
+}
+
+#urlbar-input,
+#searchbar input {
+  color: var(--jm-text-bright) !important;
+}
+
+#identity-icon-box,
+#tracking-protection-icon-container {
+  color: var(--jm-muted) !important;
+}
+
+#urlbar .urlbarView {
+  background: var(--jm-bg) !important;
+  border: 1px solid var(--jm-accent-soft) !important;
+  color: var(--jm-text) !important;
+}
+
+.urlbarView-row:hover,
+.urlbarView-row[selected] {
+  background: var(--jm-surface-raised) !important;
+  color: var(--jm-text-bright) !important;
+}
+
+menupopup,
+panel,
+.panel-arrowcontent {
+  --panel-background: var(--jm-bg) !important;
+  --panel-color: var(--jm-text) !important;
+  --panel-border-color: var(--jm-accent-soft) !important;
+  --panel-border-radius: 6px !important;
+  --panel-separator-color: var(--jm-border) !important;
+}
+
+menu,
+menuitem,
+.subviewbutton,
+.toolbaritem-combined-buttons > toolbarbutton {
+  color: var(--jm-text) !important;
+}
+
+menu:hover,
+menuitem:hover,
+.subviewbutton:hover,
+.subviewbutton[open],
+.subviewbutton:focus-visible {
+  background: var(--jm-surface-raised) !important;
+  color: var(--jm-text-bright) !important;
+}
+
+#sidebar-box,
+#sidebar-header {
+  background: var(--jm-bg) !important;
+  color: var(--jm-text) !important;
+  border-color: var(--jm-accent-soft) !important;
+}
+
+#sidebar-search-container,
+#sidebar {
+  background: var(--jm-bg-deep) !important;
+  color: var(--jm-text) !important;
+}
+
+findbar {
+  background: var(--jm-bg) !important;
+  color: var(--jm-text) !important;
+  border-top: 1px solid var(--jm-accent-soft) !important;
+}
+
+findbar textbox {
+  background: var(--jm-bg-deep) !important;
+  color: var(--jm-text-bright) !important;
+  border-color: var(--jm-accent-soft) !important;
+}
+
+.findbar-find-status {
+  color: var(--jm-muted) !important;
+}
+
+.findbar-find-status[status="notfound"] {
+  color: var(--jm-urgent) !important;
+}
+
+::-moz-selection {
+  background: var(--jm-accent) !important;
+  color: var(--jm-text-bright) !important;
+}

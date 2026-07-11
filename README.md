@@ -20,12 +20,18 @@ make install
 ./install.sh --minimal      # Minimal config for servers/containers
 ./install.sh --no-packages  # Skip package installation
 ./install.sh --dry-run      # Preview what will be installed
+./install.sh --check        # Compare managed live files with the repo
+./install.sh --backup-only  # Snapshot managed files without installing
+./install.sh --doctor       # Check runtime dependencies
 
 # Make targets
 make install              # Full installation
 make install-minimal      # Minimal config
 make install-no-packages  # Config files only
 make install-dry-run      # Preview changes
+make check-live           # Detect missing or changed managed files
+make backup               # Create a path-preserving live backup
+make doctor               # Check commands, portals, fonts, and themes
 ```
 
 ### Remote Installation
@@ -81,6 +87,7 @@ dotfiles/
 | `common/nvim/init.vim` | `~/.config/nvim/init.vim` | Neovim bridge to the Vim config |
 | `.vim/coc-settings.json` | `~/.vim/` and `~/.config/nvim/` | CoC LSP settings (both editors) |
 | `scripts/sudo-askpass.sh` | `~/.local/bin/sudo-askpass` | GUI sudo prompt helper |
+| `linux/arch/firefox/*` | Active Firefox profile | Desktop-matched browser chrome and settings pages |
 
 ### Shell Functions
 
@@ -171,6 +178,20 @@ The installer automatically backs up existing configs to:
 ~/.dotfiles-backup-YYYYMMDD_HHMMSS/
 ```
 
+Backups mirror home-directory paths under `files/` and include an
+`install-audit.tsv`. Create a snapshot without changing live files with:
+
+```bash
+make backup
+```
+
+Restore one file after inspecting a backup:
+
+```bash
+cp -a ~/.dotfiles-backup-YYYYMMDD_HHMMSS/files/.config/waybar/config \
+  ~/.config/waybar/config
+```
+
 To clean old backups (30+ days):
 ```bash
 make clean-backup
@@ -187,7 +208,13 @@ and distribution and installs the right layer on top of `common/`:
   overlays)
 
 Installs are always copies (never symlinks) with path-preserving backups and
-an audit log. Preview any run with `./install.sh --dry-run`.
+an audit log. Preview any run with `./install.sh --dry-run`, then use
+`./install.sh --check` to prove every managed live copy matches the repo.
+
+On Arch, the installer also discovers the active profile from Firefox's
+`profiles.ini` and installs the tracked `userChrome.css`, `userContent.css`,
+and `user.js`. Launch Firefox once before the first install so the profile
+exists, and restart Firefox after those files change.
 
 This converges personal interactive machines on Zsh, Kitty, and Neovim while
 keeping Bash available as a fallback. The history of this effort is recorded

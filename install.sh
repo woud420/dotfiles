@@ -36,12 +36,19 @@ NC='\033[0m' # No Color
 
 # Configuration
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BACKUP_DIR="$HOME/.dotfiles-backup-$(date +%Y%m%d_%H%M%S)"
+BACKUP_DIR="${DOTFILES_BACKUP_DIR:-$HOME/.dotfiles-backup-$(date +%Y%m%d_%H%M%S)}"
 AUDIT_LOG=""
 INSTALL_ARGS="$*"
 MINIMAL_MODE=false
 INSTALL_PACKAGES=true
 DRY_RUN=false
+CHECK_MODE=false
+BACKUP_ONLY=false
+DOCTOR_MODE=false
+CHECKED_FILES=0
+CHECK_FAILURES=0
+BACKED_UP_FILES=0
+DOCTOR_FAILURES=0
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -58,6 +65,21 @@ while [[ $# -gt 0 ]]; do
             DRY_RUN=true
             shift
             ;;
+        --check)
+            CHECK_MODE=true
+            INSTALL_PACKAGES=false
+            shift
+            ;;
+        --backup-only)
+            BACKUP_ONLY=true
+            INSTALL_PACKAGES=false
+            shift
+            ;;
+        --doctor)
+            DOCTOR_MODE=true
+            INSTALL_PACKAGES=false
+            shift
+            ;;
         --copy)
             # Historical no-op: copied files are now the only install mode.
             shift
@@ -67,6 +89,9 @@ while [[ $# -gt 0 ]]; do
             echo "  --minimal       Install minimal config (no fancy tools)"
             echo "  --no-packages   Skip package installation"
             echo "  --dry-run       Show what would be done without doing it"
+            echo "  --check         Compare managed live files with the repo"
+            echo "  --backup-only   Back up managed live files without installing"
+            echo "  --doctor        Check runtime dependencies for this machine"
             echo "  --copy          No-op; files are always copied"
             echo "  -h, --help      Show this help"
             exit 0
@@ -77,6 +102,15 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+mode_count=0
+[[ "$CHECK_MODE" == "true" ]] && mode_count=$((mode_count + 1))
+[[ "$BACKUP_ONLY" == "true" ]] && mode_count=$((mode_count + 1))
+[[ "$DOCTOR_MODE" == "true" ]] && mode_count=$((mode_count + 1))
+if [[ "$mode_count" -gt 1 ]]; then
+    echo "Choose only one of --check, --backup-only, or --doctor"
+    exit 1
+fi
 
 # Logging functions
 log_info() {
@@ -99,8 +133,12 @@ log_step() {
     echo -e "${PURPLE}[STEP]${NC} $1"
 }
 
+state_only_mode() {
+    [[ "$CHECK_MODE" == "true" || "$BACKUP_ONLY" == "true" ]]
+}
+
 init_audit() {
-    if [[ "$DRY_RUN" == "true" ]] || [[ -n "$AUDIT_LOG" ]]; then
+    if [[ "$DRY_RUN" == "true" ]] || [[ "$CHECK_MODE" == "true" ]] || [[ -n "$AUDIT_LOG" ]]; then
         return
     fi
 
@@ -121,7 +159,7 @@ audit_action() {
     local target="${3:-}"
     local detail="${4:-}"
 
-    if [[ "$DRY_RUN" == "true" ]]; then
+    if [[ "$DRY_RUN" == "true" ]] || [[ "$CHECK_MODE" == "true" ]]; then
         return
     fi
 
@@ -151,6 +189,7 @@ detect_os() {
         OS="macos"
         DISTRO="macos"
     elif [[ -f /etc/os-release ]]; then
+        # shellcheck disable=SC1091
         source /etc/os-release
         OS="linux"
         DISTRO="${ID,,}" # Convert to lowercase
@@ -169,6 +208,7 @@ detect_os() {
 }
 
 # Container/Environment Detection
+# shellcheck disable=SC2034
 detect_environment() {
     if [[ -f /.dockerenv ]] || [[ -n "$CONTAINER" ]]; then
         ENVIRONMENT="container"
@@ -206,6 +246,54 @@ install_packages_macos() {
     fi
 }
 
+install_arch_aur_packages() {
+    local package_list="$DOTFILES_DIR/linux/arch/packages-aur.list"
+    [[ -f "$package_list" ]] || return 0
+
+    local helper=""
+    local candidate
+    for candidate in yay paru; do
+        if command -v "$candidate" >/dev/null 2>&1; then
+            helper="$candidate"
+            break
+        fi
+    done
+
+    if [[ -z "$helper" ]]; then
+        log_warning "No AUR helper found; install packages from $package_list manually"
+        return 0
+    fi
+
+    if [[ "$DRY_RUN" == "false" ]]; then
+        log_step "Installing AUR packages from $package_list with $helper..."
+        sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' "$package_list" \
+            | xargs "$helper" -S --needed --noconfirm \
+            || log_warning "Some AUR packages failed to install"
+    else
+        log_info "Would install packages from $package_list with $helper"
+    fi
+}
+
+install_arch_packages() {
+    local package_list="$1"
+    local packages=()
+    local package
+
+    while IFS= read -r package; do
+        [[ -n "$package" ]] || continue
+        if pacman -Si "$package" >/dev/null 2>&1; then
+            packages+=("$package")
+        else
+            log_warning "Skipping unavailable Arch package: $package"
+        fi
+    done < <(sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' "$package_list")
+
+    if [[ "${#packages[@]}" -gt 0 ]]; then
+        sudo pacman -S --needed --noconfirm "${packages[@]}" \
+            || log_warning "Some Arch packages failed to install"
+    fi
+}
+
 install_packages_linux() {
     local package_list=""
 
@@ -225,10 +313,11 @@ install_packages_linux() {
             package_list="$DOTFILES_DIR/linux/arch/packages.list"
             if [[ "$DRY_RUN" == "false" ]]; then
                 log_step "Installing packages from $package_list..."
-                # Filter comments and empty lines, then install
-                grep -v '^#' "$package_list" | grep -v '^$' | xargs sudo pacman -S --needed --noconfirm || log_warning "Some packages failed to install"
+                install_arch_packages "$package_list"
+                install_arch_aur_packages
             else
                 log_info "Would install packages from $package_list with pacman"
+                install_arch_aur_packages
             fi
             ;;
         rhel|centos|fedora)
@@ -262,6 +351,7 @@ install_packages_linux() {
 # Backup existing files (path-preserving: mirrors directory structure under BACKUP_DIR)
 backup_file() {
     local file="$1"
+    [[ "$CHECK_MODE" == "true" ]] && return 0
     if [[ -f "$file" ]] || [[ -L "$file" ]]; then
         if [[ "$DRY_RUN" == "false" ]]; then
             local backup_path
@@ -271,6 +361,7 @@ backup_file() {
                 audit_action "backup-skip" "$file" "$backup_path" "existing backup retained"
             else
                 cp -a "$file" "$backup_path"
+                BACKED_UP_FILES=$((BACKED_UP_FILES + 1))
                 audit_action "backup" "$file" "$backup_path" "existing target preserved"
                 log_info "Backed up $file to $backup_path"
             fi
@@ -316,7 +407,31 @@ materialize_target_dir() {
 install_file() {
     local source="$1"
     local target="$2"
-    local target_dir="$(dirname "$target")"
+    local target_dir
+    target_dir="$(dirname "$target")"
+
+    if [[ "$CHECK_MODE" == "true" ]]; then
+        CHECKED_FILES=$((CHECKED_FILES + 1))
+        if [[ -L "$target" ]]; then
+            log_error "Symlink where a regular copy is required: $target"
+            CHECK_FAILURES=$((CHECK_FAILURES + 1))
+        elif [[ ! -f "$target" ]]; then
+            log_error "Missing: $target"
+            CHECK_FAILURES=$((CHECK_FAILURES + 1))
+        elif ! cmp -s "$source" "$target"; then
+            log_error "Changed: $target"
+            CHECK_FAILURES=$((CHECK_FAILURES + 1))
+        elif [[ -x "$source" && ! -x "$target" ]]; then
+            log_error "Not executable: $target"
+            CHECK_FAILURES=$((CHECK_FAILURES + 1))
+        fi
+        return 0
+    fi
+
+    if [[ "$BACKUP_ONLY" == "true" ]]; then
+        backup_file "$target"
+        return 0
+    fi
 
     if [[ "$DRY_RUN" == "false" ]]; then
         # Create target directory if it doesn't exist
@@ -389,7 +504,13 @@ install_git_hooks() {
         return
     fi
 
-    if [[ "$DRY_RUN" == "false" ]]; then
+    if state_only_mode; then
+        for hook_file in "$hooks_src"/*; do
+            if [[ -f "$hook_file" && "$(basename "$hook_file")" != "README.md" ]]; then
+                install_file "$hook_file" "$hooks_dest/$(basename "$hook_file")"
+            fi
+        done
+    elif [[ "$DRY_RUN" == "false" ]]; then
         mkdir -p "$hooks_dest"
         for hook_file in "$hooks_src"/*; do
             if [[ -f "$hook_file" && "$(basename "$hook_file")" != "README.md" ]]; then
@@ -412,7 +533,16 @@ install_ssh_config() {
     [[ -f "$src" ]] || return 0
 
     log_step "Installing shared SSH config..."
-    if [[ "$DRY_RUN" == "false" ]]; then
+    if [[ "$CHECK_MODE" == "true" ]]; then
+        install_file "$src" "$HOME/.ssh/config.dotfiles"
+        if [[ ! -f "$HOME/.ssh/config" ]] || ! grep -q '^[[:space:]]*Include[[:space:]].*config\.dotfiles' "$HOME/.ssh/config"; then
+            log_error "Missing Include for ~/.ssh/config.dotfiles in ~/.ssh/config"
+            CHECK_FAILURES=$((CHECK_FAILURES + 1))
+        fi
+    elif [[ "$BACKUP_ONLY" == "true" ]]; then
+        backup_file "$HOME/.ssh/config"
+        install_file "$src" "$HOME/.ssh/config.dotfiles"
+    elif [[ "$DRY_RUN" == "false" ]]; then
         mkdir -p "$HOME/.ssh"
         chmod 700 "$HOME/.ssh"
         install_file "$src" "$HOME/.ssh/config.dotfiles"
@@ -438,7 +568,13 @@ install_ssh_config() {
 install_shell_functions() {
     log_step "Installing shell functions..."
 
-    if [[ "$DRY_RUN" == "false" ]]; then
+    if state_only_mode; then
+        for func_file in "$DOTFILES_DIR/common/shell-functions/"*.sh; do
+            if [[ -f "$func_file" ]]; then
+                install_file "$func_file" "$HOME/.config/shell-functions/$(basename "$func_file")"
+            fi
+        done
+    elif [[ "$DRY_RUN" == "false" ]]; then
         mkdir -p "$HOME/.config/shell-functions"
         for func_file in "$DOTFILES_DIR/common/shell-functions/"*.sh; do
             if [[ -f "$func_file" ]]; then
@@ -456,6 +592,8 @@ install_shell_functions() {
     # GUI sudo askpass helper at a stable path (sudo.sh points SUDO_ASKPASS here)
     if [[ "$MINIMAL_MODE" == "true" ]]; then
         log_info "Minimal mode: skipping sudo-askpass helper"
+    elif state_only_mode; then
+        install_file "$DOTFILES_DIR/scripts/sudo-askpass.sh" "$HOME/.local/bin/sudo-askpass"
     elif [[ "$DRY_RUN" == "false" ]]; then
         install_file "$DOTFILES_DIR/scripts/sudo-askpass.sh" "$HOME/.local/bin/sudo-askpass"
         chmod +x "$HOME/.local/bin/sudo-askpass"
@@ -469,11 +607,11 @@ install_terminal_config() {
     log_step "Installing terminal configuration..."
 
     # Kitty config based on OS (using hard copies for kitty to work properly)
-    if [[ "$DRY_RUN" == "false" ]]; then
+    if [[ "$DRY_RUN" == "false" ]] && ! state_only_mode; then
         audit_action "mkdir" "" "$HOME/.config/kitty" "ensure kitty config directory"
     fi
     
-    if [[ "$DRY_RUN" == "false" ]]; then
+    if [[ "$DRY_RUN" == "false" ]] || state_only_mode; then
         if [[ "$OS" == "macos" ]]; then
             install_file "$DOTFILES_DIR/darwin/kitty.conf" "$HOME/.config/kitty/kitty.conf"
         else
@@ -483,6 +621,10 @@ install_terminal_config() {
         # Copy themes
         for theme_file in "$DOTFILES_DIR/common/themes/"*.conf; do
             if [[ -f "$theme_file" ]]; then
+                if [[ ( "$DISTRO" == "arch" || "$DISTRO" == "manjaro" ) \
+                    && -f "$DOTFILES_DIR/linux/arch/.config/kitty/$(basename "$theme_file")" ]]; then
+                    continue
+                fi
                 install_file "$theme_file" "$HOME/.config/kitty/$(basename "$theme_file")"
             fi
         done
@@ -513,6 +655,23 @@ install_terminal_config() {
 # Install Linux desktop configurations (sway, waybar, gtk, rofi, mako, ...)
 # Copies everything under linux/arch/.config/ into ~/.config/ preserving
 # relative paths, so new tool configs are picked up without listing them here.
+desktop_config_files() {
+    local desktop_root="$DOTFILES_DIR/linux/arch/.config"
+    local rel
+
+    if git -C "$DOTFILES_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        while IFS= read -r -d '' rel; do
+            printf '%s\0' "$DOTFILES_DIR/$rel"
+        done < <(git -C "$DOTFILES_DIR" ls-files -z -- linux/arch/.config)
+    else
+        find "$desktop_root" -type f \
+            ! -path '*/__pycache__/*' \
+            ! -name '*.pyc' \
+            -print0 \
+            | sort -z
+    fi
+}
+
 install_desktop_configs() {
     if [[ "$DISTRO" != "arch" && "$DISTRO" != "manjaro" ]] || [[ "$MINIMAL_MODE" == "true" ]]; then
         return 0
@@ -523,11 +682,112 @@ install_desktop_configs() {
     local desktop_root="$DOTFILES_DIR/linux/arch/.config"
     local src rel
     while IFS= read -r -d '' src; do
-        rel="${src#$desktop_root/}"
+        rel="${src#"$desktop_root"/}"
         # kitty files are applied as theme overlays by install_terminal_config
         [[ "$rel" == kitty/* ]] && continue
         install_file "$src" "$HOME/.config/$rel"
-    done < <(find "$desktop_root" -type f -print0 | sort -z)
+    done < <(desktop_config_files)
+}
+
+firefox_default_profile() {
+    local firefox_root="$HOME/.mozilla/firefox"
+    local profiles_ini="$firefox_root/profiles.ini"
+    [[ -f "$profiles_ini" ]] || return 1
+
+    local section=""
+    local install_default=""
+    local profile_path=""
+    local profile_relative="1"
+    local profile_default="0"
+    local fallback_path=""
+    local fallback_relative="1"
+    local line=""
+
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        line="${line%$'\r'}"
+        if [[ "$line" == \[*\] ]]; then
+            if [[ "$section" == Profile* && "$profile_default" == "1" && -n "$profile_path" && -z "$fallback_path" ]]; then
+                fallback_path="$profile_path"
+                fallback_relative="$profile_relative"
+            fi
+            section="${line#[}"
+            section="${section%]}"
+            profile_path=""
+            profile_relative="1"
+            profile_default="0"
+            continue
+        fi
+
+        case "$section:$line" in
+            Install*:Default=*)
+                install_default="${line#*=}"
+                ;;
+            Profile*:Path=*)
+                profile_path="${line#*=}"
+                ;;
+            Profile*:IsRelative=*)
+                profile_relative="${line#*=}"
+                ;;
+            Profile*:Default=*)
+                profile_default="${line#*=}"
+                ;;
+        esac
+    done < "$profiles_ini"
+
+    if [[ "$section" == Profile* && "$profile_default" == "1" && -n "$profile_path" && -z "$fallback_path" ]]; then
+        fallback_path="$profile_path"
+        fallback_relative="$profile_relative"
+    fi
+
+    local selected=""
+    local relative="1"
+    if [[ -n "$install_default" ]]; then
+        selected="$install_default"
+    elif [[ -n "$fallback_path" ]]; then
+        selected="$fallback_path"
+        relative="$fallback_relative"
+    else
+        return 1
+    fi
+
+    local resolved="$selected"
+    if [[ "$relative" != "0" && "$selected" != /* ]]; then
+        resolved="$firefox_root/$selected"
+    fi
+
+    if [[ ! -d "$resolved" && -n "$fallback_path" && "$selected" != "$fallback_path" ]]; then
+        selected="$fallback_path"
+        resolved="$selected"
+        if [[ "$fallback_relative" != "0" && "$selected" != /* ]]; then
+            resolved="$firefox_root/$selected"
+        fi
+    fi
+
+    [[ -d "$resolved" ]] || return 1
+    printf '%s\n' "$resolved"
+}
+
+install_firefox_config() {
+    if [[ "$DISTRO" != "arch" && "$DISTRO" != "manjaro" ]] || [[ "$MINIMAL_MODE" == "true" ]]; then
+        return 0
+    fi
+
+    local profile=""
+    if ! profile="$(firefox_default_profile)"; then
+        if [[ "$CHECK_MODE" == "true" ]]; then
+            log_error "Firefox profile not found; launch Firefox once, then rerun the installer"
+            CHECK_FAILURES=$((CHECK_FAILURES + 1))
+        else
+            log_warning "Firefox profile not found; launch Firefox once, then rerun the installer"
+        fi
+        return 0
+    fi
+
+    log_step "Installing Firefox profile theme..."
+    local firefox_src="$DOTFILES_DIR/linux/arch/firefox"
+    install_file "$firefox_src/user.js" "$profile/user.js"
+    install_file "$firefox_src/chrome/userChrome.css" "$profile/chrome/userChrome.css"
+    install_file "$firefox_src/chrome/userContent.css" "$profile/chrome/userContent.css"
 }
 
 # Compile CoC.nvim after plugin installation (shared by vim + nvim paths)
@@ -570,7 +830,7 @@ compile_coc_nvim() {
 install_vim_config() {
     log_step "Installing vim configuration..."
 
-    if [[ "$DRY_RUN" == "false" ]]; then
+    if [[ "$DRY_RUN" == "false" ]] && ! state_only_mode; then
         mkdir -p "$HOME/.vim/settings"
     fi
 
@@ -586,6 +846,10 @@ install_vim_config() {
             install_file "$settings_file" "$HOME/.vim/settings/$(basename "$settings_file")"
         fi
     done
+
+    if state_only_mode; then
+        return 0
+    fi
 
     if [[ "$MINIMAL_MODE" == "true" ]]; then
         log_info "Minimal mode: skipping vim plugin installation"
@@ -649,6 +913,7 @@ run_vim_in_pty() {
 report_plug_count() {
     local expected installed
     expected="$(grep -c "^Plug '" "$HOME/.vim/plugins.vim" 2>/dev/null || echo 0)"
+    # shellcheck disable=SC2012
     installed="$(ls -1 "$HOME/.vim/plugged" 2>/dev/null | wc -l | tr -d ' ')"
     if [[ "$installed" -ge "$expected" && "$expected" -gt 0 ]]; then
         log_success "vim plugins installed ($installed/$expected)"
@@ -661,7 +926,11 @@ report_plug_count() {
 install_neovim_config() {
     log_step "Installing neovim configuration..."
 
-    if [[ "$DRY_RUN" == "false" ]]; then
+    if state_only_mode; then
+        install_file "$DOTFILES_DIR/common/nvim/init.vim" "$HOME/.config/nvim/init.vim"
+        install_file "$DOTFILES_DIR/.vim/coc-settings.json" "$HOME/.config/nvim/coc-settings.json"
+        return 0
+    elif [[ "$DRY_RUN" == "false" ]]; then
         mkdir -p "$HOME/.config/nvim"
 
         backup_file "$HOME/.config/nvim/init.vim"
@@ -697,6 +966,10 @@ install_neovim_config() {
 
 # Install optional tools
 install_optional_tools() {
+    if state_only_mode; then
+        return 0
+    fi
+
     if [[ "$MINIMAL_MODE" == "true" ]]; then
         log_info "Minimal mode: Skipping optional tools"
         return
@@ -732,7 +1005,9 @@ install_ai_context() {
     # only seed it when absent instead of clobbering it on every install.
     local claude_src="$DOTFILES_DIR/common/ai-context/CLAUDE.md"
     if [[ -f "$claude_src" ]]; then
-        if [[ -f "$HOME/.claude/CLAUDE.md" ]] && ! cmp -s "$claude_src" "$HOME/.claude/CLAUDE.md"; then
+        if [[ "$BACKUP_ONLY" == "true" ]]; then
+            backup_file "$HOME/.claude/CLAUDE.md"
+        elif [[ -f "$HOME/.claude/CLAUDE.md" ]] && ! cmp -s "$claude_src" "$HOME/.claude/CLAUDE.md"; then
             log_info "Keeping existing ~/.claude/CLAUDE.md (differs from repo version; merge manually if wanted)"
         else
             install_file "$claude_src" "$HOME/.claude/CLAUDE.md"
@@ -773,6 +1048,102 @@ install_ai_context() {
     # DOTFILES_DIR=$DOTFILES_DIR scripts/refresh-machine-state.sh
 }
 
+backup_local_overrides() {
+    [[ "$BACKUP_ONLY" == "true" ]] || return 0
+
+    local file
+    for file in \
+        "$HOME/.bashrc.local" \
+        "$HOME/.zshrc.local" \
+        "$HOME/.gitconfig.local" \
+        "$HOME/.ssh/config"; do
+        backup_file "$file"
+    done
+}
+
+doctor_require_command() {
+    local command="$1"
+    if command -v "$command" >/dev/null 2>&1; then
+        log_success "$command"
+    else
+        log_error "Missing command: $command"
+        DOCTOR_FAILURES=$((DOCTOR_FAILURES + 1))
+    fi
+}
+
+doctor_require_path() {
+    local path="$1"
+    local description="$2"
+    if [[ -e "$path" ]]; then
+        log_success "$description"
+    else
+        log_error "Missing $description: $path"
+        DOCTOR_FAILURES=$((DOCTOR_FAILURES + 1))
+    fi
+}
+
+doctor_optional_command() {
+    local command="$1"
+    if command -v "$command" >/dev/null 2>&1; then
+        log_success "$command (optional)"
+    else
+        log_warning "Optional command not found: $command"
+    fi
+}
+
+run_doctor() {
+    log_step "Checking runtime dependencies..."
+
+    local command
+    local common_commands=(bash git zsh kitty nvim rg fzf)
+    for command in "${common_commands[@]}"; do
+        doctor_require_command "$command"
+    done
+
+    if [[ "$DISTRO" == "arch" || "$DISTRO" == "manjaro" ]]; then
+        local desktop_commands=(
+            sway waybar rofi mako grim slurp wl-copy cliphist playerctl
+            thunar ranger pavucontrol notify-send nmcli pactl firefox
+            spotify slack steam
+        )
+        for command in "${desktop_commands[@]}"; do
+            doctor_require_command "$command"
+        done
+
+        doctor_require_path "/usr/lib/xdg-desktop-portal" "desktop portal"
+        doctor_require_path "/usr/lib/xdg-desktop-portal-gtk" "GTK portal backend"
+        doctor_require_path "/usr/lib/xdg-desktop-portal-wlr" "wlroots portal backend"
+        doctor_require_path "/usr/share/themes/Nordic-darker" "Nordic-darker GTK theme"
+
+        if command -v fc-list >/dev/null 2>&1 && fc-list -q "FiraCode Nerd Font"; then
+            log_success "FiraCode Nerd Font"
+        else
+            log_error "Missing FiraCode Nerd Font"
+            DOCTOR_FAILURES=$((DOCTOR_FAILURES + 1))
+        fi
+
+        if command -v sway >/dev/null 2>&1 && sway --version 2>/dev/null | grep -qi swayfx; then
+            log_success "SwayFX runtime"
+        else
+            log_error "SwayFX is required by the committed Sway effects"
+            DOCTOR_FAILURES=$((DOCTOR_FAILURES + 1))
+        fi
+
+        doctor_optional_command docker
+        doctor_optional_command kubectl
+        if [[ ! -f "$HOME/.config/waybar/modules/mailsecrets.py" ]]; then
+            log_warning "Waybar mail counter is disabled until mailsecrets.py exists"
+        fi
+    fi
+
+    if [[ "$DOCTOR_FAILURES" -gt 0 ]]; then
+        log_error "Doctor found $DOCTOR_FAILURES missing required component(s)"
+        return 1
+    fi
+
+    log_success "Runtime dependencies are present"
+}
+
 # Main installation function
 main() {
     echo -e "${CYAN}"
@@ -784,6 +1155,11 @@ main() {
 
     detect_os
     detect_environment
+
+    if [[ "$DOCTOR_MODE" == "true" ]]; then
+        run_doctor
+        return
+    fi
 
     if [[ "$DRY_RUN" == "true" ]]; then
         log_warning "DRY RUN MODE - No changes will be made"
@@ -814,10 +1190,27 @@ main() {
     install_shell_functions     # 3. Shell functions (depends on shell configs)
     install_terminal_config     # 4. Terminal configs (kitty, htop)
     install_desktop_configs     # 5. Linux desktop configs (sway/waybar/gtk) - arch only
-    install_vim_config          # 6. Vim setup (plugins, settings, CoC compilation)
-    install_neovim_config       # 7. Neovim bridge to Vim config
-    install_optional_tools      # 8. Optional tools (fzf, etc.) - last
-    install_ai_context          # 9. AI context files (CLAUDE.md, AGENTS.md, MACHINE.md)
+    install_firefox_config      # 6. Firefox profile chrome/content theme - arch only
+    install_vim_config          # 7. Vim setup (plugins, settings, CoC compilation)
+    install_neovim_config       # 8. Neovim bridge to Vim config
+    install_optional_tools      # 9. Optional tools (fzf, etc.) - last
+    install_ai_context          # 10. AI context files (CLAUDE.md, AGENTS.md, MACHINE.md)
+    backup_local_overrides
+
+    if [[ "$CHECK_MODE" == "true" ]]; then
+        if [[ "$CHECK_FAILURES" -gt 0 ]]; then
+            log_error "$CHECK_FAILURES of $CHECKED_FILES managed files or requirements differ"
+            return 1
+        fi
+        log_success "All $CHECKED_FILES managed files match the repo"
+        return 0
+    fi
+
+    if [[ "$BACKUP_ONLY" == "true" ]]; then
+        log_success "Backed up $BACKED_UP_FILES live files to $BACKUP_DIR"
+        [[ -n "$AUDIT_LOG" ]] && log_info "Audit log: $AUDIT_LOG"
+        return 0
+    fi
     
     echo -e "${GREEN}"
     echo "╔══════════════════════════════════════════════════════════════╗"

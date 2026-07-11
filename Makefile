@@ -1,4 +1,4 @@
-.PHONY: all help install install-minimal install-no-packages install-dry-run install-copy install-git-hooks check test-install check-editor brew-sync clean-backup
+.PHONY: all help install install-minimal install-no-packages install-dry-run install-copy install-git-hooks check check-live test-install check-editor doctor backup brew-sync clean-backup
 .ONESHELL:
 
 SHELL		= /bin/bash
@@ -26,6 +26,15 @@ check: test-install
 	bash -n $(DOTFILE_DIR)/install.sh
 	bash -n $(DOTFILE_DIR)/scripts/check-editor-parity.sh
 	bash -n $(DOTFILE_DIR)/scripts/test-install.sh
+
+check-live:
+	$(DOTFILE_DIR)/install.sh --check
+
+doctor:
+	$(DOTFILE_DIR)/install.sh --doctor
+
+backup:
+	$(DOTFILE_DIR)/install.sh --backup-only
 
 test-install:
 	$(DOTFILE_DIR)/scripts/test-install.sh
@@ -63,11 +72,14 @@ help:
 	@echo ""
 	@echo "Checks:"
 	@echo "  make check              # Lint installer scripts + run smoke test"
+	@echo "  make check-live         # Compare managed live files with the repo"
 	@echo "  make test-install       # Run the installer against a temp HOME"
 	@echo "  make check-editor       # Verify vim/nvim behavior parity"
+	@echo "  make doctor             # Check runtime dependencies"
 	@echo ""
 	@echo "Maintenance:"
 	@echo "  make brew-sync          # Update Brewfile with current packages"
+	@echo "  make backup             # Back up managed live files without installing"
 	@echo "  make clean-backup       # Remove old backup directories (30+ days)"
 	@echo ""
 	@echo "Direct script usage:"
