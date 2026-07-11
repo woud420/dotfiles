@@ -1,0 +1,19 @@
+install.sh
+  s_9acda3e46ac170::t_ce9648c1969692 52-55,296,309,311,332,334,344
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "7ecc32a647a59865f03daef3ed1dd7a10cbb2bf6",
+  "prompts": {},
+  "sessions": {
+    "s_9acda3e46ac170": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ef243-83a4-7581-8d79-3dd1ac42c640",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Jean-Michel Bouchard <jim@polarcoordinates.org>"
+    }
+  }
+}
