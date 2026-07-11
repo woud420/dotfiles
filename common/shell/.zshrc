@@ -130,7 +130,7 @@ path_prepend() {
   done
 }
 
-path_prepend "/opt/homebrew/bin" "/usr/local/bin" "/usr/local/sbin" "$HOME/bin" "$HOME/.local/bin" "$HOME/.cargo/bin" "$HOME/.git-ai/bin"
+path_prepend "/opt/homebrew/bin" "/usr/local/bin" "/usr/local/sbin" "$HOME/bin" "$HOME/.local/bin" "$HOME/.cargo/bin"
 
 # mise (version manager for Python, Node, etc.)
 if command -v mise >/dev/null 2>&1; then

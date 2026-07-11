@@ -243,7 +243,7 @@ Machine-specific config lives outside the repo and survives reinstalls:
 
 - `~/.bashrc.local` / `~/.zshrc.local` - sourced at the end of the shell configs
 - `~/.gitconfig.local` - included last by `.gitconfig`, so identity or
-  tool-appended blocks (e.g. git-ai) win over the shared config
+  tool-specific settings win over the shared config
 - `~/.ssh/config` - your own host entries stay first; the shared defaults are
   pulled in via `Include ~/.ssh/config.dotfiles`. Note the shared defaults set
   `ForwardAgent yes` globally - convenient across personal machines, but scope

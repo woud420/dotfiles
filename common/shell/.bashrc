@@ -154,7 +154,7 @@ path_prepend() {
 }
 
 path_prepend "/usr/local/bin" "/usr/local/sbin" "/opt/homebrew/bin" \
-    "$HOME/bin" "$HOME/.local/bin" "$HOME/.cargo/bin" "$HOME/.git-ai/bin"
+    "$HOME/bin" "$HOME/.local/bin" "$HOME/.cargo/bin"
 export PATH
 
 # Load custom shell functions
