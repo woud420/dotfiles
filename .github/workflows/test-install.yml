@@ -89,7 +89,7 @@ jobs:
             'Path=test.default' \
             'Default=1' \
             > /home/testuser/.mozilla/firefox/profiles.ini
-          chown testuser:testuser /home/testuser/.mozilla/firefox/profiles.ini
+          chown -R testuser:testuser /home/testuser/.mozilla
 
       - name: Run install.sh
         shell: bash
