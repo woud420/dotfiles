@@ -1,0 +1,27 @@
+README.md
+  s_9acda3e46ac170::t_58c560dd88da48 246
+linux/arch/.config/waybar/config
+  s_9acda3e46ac170::t_58c560dd88da48 27
+common/shell/.bashrc
+  s_9acda3e46ac170::t_58c560dd88da48 157
+common/git/.gitconfig
+  s_9acda3e46ac170::t_58c560dd88da48 89
+common/shell/.zshrc
+  s_9acda3e46ac170::t_58c560dd88da48 133
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "ca79467b86664119b214babce2c352076081837e",
+  "prompts": {},
+  "sessions": {
+    "s_9acda3e46ac170": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ef243-83a4-7581-8d79-3dd1ac42c640",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Jean-Michel Bouchard <jim@polarcoordinates.org>"
+    }
+  }
+}
