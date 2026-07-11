@@ -254,6 +254,20 @@ install_arch_aur_packages() {
     local package_list="$DOTFILES_DIR/linux/arch/packages-aur.list"
     [[ -f "$package_list" ]] || return 0
 
+    local packages=()
+    local package
+    while IFS= read -r package; do
+        [[ -n "$package" ]] || continue
+        if ! pacman -Q "$package" >/dev/null 2>&1; then
+            packages+=("$package")
+        fi
+    done < <(sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' "$package_list")
+
+    if [[ "${#packages[@]}" -eq 0 ]]; then
+        log_info "AUR packages are already installed"
+        return 0
+    fi
+
     local helper=""
     local candidate
     for candidate in yay paru; do
@@ -269,12 +283,11 @@ install_arch_aur_packages() {
     fi
 
     if [[ "$DRY_RUN" == "false" ]]; then
-        log_step "Installing AUR packages from $package_list with $helper..."
-        sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' "$package_list" \
-            | xargs "$helper" -S --needed --noconfirm \
+        log_step "Installing missing AUR packages from $package_list with $helper..."
+        "$helper" -S --needed --noconfirm "${packages[@]}" \
             || log_warning "Some AUR packages failed to install"
     else
-        log_info "Would install packages from $package_list with $helper"
+        log_info "Would install ${#packages[@]} missing packages from $package_list with $helper"
     fi
 }
 
@@ -285,6 +298,9 @@ install_arch_packages() {
 
     while IFS= read -r package; do
         [[ -n "$package" ]] || continue
+        if pacman -Q "$package" >/dev/null 2>&1; then
+            continue
+        fi
         if pacman -Si "$package" >/dev/null 2>&1; then
             packages+=("$package")
         else
@@ -292,10 +308,21 @@ install_arch_packages() {
         fi
     done < <(sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' "$package_list")
 
-    if [[ "${#packages[@]}" -gt 0 ]]; then
-        "${SUDO_CMD[@]}" pacman -S --needed --noconfirm "${packages[@]}" \
-            || log_warning "Some Arch packages failed to install"
+    if [[ "${#packages[@]}" -eq 0 ]]; then
+        log_info "Official Arch packages are already installed"
+        return 0
     fi
+
+    if "${SUDO_CMD[@]}" pacman -S --needed --noconfirm "${packages[@]}"; then
+        return 0
+    fi
+
+    log_warning "Batch install failed; retrying missing packages individually"
+    for package in "${packages[@]}"; do
+        pacman -Q "$package" >/dev/null 2>&1 && continue
+        "${SUDO_CMD[@]}" pacman -S --needed --noconfirm "$package" \
+            || log_warning "Failed to install Arch package: $package"
+    done
 }
 
 install_packages_linux() {
