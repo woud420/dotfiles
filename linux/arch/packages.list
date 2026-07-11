@@ -51,7 +51,7 @@ python
 python-pip
 python-virtualenv
 ripgrep
-rust
+rustup
 tmux
 tree
 vim
