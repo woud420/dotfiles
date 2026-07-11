@@ -633,6 +633,24 @@ install_shell_functions() {
     fi
 }
 
+# Kitty watches its config files, but install_file replaces them one at a time.
+# Force one final reload after the complete config and theme set is present.
+reload_running_kitty() {
+    if [[ "$DRY_RUN" == "true" ]] || state_only_mode \
+        || [[ "${DOTFILES_NO_RUNTIME_RELOAD:-0}" == "1" ]]; then
+        return 0
+    fi
+
+    local kitty_pid="${KITTY_PID:-}"
+    [[ "$kitty_pid" =~ ^[0-9]+$ ]] || return 0
+
+    if kill -USR1 "$kitty_pid" 2>/dev/null; then
+        log_success "Reloaded Kitty configuration"
+    else
+        log_warning "Could not reload Kitty process $kitty_pid; press Ctrl+Shift+F5 in Kitty"
+    fi
+}
+
 # Install terminal configuration
 install_terminal_config() {
     log_step "Installing terminal configuration..."
@@ -667,6 +685,8 @@ install_terminal_config() {
                 install_file "$theme_file" "$HOME/.config/kitty/$(basename "$theme_file")"
             done
         fi
+
+        reload_running_kitty
     else
         if [[ "$OS" == "macos" ]]; then
             log_info "Would copy: darwin/kitty.conf -> ~/.config/kitty/kitty.conf"

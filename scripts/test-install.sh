@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-install-test.XXXXXX")"
+export DOTFILES_NO_RUNTIME_RELOAD=1
 TEST_HOME="$TMP_DIR/home"
 DRY_HOME="$TMP_DIR/dry-home"
 STUB_DIR="$TMP_DIR/bin"
@@ -17,10 +18,16 @@ trap cleanup EXIT
 
 mkdir -p \
     "$TEST_HOME/.mozilla/firefox/test.default/chrome" \
+    "$TEST_HOME/.ssh" \
     "$DRY_HOME" \
     "$STUB_DIR"
 
 printf 'pre-install bashrc\n' > "$TEST_HOME/.bashrc"
+cat > "$TEST_HOME/.ssh/config" <<'SSH_CONFIG'
+Host github.com
+  User git
+  IdentityFile ~/.ssh/github_ed25519
+SSH_CONFIG
 cat > "$TEST_HOME/.mozilla/firefox/profiles.ini" <<'PROFILE'
 [InstallTest]
 Default=test.default
@@ -85,6 +92,11 @@ assert_file "$TEST_HOME/.config/kitty/kitty.conf"
 assert_file "$TEST_HOME/.config/shell-functions/git.sh"
 assert_regular_copy "$TEST_HOME/.config/shell-functions/editor.sh" "$ROOT_DIR/common/shell-functions/editor.sh"
 assert_regular_copy "$TEST_HOME/.config/shell-functions/which.sh" "$ROOT_DIR/common/shell-functions/which.sh"
+assert_regular_copy "$TEST_HOME/.ssh/config.dotfiles" "$ROOT_DIR/common/ssh/config"
+grep -q 'Include ~/.ssh/config.dotfiles' "$TEST_HOME/.ssh/config" || fail "shared SSH include is missing"
+grep -q 'IdentityFile ~/.ssh/github_ed25519' "$TEST_HOME/.ssh/config" || fail "machine-local SSH identity was lost"
+! grep -Eq '^[[:space:]]*IdentityFile[[:space:]]' "$TEST_HOME/.ssh/config.dotfiles" \
+    || fail "shared SSH config must not select a machine-specific identity"
 
 AUDIT_LOG="$INSTALL_BACKUP/install-audit.tsv"
 [[ -f "$AUDIT_LOG" ]] || fail "audit log was not created"
@@ -92,6 +104,8 @@ grep -q $'\tcopy\t' "$AUDIT_LOG" || fail "audit log has no copy action"
 ! grep -q $'\tlink\t' "$AUDIT_LOG" || fail "audit log must not contain link actions"
 grep -q "$ROOT_DIR/common/nvim/init.vim" "$AUDIT_LOG" || fail "audit log does not include neovim init"
 grep -q '^pre-install bashrc$' "$INSTALL_BACKUP/files/.bashrc" || fail "pre-install bashrc was not backed up"
+grep -q 'IdentityFile ~/.ssh/github_ed25519' "$INSTALL_BACKUP/files/.ssh/config" \
+    || fail "machine-local SSH config was not backed up"
 
 if [[ -f /etc/os-release ]]; then
     # shellcheck disable=SC1091
