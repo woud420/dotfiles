@@ -3,7 +3,6 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-install-test.XXXXXX")"
-export DOTFILES_NO_RUNTIME_RELOAD=1
 TEST_HOME="$TMP_DIR/home"
 DRY_HOME="$TMP_DIR/dry-home"
 STUB_DIR="$TMP_DIR/bin"
@@ -72,12 +71,21 @@ assert_file() {
     [[ -f "$path" ]] || fail "$path is not a file"
 }
 
-HOME="$TEST_HOME" \
-PATH="$STUB_DIR:$PATH" \
-DOTFILES_INSTALL_TEST_LOG="$STUB_LOG" \
-DOTFILES_BACKUP_DIR="$INSTALL_BACKUP" \
-DOTFILES_FULL_INSTALL=1 \
-    "$ROOT_DIR/install.sh" --no-packages > "$TMP_DIR/install.log"
+run_installer() {
+    local home="$1"
+    local backup_dir="$2"
+    shift 2
+
+    HOME="$home" \
+    PATH="$STUB_DIR:$PATH" \
+    KITTY_PID='' \
+    DOTFILES_INSTALL_TEST_LOG="$STUB_LOG" \
+    DOTFILES_BACKUP_DIR="$backup_dir" \
+    DOTFILES_FULL_INSTALL=1 \
+        "$ROOT_DIR/install.sh" "$@"
+}
+
+run_installer "$TEST_HOME" "$INSTALL_BACKUP" --no-packages > "$TMP_DIR/install.log"
 
 assert_regular_copy "$TEST_HOME/.bashrc" "$ROOT_DIR/common/shell/.bashrc"
 assert_regular_copy "$TEST_HOME/.zshrc" "$ROOT_DIR/common/shell/.zshrc"
@@ -117,43 +125,27 @@ if [[ -f /etc/os-release ]]; then
     fi
 fi
 
-if ! HOME="$TEST_HOME" \
-    PATH="$STUB_DIR:$PATH" \
-    DOTFILES_INSTALL_TEST_LOG="$STUB_LOG" \
-    DOTFILES_FULL_INSTALL=1 \
-        "$ROOT_DIR/install.sh" --check > "$TMP_DIR/check-clean.log" 2>&1; then
+if ! run_installer "$TEST_HOME" "$INSTALL_BACKUP" --check > "$TMP_DIR/check-clean.log" 2>&1; then
     cat "$TMP_DIR/check-clean.log" >&2
     fail "--check rejected a clean install"
 fi
 
 printf 'locally changed zshrc\n' > "$TEST_HOME/.zshrc"
-if HOME="$TEST_HOME" PATH="$STUB_DIR:$PATH" DOTFILES_FULL_INSTALL=1 \
-    "$ROOT_DIR/install.sh" --check > "$TMP_DIR/check-drift.log" 2>&1; then
+if run_installer "$TEST_HOME" "$INSTALL_BACKUP" --check > "$TMP_DIR/check-drift.log" 2>&1; then
     fail "--check did not detect a changed zshrc"
 fi
 
-HOME="$TEST_HOME" \
-PATH="$STUB_DIR:$PATH" \
-DOTFILES_INSTALL_TEST_LOG="$STUB_LOG" \
-DOTFILES_BACKUP_DIR="$MANUAL_BACKUP" \
-DOTFILES_FULL_INSTALL=1 \
-    "$ROOT_DIR/install.sh" --backup-only > "$TMP_DIR/backup.log"
+run_installer "$TEST_HOME" "$MANUAL_BACKUP" --backup-only > "$TMP_DIR/backup.log"
 grep -q '^locally changed zshrc$' "$MANUAL_BACKUP/files/.zshrc" || fail "--backup-only did not preserve live drift"
 grep -q '^locally changed zshrc$' "$TEST_HOME/.zshrc" || fail "--backup-only changed the live file"
 
 cp "$ROOT_DIR/common/shell/.zshrc" "$TEST_HOME/.zshrc"
-if ! HOME="$TEST_HOME" PATH="$STUB_DIR:$PATH" DOTFILES_FULL_INSTALL=1 \
-    "$ROOT_DIR/install.sh" --check > "$TMP_DIR/check-restored.log" 2>&1; then
+if ! run_installer "$TEST_HOME" "$INSTALL_BACKUP" --check > "$TMP_DIR/check-restored.log" 2>&1; then
     cat "$TMP_DIR/check-restored.log" >&2
     fail "--check rejected the restored install"
 fi
 
-HOME="$DRY_HOME" \
-PATH="$STUB_DIR:$PATH" \
-DOTFILES_INSTALL_TEST_LOG="$STUB_LOG" \
-DOTFILES_BACKUP_DIR="$TMP_DIR/dry-backup" \
-DOTFILES_FULL_INSTALL=1 \
-    "$ROOT_DIR/install.sh" --dry-run --no-packages > "$TMP_DIR/dry-run.log"
+run_installer "$DRY_HOME" "$TMP_DIR/dry-backup" --dry-run --no-packages > "$TMP_DIR/dry-run.log"
 [[ -z "$(find "$DRY_HOME" -mindepth 1 -print -quit)" ]] || fail "--dry-run changed HOME"
 [[ ! -e "$TMP_DIR/dry-backup" ]] || fail "--dry-run created a backup directory"
 

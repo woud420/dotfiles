@@ -20,9 +20,6 @@
     --jm-accent-soft: #6b4456;
     --jm-text: #d0d0d0;
     --jm-text-bright: #cdd6f4;
-    --jm-muted: #8a8a8a;
-    --jm-border: #626262;
-    --jm-urgent: #d68787;
 
     color-scheme: dark !important;
     --in-content-page-background: var(--jm-bg) !important;

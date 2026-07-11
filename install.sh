@@ -141,6 +141,10 @@ state_only_mode() {
     [[ "$CHECK_MODE" == "true" || "$BACKUP_ONLY" == "true" ]]
 }
 
+is_arch_family() {
+    [[ "$DISTRO" == "arch" || "$DISTRO" == "manjaro" ]]
+}
+
 init_audit() {
     if [[ "$DRY_RUN" == "true" ]] || [[ "$CHECK_MODE" == "true" ]] || [[ -n "$AUDIT_LOG" ]]; then
         return
@@ -556,9 +560,10 @@ install_git_hooks() {
     fi
 }
 
-# Install shared SSH config without clobbering machine-local host entries:
-# the shared file lands at ~/.ssh/config.dotfiles and is Include'd from
-# ~/.ssh/config, so per-machine hosts keep precedence.
+# Install shared SSH config without replacing machine-local host entries:
+# the shared file lands at ~/.ssh/config.dotfiles and is included before the
+# existing ~/.ssh/config content. Shared scalar defaults therefore win under
+# OpenSSH's first-value semantics; identity files remain machine-local.
 install_ssh_config() {
     local src="$DOTFILES_DIR/common/ssh/config"
     [[ -f "$src" ]] || return 0
@@ -636,8 +641,7 @@ install_shell_functions() {
 # Kitty watches its config files, but install_file replaces them one at a time.
 # Force one final reload after the complete config and theme set is present.
 reload_running_kitty() {
-    if [[ "$DRY_RUN" == "true" ]] || state_only_mode \
-        || [[ "${DOTFILES_NO_RUNTIME_RELOAD:-0}" == "1" ]]; then
+    if [[ "$DRY_RUN" == "true" ]] || state_only_mode; then
         return 0
     fi
 
@@ -670,8 +674,8 @@ install_terminal_config() {
         # Copy themes
         for theme_file in "$DOTFILES_DIR/common/themes/"*.conf; do
             if [[ -f "$theme_file" ]]; then
-                if [[ ( "$DISTRO" == "arch" || "$DISTRO" == "manjaro" ) \
-                    && -f "$DOTFILES_DIR/linux/arch/.config/kitty/$(basename "$theme_file")" ]]; then
+                if is_arch_family \
+                    && [[ -f "$DOTFILES_DIR/linux/arch/.config/kitty/$(basename "$theme_file")" ]]; then
                     continue
                 fi
                 install_file "$theme_file" "$HOME/.config/kitty/$(basename "$theme_file")"
@@ -679,7 +683,7 @@ install_terminal_config() {
         done
 
         # Arch-specific theme overrides (e.g. personal-pink plum background)
-        if [[ "$DISTRO" == "arch" || "$DISTRO" == "manjaro" ]]; then
+        if is_arch_family; then
             for theme_file in "$DOTFILES_DIR/linux/arch/.config/kitty/"*.conf; do
                 [[ -f "$theme_file" ]] || continue
                 install_file "$theme_file" "$HOME/.config/kitty/$(basename "$theme_file")"
@@ -694,7 +698,7 @@ install_terminal_config() {
             log_info "Would copy: linux/common/kitty.conf -> ~/.config/kitty/kitty.conf"
         fi
         log_info "Would copy kitty themes to ~/.config/kitty/"
-        if [[ "$DISTRO" == "arch" || "$DISTRO" == "manjaro" ]]; then
+        if is_arch_family; then
             log_info "Would apply Arch kitty overrides from linux/arch/.config/kitty/ to ~/.config/kitty/"
         fi
     fi
@@ -724,7 +728,7 @@ desktop_config_files() {
 }
 
 install_desktop_configs() {
-    if [[ "$DISTRO" != "arch" && "$DISTRO" != "manjaro" ]] || [[ "$MINIMAL_MODE" == "true" ]]; then
+    if ! is_arch_family || [[ "$MINIMAL_MODE" == "true" ]]; then
         return 0
     fi
 
@@ -819,7 +823,7 @@ firefox_default_profile() {
 }
 
 install_firefox_config() {
-    if [[ "$DISTRO" != "arch" && "$DISTRO" != "manjaro" ]] || [[ "$MINIMAL_MODE" == "true" ]]; then
+    if ! is_arch_family || [[ "$MINIMAL_MODE" == "true" ]]; then
         return 0
     fi
 
@@ -1151,7 +1155,7 @@ run_doctor() {
         doctor_require_command "$command"
     done
 
-    if [[ "$DISTRO" == "arch" || "$DISTRO" == "manjaro" ]]; then
+    if is_arch_family; then
         local desktop_commands=(
             sway waybar rofi mako grim slurp wl-copy cliphist playerctl
             thunar ranger pavucontrol notify-send nmcli pactl firefox

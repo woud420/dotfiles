@@ -244,10 +244,11 @@ Machine-specific config lives outside the repo and survives reinstalls:
 - `~/.bashrc.local` / `~/.zshrc.local` - sourced at the end of the shell configs
 - `~/.gitconfig.local` - included last by `.gitconfig`, so identity or
   tool-specific settings win over the shared config
-- `~/.ssh/config` - your own host entries stay first; the shared defaults are
-  pulled in via `Include ~/.ssh/config.dotfiles`. Note the shared defaults set
-  `ForwardAgent yes` globally - convenient across personal machines, but scope
-  it per-host in a local block if you ssh to hosts you don't control.
+- `~/.ssh/config` - machine-specific host entries and identity files stay in
+  this local file; shared defaults are pulled in first via
+  `Include ~/.ssh/config.dotfiles`. OpenSSH keeps the first value it reads, so
+  change a shared scalar default such as `ForwardAgent` in `common/ssh/config`
+  rather than trying to override it in a later local host block.
 
 ### Personal Git Hooks
 
