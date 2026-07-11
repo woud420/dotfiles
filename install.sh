@@ -49,6 +49,10 @@ CHECKED_FILES=0
 CHECK_FAILURES=0
 BACKED_UP_FILES=0
 DOCTOR_FAILURES=0
+SUDO_CMD=(sudo)
+if [[ -n "${SUDO_ASKPASS:-}" && -x "${SUDO_ASKPASS}" ]]; then
+    SUDO_CMD=(sudo -A)
+fi
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -289,7 +293,7 @@ install_arch_packages() {
     done < <(sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' "$package_list")
 
     if [[ "${#packages[@]}" -gt 0 ]]; then
-        sudo pacman -S --needed --noconfirm "${packages[@]}" \
+        "${SUDO_CMD[@]}" pacman -S --needed --noconfirm "${packages[@]}" \
             || log_warning "Some Arch packages failed to install"
     fi
 }
@@ -302,9 +306,9 @@ install_packages_linux() {
             package_list="$DOTFILES_DIR/linux/debian/packages.list"
             if [[ "$DRY_RUN" == "false" ]]; then
                 log_step "Updating package lists..."
-                sudo apt-get update
+                "${SUDO_CMD[@]}" apt-get update
                 log_step "Installing packages from $package_list..."
-                grep -v '^#' "$package_list" | grep -v '^$' | xargs sudo apt-get install -y
+                grep -v '^#' "$package_list" | grep -v '^$' | xargs "${SUDO_CMD[@]}" apt-get install -y
             else
                 log_info "Would run: apt-get update && install packages from $package_list"
             fi
@@ -325,9 +329,9 @@ install_packages_linux() {
             if [[ "$DRY_RUN" == "false" ]]; then
                 log_step "Installing packages from $package_list..."
                 if command -v dnf >/dev/null 2>&1; then
-                    grep -v '^#' "$package_list" | grep -v '^$' | xargs sudo dnf install -y
+                    grep -v '^#' "$package_list" | grep -v '^$' | xargs "${SUDO_CMD[@]}" dnf install -y
                 else
-                    grep -v '^#' "$package_list" | grep -v '^$' | xargs sudo yum install -y
+                    grep -v '^#' "$package_list" | grep -v '^$' | xargs "${SUDO_CMD[@]}" yum install -y
                 fi
             else
                 log_info "Would install packages from $package_list with yum/dnf"
@@ -337,7 +341,7 @@ install_packages_linux() {
             package_list="$DOTFILES_DIR/linux/alpine/packages.list"
             if [[ "$DRY_RUN" == "false" ]]; then
                 log_step "Installing packages from $package_list..."
-                grep -v '^#' "$package_list" | grep -v '^$' | xargs sudo apk add --no-cache
+                grep -v '^#' "$package_list" | grep -v '^$' | xargs "${SUDO_CMD[@]}" apk add --no-cache
             else
                 log_info "Would install packages from $package_list with apk"
             fi
