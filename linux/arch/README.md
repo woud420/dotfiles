@@ -67,6 +67,8 @@ This directory contains configuration files for my Arch Linux desktop setup.
      | xargs sudo pacman -S --needed
 
    # AUR (the installer uses yay or paru when one is available)
+   # Note: AUR installs run with --noconfirm for unattended installs, which
+   # skips PKGBUILD review; the declared set is pinned in packages-aur.list.
    grep -Ev '^[[:space:]]*(#|$)' packages-aur.list \
      | xargs paru -S --needed
    ```

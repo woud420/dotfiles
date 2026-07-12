@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ===== Universal Dotfiles Installer =====
 # Works on macOS, Linux (Ubuntu/Debian, Arch, RHEL/CentOS, Alpine)
-# Usage: ./install.sh [--minimal] [--no-packages] [--dry-run] [--copy]
+# Usage: ./install.sh [--minimal] [--no-packages] [--dry-run] [--check] [--backup-only] [--doctor]
 #
 # Installation Order:
 # 1. OS Detection & Environment Setup
@@ -301,17 +301,26 @@ install_arch_packages() {
     local packages=()
     local package
 
+    local queried=0 unavailable=0
     while IFS= read -r package; do
         [[ -n "$package" ]] || continue
         if pacman -Q "$package" >/dev/null 2>&1; then
             continue
         fi
+        queried=$((queried + 1))
         if pacman -Si "$package" >/dev/null 2>&1; then
             packages+=("$package")
         else
+            unavailable=$((unavailable + 1))
             log_warning "Skipping unavailable Arch package: $package"
         fi
     done < <(sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' "$package_list")
+
+    # Every queried package unknown almost certainly means the sync database
+    # is missing or stale, not that the whole list is invalid.
+    if [[ "$queried" -gt 0 && "$unavailable" -eq "$queried" ]]; then
+        log_error "No queried package exists in the pacman sync DB; run 'sudo pacman -Sy' and re-run the installer"
+    fi
 
     if [[ "${#packages[@]}" -eq 0 ]]; then
         log_info "Official Arch packages are already installed"
@@ -439,6 +448,34 @@ materialize_target_dir() {
     done
 }
 
+# Check-mode counterpart of materialize_target_dir: a symlinked ancestor into
+# the repo means install and check would disagree about this HOME.
+CHECKED_SYMLINK_ANCESTORS=""
+check_ancestor_symlinks() {
+    local seg="$1" repo_real resolved
+    repo_real="$(cd "$DOTFILES_DIR" 2>/dev/null && pwd -P || printf '%s' "$DOTFILES_DIR")"
+    while [[ "$seg" != "$HOME" && "$seg" != "/" && -n "$seg" ]]; do
+        if [[ -L "$seg" ]]; then
+            resolved="$(cd "$seg" 2>/dev/null && pwd -P || true)"
+            case "$resolved" in
+                "$repo_real"|"$repo_real"/*)
+                    # Report each offending ancestor once, not per managed file
+                    case "$CHECKED_SYMLINK_ANCESTORS" in
+                        *":$seg:"*) ;;
+                        *)
+                            CHECKED_SYMLINK_ANCESTORS="$CHECKED_SYMLINK_ANCESTORS:$seg:"
+                            log_error "Symlinked directory into the repo: $seg -> $resolved"
+                            CHECK_FAILURES=$((CHECK_FAILURES + 1))
+                            ;;
+                    esac
+                    return 0
+                    ;;
+            esac
+        fi
+        seg="$(dirname "$seg")"
+    done
+}
+
 # Install a regular copied file
 install_file() {
     local source="$1"
@@ -446,8 +483,17 @@ install_file() {
     local target_dir
     target_dir="$(dirname "$target")"
 
+    # git ls-files enumerations list tracked files even when deleted from the
+    # worktree; a missing source must not abort the install (set -e) or be
+    # misreported as target drift in check mode.
+    if [[ ! -f "$source" ]]; then
+        log_warning "Source missing (deleted from worktree?): $source"
+        return 0
+    fi
+
     if [[ "$CHECK_MODE" == "true" ]]; then
         CHECKED_FILES=$((CHECKED_FILES + 1))
+        check_ancestor_symlinks "$target_dir"
         if [[ -L "$target" ]]; then
             log_error "Symlink where a regular copy is required: $target"
             CHECK_FAILURES=$((CHECK_FAILURES + 1))
@@ -584,7 +630,7 @@ install_ssh_config() {
         chmod 700 "$HOME/.ssh"
         install_file "$src" "$HOME/.ssh/config.dotfiles"
         chmod 600 "$HOME/.ssh/config.dotfiles"
-        if [[ ! -f "$HOME/.ssh/config" ]] || ! grep -q 'config\.dotfiles' "$HOME/.ssh/config"; then
+        if [[ ! -f "$HOME/.ssh/config" ]] || ! grep -q '^[[:space:]]*Include[[:space:]].*config\.dotfiles' "$HOME/.ssh/config"; then
             backup_file "$HOME/.ssh/config"
             # Prepend: an Include after a Host block would only apply to that
             # host, and IgnoreUnknown must be parsed before any UseKeychain.
@@ -648,6 +694,13 @@ reload_running_kitty() {
 
     local kitty_pid="${KITTY_PID:-}"
     [[ "$kitty_pid" =~ ^[0-9]+$ ]] || return 0
+
+    # A stale KITTY_PID (tmux outliving kitty) could point at a reused PID;
+    # SIGUSR1's default disposition would terminate that process.
+    case "$(ps -p "$kitty_pid" -o comm= 2>/dev/null)" in
+        *kitty*) ;;
+        *) return 0 ;;
+    esac
 
     if kill -USR1 "$kitty_pid" 2>/dev/null; then
         log_success "Reloaded Kitty configuration"
@@ -715,7 +768,7 @@ desktop_config_files() {
     local desktop_root="$DOTFILES_DIR/linux/arch/.config"
     local rel
 
-    if git -C "$DOTFILES_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    if [[ "$(git -C "$DOTFILES_DIR" rev-parse --show-toplevel 2>/dev/null)" == "$(cd "$DOTFILES_DIR" && pwd -P)" ]]; then
         while IFS= read -r -d '' rel; do
             printf '%s\0' "$DOTFILES_DIR/$rel"
         done < <(git -C "$DOTFILES_DIR" ls-files -z -- linux/arch/.config)
@@ -757,6 +810,9 @@ firefox_default_profile() {
     local profile_default="0"
     local fallback_path=""
     local fallback_relative="1"
+    local profile_count=0
+    local first_profile_path=""
+    local first_profile_relative="1"
     local line=""
 
     while IFS= read -r line || [[ -n "$line" ]]; do
@@ -780,9 +836,16 @@ firefox_default_profile() {
                 ;;
             Profile*:Path=*)
                 profile_path="${line#*=}"
+                profile_count=$((profile_count + 1))
+                if [[ -z "$first_profile_path" ]]; then
+                    first_profile_path="$profile_path"
+                fi
                 ;;
             Profile*:IsRelative=*)
                 profile_relative="${line#*=}"
+                if [[ "$profile_count" -eq 1 ]]; then
+                    first_profile_relative="$profile_relative"
+                fi
                 ;;
             Profile*:Default=*)
                 profile_default="${line#*=}"
@@ -802,6 +865,11 @@ firefox_default_profile() {
     elif [[ -n "$fallback_path" ]]; then
         selected="$fallback_path"
         relative="$fallback_relative"
+    elif [[ "$profile_count" -eq 1 && -n "$first_profile_path" ]]; then
+        # Legacy single-profile profiles.ini: no [Install] section and no
+        # Default=1 flag; Firefox itself treats the lone profile as default.
+        selected="$first_profile_path"
+        relative="$first_profile_relative"
     else
         return 1
     fi
@@ -1211,6 +1279,10 @@ install_private_skills() {
     while IFS= read -r skill_dir; do
         [[ -n "$skill_dir" ]] || continue
         while IFS= read -r -d '' relative; do
+            if [[ -L "$source/$relative" || ! -f "$source/$relative" ]]; then
+                log_warning "Skipping non-regular skill file: $relative"
+                continue
+            fi
             install_file "$source/$relative" "$HOME/.agents/skills/$relative"
         done < <(git -C "$source" ls-files -z -- "$skill_dir")
     done <<< "$skill_dirs"
@@ -1376,8 +1448,12 @@ main() {
     fi
 
     if [[ "$BACKUP_ONLY" == "true" ]]; then
-        log_success "Backed up $BACKED_UP_FILES live files to $BACKUP_DIR"
-        [[ -n "$AUDIT_LOG" ]] && log_info "Audit log: $AUDIT_LOG"
+        if [[ "$DRY_RUN" == "true" ]]; then
+            log_info "Dry run: no files were backed up (see the 'Would backup' lines above)"
+        else
+            log_success "Backed up $BACKED_UP_FILES live files to $BACKUP_DIR"
+            [[ -n "$AUDIT_LOG" ]] && log_info "Audit log: $AUDIT_LOG"
+        fi
         return 0
     fi
     

@@ -346,6 +346,18 @@ jobs:
           git config --file ~/.gitconfig --list > /dev/null 2>&1 && echo "PASS: .gitconfig" || { echo "FAIL"; exit 1; }
           echo "  $(git config --file ~/.gitconfig --get-regexp '^alias\.' | wc -l) git aliases loaded"
 
+      - name: Installer smoke test (bash 3.2)
+        run: /bin/bash ./scripts/test-install.sh
+
+      - name: Verify --check matches and detects drift
+        run: |
+          ./install.sh --check --no-packages
+          echo "# drift" >> ~/.gnu_aliases
+          if ./install.sh --check --no-packages; then
+            echo "FAIL: drift not detected"; exit 1
+          fi
+          echo "PASS: drift detected"
+
       - name: Collect evidence
         if: always()
         run: |
