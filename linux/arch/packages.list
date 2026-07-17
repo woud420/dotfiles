@@ -20,12 +20,29 @@ wl-clipboard
 wtype
 waybar
 ttf-firacode-nerd
+fontconfig
 rofi
 mako
 grim
 slurp
 cliphist
 playerctl
+thunar
+ranger
+pavucontrol
+libnotify
+networkmanager
+iputils
+procps-ng
+libpulse
+swayidle
+swaylock
+xdg-desktop-portal
+xdg-desktop-portal-gtk
+xdg-desktop-portal-wlr
+xdg-utils
+firefox
+steam
 make
 neovim
 nodejs
@@ -34,7 +51,7 @@ python
 python-pip
 python-virtualenv
 ripgrep
-rust
+rustup
 tmux
 tree
 vim
@@ -50,6 +67,4 @@ bottom
 httpie
 yq
 
-# AUR (install with an AUR helper, e.g. paru -S; pacman cannot install these)
-# swayfx
-# nordic-theme (GTK theme referenced by gtk settings.ini)
+# AUR packages live in packages-aur.list and are installed with yay or paru.

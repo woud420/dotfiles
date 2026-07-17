@@ -53,15 +53,24 @@ This directory contains configuration files for my Arch Linux desktop setup.
 - **Font**: FiraCode Nerd Font 10px
 - **Border radius**: 16px
 
+### Firefox
+- **Location**: `firefox/` in the repo; installed into the active profile
+  discovered from `~/.mozilla/firefox/profiles.ini`
+- **Theme**: Matches Sway, Waybar, GTK, mako, and Kitty
+- Restart Firefox after installing profile CSS
+
 ## Installation
 
 1. **Prerequisites**:
    ```bash
-   sudo pacman -S waybar kitty rofi mako grim slurp \
-                  firefox spotify-launcher steam
+   grep -Ev '^[[:space:]]*(#|$)' packages.list \
+     | xargs sudo pacman -S --needed
 
-   # AUR (pacman cannot install these; use an AUR helper)
-   paru -S swayfx slack-desktop nordic-theme
+   # AUR (the installer uses yay or paru when one is available)
+   # Note: AUR installs run with --noconfirm for unattended installs, which
+   # skips PKGBUILD review; the declared set is pinned in packages-aur.list.
+   grep -Ev '^[[:space:]]*(#|$)' packages-aur.list \
+     | xargs paru -S --needed
    ```
 
 2. **Install configs** (from the dotfiles root - configs are copied, never
@@ -70,12 +79,20 @@ This directory contains configuration files for my Arch Linux desktop setup.
    ./install.sh
    ```
 
+   Launch Firefox once before installing if it has no profile yet.
+
 3. **Reload Sway**:
    ```bash
    swaymsg reload
    ```
 
-4. **(Optional) auto-refresh the AI machine-state snapshot on package changes**
+4. **Verify live state and runtime dependencies**:
+   ```bash
+   ./install.sh --check
+   ./install.sh --doctor
+   ```
+
+5. **(Optional) auto-refresh the AI machine-state snapshot on package changes**
    (the installer deliberately does not enable this; it writes into the repo):
    ```bash
    sed -e "s|__DOTFILES_DIR__|$PWD|" -e "s|__DOTFILES_USER__|$USER|" \

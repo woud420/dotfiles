@@ -20,12 +20,18 @@ make install
 ./install.sh --minimal      # Minimal config for servers/containers
 ./install.sh --no-packages  # Skip package installation
 ./install.sh --dry-run      # Preview what will be installed
+./install.sh --check        # Compare managed live files with the repo
+./install.sh --backup-only  # Snapshot managed files without installing
+./install.sh --doctor       # Check runtime dependencies
 
 # Make targets
 make install              # Full installation
 make install-minimal      # Minimal config
 make install-no-packages  # Config files only
 make install-dry-run      # Preview changes
+make check-live           # Detect missing or changed managed files
+make backup               # Create a path-preserving live backup
+make doctor               # Check commands, portals, fonts, and themes
 ```
 
 ### Remote Installation
@@ -55,6 +61,8 @@ dotfiles/
 │   ├── arch/              # Arch Linux packages
 │   ├── fedora/            # Fedora/RHEL packages
 │   └── alpine/            # Alpine Linux packages
+├── private/
+│   └── skills/             # Private agent skillpack submodule
 └── install.sh             # Universal installer
 ```
 
@@ -81,6 +89,8 @@ dotfiles/
 | `common/nvim/init.vim` | `~/.config/nvim/init.vim` | Neovim bridge to the Vim config |
 | `.vim/coc-settings.json` | `~/.vim/` and `~/.config/nvim/` | CoC LSP settings (both editors) |
 | `scripts/sudo-askpass.sh` | `~/.local/bin/sudo-askpass` | GUI sudo prompt helper |
+| `linux/arch/firefox/*` | Active Firefox profile | Desktop-matched browser chrome and settings pages |
+| `private/skills` active profile | `~/.agents/skills/` | Git-tracked private agent skills |
 
 ### Shell Functions
 
@@ -171,6 +181,20 @@ The installer automatically backs up existing configs to:
 ~/.dotfiles-backup-YYYYMMDD_HHMMSS/
 ```
 
+Backups mirror home-directory paths under `files/` and include an
+`install-audit.tsv`. Create a snapshot without changing live files with:
+
+```bash
+make backup
+```
+
+Restore one file after inspecting a backup:
+
+```bash
+cp -a ~/.dotfiles-backup-YYYYMMDD_HHMMSS/files/.config/waybar/config \
+  ~/.config/waybar/config
+```
+
 To clean old backups (30+ days):
 ```bash
 make clean-backup
@@ -187,7 +211,13 @@ and distribution and installs the right layer on top of `common/`:
   overlays)
 
 Installs are always copies (never symlinks) with path-preserving backups and
-an audit log. Preview any run with `./install.sh --dry-run`.
+an audit log. Preview any run with `./install.sh --dry-run`, then use
+`./install.sh --check` to prove every managed live copy matches the repo.
+
+On Arch, the installer also discovers the active profile from Firefox's
+`profiles.ini` and installs the tracked `userChrome.css`, `userContent.css`,
+and `user.js`. Launch Firefox once before the first install so the profile
+exists, and restart Firefox after those files change.
 
 This converges personal interactive machines on Zsh, Kitty, and Neovim while
 keeping Bash available as a fallback. The history of this effort is recorded
@@ -216,11 +246,12 @@ Machine-specific config lives outside the repo and survives reinstalls:
 
 - `~/.bashrc.local` / `~/.zshrc.local` - sourced at the end of the shell configs
 - `~/.gitconfig.local` - included last by `.gitconfig`, so identity or
-  tool-appended blocks (e.g. git-ai) win over the shared config
-- `~/.ssh/config` - your own host entries stay first; the shared defaults are
-  pulled in via `Include ~/.ssh/config.dotfiles`. Note the shared defaults set
-  `ForwardAgent yes` globally - convenient across personal machines, but scope
-  it per-host in a local block if you ssh to hosts you don't control.
+  tool-specific settings win over the shared config
+- `~/.ssh/config` - machine-specific host entries and identity files stay in
+  this local file; shared defaults are pulled in first via
+  `Include ~/.ssh/config.dotfiles`. OpenSSH keeps the first value it reads, so
+  change a shared scalar default such as `ForwardAgent` in `common/ssh/config`
+  rather than trying to override it in a later local host block.
 
 ### Personal Git Hooks
 
@@ -251,6 +282,31 @@ The installer copies `common/ai-context/` files into place:
 only seeded when absent (an existing customized one is left alone).
 Machine state snapshots are generated on demand with
 `scripts/refresh-machine-state.sh`.
+
+### Private Agent Skills
+
+`private/skills` is a submodule pinned to a commit in the private
+`woud420/skills` repository. The public dotfiles repository exposes the SSH
+URL and pinned commit ID, but no private skill contents or credentials.
+
+On a normal install, `install.sh` initializes the submodule when needed and
+copies only Git-tracked skills marked `active` or `maintenance` in its
+`manifest.json` into `~/.agents/skills/`. Candidate skills, untracked files,
+and repository metadata are not installed. Existing managed files are covered
+by the normal backup and `--check` behavior; target-only skills are left alone.
+
+Initialization requires GitHub SSH access to the private repository. Public CI
+sets `DOTFILES_SKIP_PRIVATE_SKILLS=1` and never requests private credentials.
+The same variable can explicitly skip private skills on another machine.
+
+```bash
+# Initialize manually or repair an unavailable private checkout
+git submodule update --init --checkout -- private/skills
+
+# Advance the pinned skillpack revision intentionally
+git submodule update --remote --checkout -- private/skills
+git add private/skills
+```
 
 ## 📚 Requirements
 

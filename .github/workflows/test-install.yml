@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [master]
 
+env:
+  # Public CI intentionally never requests credentials for the private submodule.
+  DOTFILES_SKIP_PRIVATE_SKILLS: "1"
+
 jobs:
   # Fast syntax/parse checks that don't need install.sh
   lint:
@@ -76,6 +80,20 @@ jobs:
         run: |
           useradd -m -s /bin/zsh testuser
           echo "testuser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          install -d -o testuser -g testuser \
+            /home/testuser/.mozilla/firefox/test.default/chrome
+          printf '%s\n' \
+            '[InstallTest]' \
+            'Default=test.default' \
+            'Locked=1' \
+            '' \
+            '[Profile0]' \
+            'Name=default' \
+            'IsRelative=1' \
+            'Path=test.default' \
+            'Default=1' \
+            > /home/testuser/.mozilla/firefox/profiles.ini
+          chown -R testuser:testuser /home/testuser/.mozilla
 
       - name: Run install.sh
         shell: bash
@@ -106,6 +124,11 @@ jobs:
               test -f ~/$f && echo "PASS: $f" || { echo "FAIL: $f"; exit 1; }
             done
 
+            echo "=== Firefox profile theme ==="
+            for f in .mozilla/firefox/test.default/user.js .mozilla/firefox/test.default/chrome/userChrome.css .mozilla/firefox/test.default/chrome/userContent.css; do
+              test -f ~/$f && ! test -L ~/$f && echo "PASS: $f (copied)" || { echo "FAIL: $f"; exit 1; }
+            done
+
             echo "=== AI context ==="
             test -f ~/AGENTS.md && echo "PASS: AGENTS.md"
             test -f ~/MACHINE.md && echo "PASS: MACHINE.md"
@@ -113,6 +136,10 @@ jobs:
             echo "=== Audit log ==="
             ls ~/.dotfiles-backup-*/install-audit.tsv > /dev/null && echo "PASS: install audit written"
           '
+
+      - name: Verify live files match the repository
+        run: |
+          su testuser -c "cd /home/testuser/dotfiles && DOTFILES_FULL_INSTALL=1 ./install.sh --check"
 
       - name: Validate Kitty config (headless parse)
         run: |
@@ -318,6 +345,18 @@ jobs:
         run: |
           git config --file ~/.gitconfig --list > /dev/null 2>&1 && echo "PASS: .gitconfig" || { echo "FAIL"; exit 1; }
           echo "  $(git config --file ~/.gitconfig --get-regexp '^alias\.' | wc -l) git aliases loaded"
+
+      - name: Installer smoke test (bash 3.2)
+        run: /bin/bash ./scripts/test-install.sh
+
+      - name: Verify --check matches and detects drift
+        run: |
+          ./install.sh --check --no-packages
+          echo "# drift" >> ~/.gnu_aliases
+          if ./install.sh --check --no-packages; then
+            echo "FAIL: drift not detected"; exit 1
+          fi
+          echo "PASS: drift detected"
 
       - name: Collect evidence
         if: always()

@@ -1,0 +1,81 @@
+/*
+ * Keep a few Firefox settings pages aligned with the desktop palette.
+ * about:home and about:newtab are intentionally excluded so Firefox's
+ * activity-stream widgets/tiles keep their normal visibility behavior.
+ */
+
+@-moz-document url-prefix("about:preferences"),
+  url-prefix("about:addons"),
+  url-prefix("about:support"),
+  url-prefix("about:downloads"),
+  url-prefix("chrome://mozapps/content/") {
+  :root {
+    --jm-bg: #221820;
+    --jm-bg-deep: #18121a;
+    --jm-bg-soft: #2a1e2e;
+    --jm-surface: #332635;
+    --jm-surface-raised: #4a3844;
+    --jm-accent: #9d5a7f;
+    --jm-accent-strong: #cba6f7;
+    --jm-accent-soft: #6b4456;
+    --jm-text: #d0d0d0;
+    --jm-text-bright: #cdd6f4;
+
+    color-scheme: dark !important;
+    --in-content-page-background: var(--jm-bg) !important;
+    --in-content-page-color: var(--jm-text) !important;
+    --in-content-box-background: var(--jm-bg-deep) !important;
+    --in-content-box-background-odd: var(--jm-bg-soft) !important;
+    --in-content-box-border-color: var(--jm-accent-soft) !important;
+    --in-content-border-color: var(--jm-accent-soft) !important;
+    --in-content-primary-button-background: var(--jm-accent) !important;
+    --in-content-primary-button-background-hover: var(--jm-accent-strong) !important;
+    --in-content-primary-button-text-color: var(--jm-bg-deep) !important;
+    --in-content-button-background: var(--jm-surface) !important;
+    --in-content-button-background-hover: var(--jm-surface-raised) !important;
+    --in-content-button-text-color: var(--jm-text) !important;
+    --in-content-link-color: var(--jm-accent-strong) !important;
+    --in-content-link-color-hover: #f5c2e7 !important;
+  }
+
+  body,
+  html {
+    background-color: var(--jm-bg) !important;
+    color: var(--jm-text) !important;
+  }
+
+  input,
+  textarea,
+  select,
+  menulist,
+  tree,
+  richlistbox,
+  listbox {
+    background-color: var(--jm-bg-deep) !important;
+    color: var(--jm-text-bright) !important;
+    border-color: var(--jm-accent-soft) !important;
+  }
+
+  button,
+  .button,
+  .category,
+  .sidebar-footer-button,
+  .text-link {
+    border-radius: 6px !important;
+  }
+
+  button:not(.primary) {
+    background-color: var(--jm-surface) !important;
+    color: var(--jm-text) !important;
+    border-color: var(--jm-accent-soft) !important;
+  }
+
+  button:not(.primary):hover {
+    background-color: var(--jm-surface-raised) !important;
+  }
+
+  ::selection {
+    background: var(--jm-accent) !important;
+    color: var(--jm-text-bright) !important;
+  }
+}

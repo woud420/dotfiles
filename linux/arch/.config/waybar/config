@@ -24,7 +24,7 @@
         "format-icons": {
             "1": "",
             "2": "",
-            "3": "  ",
+            "3": "",
             "4": "",
         },
         "persistent-workspaces" : {
@@ -87,10 +87,6 @@
         "on-click": "steam",
         "tooltip": false
     },
-    "custom/launch-thunderbird": {
-        "format":  "<span font='14'></span>",
-        "on-click": "thunderbird"
-    },
     "pulseaudio": {
         "format": "{icon}",
         "format-alt": "{volume} {icon}",
@@ -143,6 +139,7 @@
         "interval": 60,
         "return-type": "json",
         "exec": "~/.config/waybar/modules/mail.py",
+        "exec-if": "test -f ~/.config/waybar/modules/mailsecrets.py",
         "tooltip": false
     },
     "tray": {
