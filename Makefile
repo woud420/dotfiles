@@ -26,6 +26,7 @@ check: test-install
 	bash -n $(DOTFILE_DIR)/install.sh
 	bash -n $(DOTFILE_DIR)/scripts/check-editor-parity.sh
 	bash -n $(DOTFILE_DIR)/scripts/test-install.sh
+	bash -n $(DOTFILE_DIR)/scripts/vim-plug-update.sh
 
 check-live:
 	$(DOTFILE_DIR)/install.sh --check

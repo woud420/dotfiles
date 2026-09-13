@@ -3,7 +3,7 @@
 " Extensions to install on first setup
 let g:coc_global_extensions = [
   \ 'coc-tsserver',
-  \ 'coc-python',
+  \ 'coc-pyright',
   \ 'coc-json',
   \ 'coc-yaml',
   \ 'coc-docker',

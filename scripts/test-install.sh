@@ -107,6 +107,16 @@ grep -q 'IdentityFile ~/.ssh/github_ed25519' "$TEST_HOME/.ssh/config" || fail "m
 ! grep -Eq '^[[:space:]]*IdentityFile[[:space:]]' "$TEST_HOME/.ssh/config.dotfiles" \
     || fail "shared SSH config must not select a machine-specific identity"
 
+assert_regular_copy "$TEST_HOME/.local/bin/vim-plug-update" "$ROOT_DIR/scripts/vim-plug-update.sh"
+if [[ "$OSTYPE" != darwin* ]] && command -v systemctl >/dev/null 2>&1; then
+    assert_regular_copy "$TEST_HOME/.config/systemd/user/vim-plug-update.service" \
+        "$ROOT_DIR/linux/common/systemd/vim-plug-update.service"
+    assert_regular_copy "$TEST_HOME/.config/systemd/user/vim-plug-update.timer" \
+        "$ROOT_DIR/linux/common/systemd/vim-plug-update.timer"
+    [[ -L "$TEST_HOME/.config/systemd/user/timers.target.wants/vim-plug-update.timer" ]] \
+        || fail "vim-plug-update.timer is not enabled via wants symlink"
+fi
+
 if [[ "${DOTFILES_SKIP_PRIVATE_SKILLS:-1}" == "0" ]]; then
     assert_regular_copy "$TEST_HOME/.agents/skills/autoresearch/SKILL.md" \
         "$ROOT_DIR/private/skills/autoresearch/SKILL.md"
