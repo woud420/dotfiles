@@ -14,6 +14,7 @@
 #    - Terminal configs (kitty, htop)
 #    - Linux desktop configs (sway/waybar/gtk, arch only)
 #    - Vim/Neovim setup (plugins, CoC compilation)
+#    - Weekly vim plugin update schedule (systemd timer / launchd agent)
 #    - Optional tools (fzf, etc.)
 #    - AI context files (CLAUDE.md, AGENTS.md, MACHINE.md)
 #    - Private agent skills (when the authenticated submodule is available)
@@ -1005,6 +1006,67 @@ install_vim_config() {
     fi
 }
 
+# Schedule weekly vim plugin updates: systemd user timer on Linux, launchd
+# agent on macOS. The update script itself is shared by both.
+install_vim_update_schedule() {
+    log_step "Installing vim plugin update schedule..."
+
+    if [[ "$MINIMAL_MODE" == "true" ]]; then
+        log_info "Minimal mode: skipping vim plugin update schedule"
+        return 0
+    fi
+
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_info "Would copy: scripts/vim-plug-update.sh -> ~/.local/bin/vim-plug-update"
+        if [[ "$OS" == "macos" ]]; then
+            log_info "Would copy: darwin/launchd/com.woud420.vim-plug-update.plist -> ~/Library/LaunchAgents/"
+        elif command -v systemctl >/dev/null 2>&1; then
+            log_info "Would copy: linux/common/systemd/vim-plug-update.{service,timer} -> ~/.config/systemd/user/"
+        fi
+        return 0
+    fi
+
+    install_file "$DOTFILES_DIR/scripts/vim-plug-update.sh" "$HOME/.local/bin/vim-plug-update"
+
+    if [[ "$OS" == "macos" ]]; then
+        install_file "$DOTFILES_DIR/darwin/launchd/com.woud420.vim-plug-update.plist" \
+            "$HOME/Library/LaunchAgents/com.woud420.vim-plug-update.plist"
+    elif command -v systemctl >/dev/null 2>&1; then
+        install_file "$DOTFILES_DIR/linux/common/systemd/vim-plug-update.service" \
+            "$HOME/.config/systemd/user/vim-plug-update.service"
+        install_file "$DOTFILES_DIR/linux/common/systemd/vim-plug-update.timer" \
+            "$HOME/.config/systemd/user/vim-plug-update.timer"
+    else
+        log_info "No systemd; skipping vim plugin update timer"
+    fi
+
+    if state_only_mode; then
+        return 0
+    fi
+
+    chmod +x "$HOME/.local/bin/vim-plug-update"
+
+    if [[ "$OS" == "macos" ]]; then
+        # bootstrap fails harmlessly if the agent is already loaded
+        launchctl bootstrap "gui/$(id -u)" \
+            "$HOME/Library/LaunchAgents/com.woud420.vim-plug-update.plist" 2>/dev/null \
+            || launchctl kickstart "gui/$(id -u)/com.woud420.vim-plug-update" >/dev/null 2>&1 \
+            || true
+        log_success "launchd agent installed: com.woud420.vim-plug-update (weekly)"
+    elif command -v systemctl >/dev/null 2>&1; then
+        # Enable via the wants symlink so this works without a reachable user
+        # manager (containers, SSH without lingering); best-effort activation.
+        mkdir -p "$HOME/.config/systemd/user/timers.target.wants"
+        ln -sf ../vim-plug-update.timer \
+            "$HOME/.config/systemd/user/timers.target.wants/vim-plug-update.timer"
+        if [[ -n "${XDG_RUNTIME_DIR:-}" ]]; then
+            systemctl --user daemon-reload 2>/dev/null || true
+            systemctl --user start vim-plug-update.timer 2>/dev/null || true
+        fi
+        log_success "systemd user timer installed: vim-plug-update.timer (weekly)"
+    fi
+}
+
 # Download vim-plug atomically; a partial file would otherwise block both this
 # pre-seed and the vimrc's own bootstrap forever.
 seed_vim_plug() {
@@ -1433,6 +1495,7 @@ main() {
     install_firefox_config      # 6. Firefox profile chrome/content theme - arch only
     install_vim_config          # 7. Vim setup (plugins, settings, CoC compilation)
     install_neovim_config       # 8. Neovim bridge to Vim config
+    install_vim_update_schedule # 8b. Weekly plugin update timer (systemd/launchd)
     install_optional_tools      # 9. Optional tools (fzf, etc.) - last
     install_ai_context          # 10. AI context files (CLAUDE.md, AGENTS.md, MACHINE.md)
     install_private_skills      # 11. Active skills from the authenticated private submodule

@@ -1,0 +1,7 @@
+[Unit]
+Description=Update vim-plug, vim plugins, and coc extensions
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/vim-plug-update
+TimeoutStartSec=30min
