@@ -19,6 +19,8 @@ make install
 ```bash
 ./install.sh --minimal      # Minimal config for servers/containers
 ./install.sh --no-packages  # Skip package installation
+./install.sh --preserve-existing --dry-run # Preview additions without replacing active config
+./install.sh --preserve-existing           # Keep current appearance, shortcuts, and behavior
 ./install.sh --dry-run      # Preview what will be installed
 ./install.sh --check        # Compare managed live files with the repo
 ./install.sh --backup-only  # Snapshot managed files without installing
@@ -28,6 +30,7 @@ make install
 make install              # Full installation
 make install-minimal      # Minimal config
 make install-no-packages  # Config files only
+make install-preserve-existing # Keep current setup; sync skills and add safe helpers/themes
 make install-dry-run      # Preview changes
 make check-live           # Detect missing or changed managed files
 make backup               # Create a path-preserving live backup
@@ -222,6 +225,47 @@ exists, and restart Firefox after those files change.
 This converges personal interactive machines on Zsh, Kitty, and Neovim while
 keeping Bash available as a fallback. The history of this effort is recorded
 in `docs/machine-convergence-plan.md`.
+
+### Keep an existing Mac setup
+
+Use `./install.sh --preserve-existing --dry-run` to preview, then
+`./install.sh --preserve-existing` when ready. This is an additive install:
+it leaves active Mac configs and existing helper/theme paths in place, including
+your shell initialization, Git credential helpers and hooks, SSH policy,
+editor mappings, highlighting, language-server settings, plugin versions,
+and tools. It skips package installation, plugin builds/downloads,
+AI context updates, terminal reloads, and automatic update scheduling.
+
+Active and maintenance private skills are updated from the checked-out,
+Git-tracked skillpack into `~/.agents/skills`, `~/.codex/skills`, and
+`~/.claude/skills`. Already-installed registered candidate skills are refreshed
+in their existing destinations too; other candidates are not installed.
+Changed skill files are backed up first; target-only files and skills remain
+in place. All selected source files and target directory paths are checked
+before copying, and directory
+symlinks are rejected. `DOTFILES_SKIP_PRIVATE_SKILLS=1` explicitly skips skills
+(for example, in public CI). The installer uses the prepared submodule revision
+rather than fetching an untested version during installation. Fetch/advance the
+submodule before testing if a newer version is wanted.
+
+Apart from skill updates, the only additions are the manual `sudo-askpass`
+and `vim-plug-update` helpers, when those command names are unused, and missing named Kitty themes
+when both the Mac Kitty config and selected theme match the verified repo
+defaults. The selected theme is never installed or replaced in this mode.
+Custom or unverified Kitty configs get no theme additions. Existing targets,
+command-name collisions, and symlinked/non-directory parent paths are skipped.
+The helpers are not invoked, added to shell startup, or scheduled automatically.
+
+This mode intentionally keeps local differences instead of converging active
+configs to the repo defaults. Plain `--check` / `make check-live` still reports
+those differences; it does not certify compatibility. `--preserve-existing`
+can be combined with `--dry-run`, `--no-packages`, and the historical `--copy`
+option, but not with `--minimal`, `--check`, `--backup-only`, or `--doctor`.
+Use the separate `--backup-only` mode for a full snapshot if wanted.
+
+Normal `./install.sh` and `--no-packages` retain their full-install behavior,
+including the Git/SSH/editor changes and plugin update schedule. Choose the
+preserving mode explicitly to retain an existing workflow.
 
 ## 🐳 Container Usage
 

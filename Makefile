@@ -1,4 +1,4 @@
-.PHONY: all help install install-minimal install-no-packages install-dry-run install-copy install-git-hooks check check-live test-install check-editor doctor backup brew-sync clean-backup
+.PHONY: all help install install-minimal install-no-packages install-preserve-existing install-dry-run install-copy install-git-hooks check check-live test-install check-editor doctor backup brew-sync clean-backup
 .ONESHELL:
 
 SHELL		= /bin/bash
@@ -15,6 +15,9 @@ install-minimal:
 
 install-no-packages:
 	$(DOTFILE_DIR)/install.sh --no-packages
+
+install-preserve-existing:
+	$(DOTFILE_DIR)/install.sh --preserve-existing
 
 install-dry-run:
 	$(DOTFILE_DIR)/install.sh --dry-run
@@ -39,6 +42,7 @@ backup:
 
 test-install:
 	$(DOTFILE_DIR)/scripts/test-install.sh
+	python3 $(DOTFILE_DIR)/scripts/test-preserve-existing.py
 
 check-editor:
 	$(DOTFILE_DIR)/scripts/check-editor-parity.sh
@@ -68,6 +72,7 @@ help:
 	@echo "  make install            # Full installation with regular file copies"
 	@echo "  make install-minimal    # Minimal config for servers/containers"
 	@echo "  make install-no-packages # Install configs only, skip packages"
+	@echo "  make install-preserve-existing # Keep Mac configs; sync skills and add safe helpers/themes"
 	@echo "  make install-dry-run    # Show what would be installed"
 	@echo "  make install-git-hooks  # Install personal global Git hooks only"
 	@echo ""

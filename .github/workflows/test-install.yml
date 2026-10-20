@@ -62,6 +62,9 @@ jobs:
       - name: Installer smoke test (temp HOME)
         run: ./scripts/test-install.sh
 
+      - name: Preserving installer regression tests (temp HOME)
+        run: python3 scripts/test-preserve-existing.py
+
   test-arch:
     runs-on: ubuntu-latest
     needs: lint
@@ -348,6 +351,9 @@ jobs:
 
       - name: Installer smoke test (bash 3.2)
         run: /bin/bash ./scripts/test-install.sh
+
+      - name: Preserving installer regression tests (temp HOME, bash 3.2)
+        run: python3 scripts/test-preserve-existing.py
 
       - name: Verify --check matches and detects drift
         run: |

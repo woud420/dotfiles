@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ===== Universal Dotfiles Installer =====
 # Works on macOS, Linux (Ubuntu/Debian, Arch, RHEL/CentOS, Alpine)
-# Usage: ./install.sh [--minimal] [--no-packages] [--dry-run] [--check] [--backup-only] [--doctor]
+# Usage: ./install.sh [--minimal] [--no-packages] [--preserve-existing] [--dry-run] [--check] [--backup-only] [--doctor]
 #
 # Installation Order:
 # 1. OS Detection & Environment Setup
@@ -47,6 +47,7 @@ DRY_RUN=false
 CHECK_MODE=false
 BACKUP_ONLY=false
 DOCTOR_MODE=false
+PRESERVE_EXISTING=false
 CHECKED_FILES=0
 CHECK_FAILURES=0
 BACKED_UP_FILES=0
@@ -64,6 +65,11 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --no-packages)
+            INSTALL_PACKAGES=false
+            shift
+            ;;
+        --preserve-existing)
+            PRESERVE_EXISTING=true
             INSTALL_PACKAGES=false
             shift
             ;;
@@ -94,6 +100,7 @@ while [[ $# -gt 0 ]]; do
             echo "Usage: $0 [OPTIONS]"
             echo "  --minimal       Install minimal config (no fancy tools)"
             echo "  --no-packages   Skip package installation"
+            echo "  --preserve-existing  Keep active Mac configs; add safe helpers/themes and sync active skills"
             echo "  --dry-run       Show what would be done without doing it"
             echo "  --check         Compare managed live files with the repo"
             echo "  --backup-only   Back up managed live files without installing"
@@ -115,6 +122,10 @@ mode_count=0
 [[ "$DOCTOR_MODE" == "true" ]] && mode_count=$((mode_count + 1))
 if [[ "$mode_count" -gt 1 ]]; then
     echo "Choose only one of --check, --backup-only, or --doctor"
+    exit 1
+fi
+if [[ "$PRESERVE_EXISTING" == "true" ]] && { [[ "$mode_count" -gt 0 ]] || [[ "$MINIMAL_MODE" == "true" ]]; }; then
+    echo "--preserve-existing can only be combined with --dry-run, --no-packages, or --copy"
     exit 1
 fi
 
@@ -1236,21 +1247,28 @@ install_ai_context() {
 
 private_skill_dirs() {
     local manifest="$1"
-    python3 - "$manifest" <<'PY'
+    shift
+    python3 - "$manifest" "$@" <<'PY'
 import json
 import sys
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 
 with open(sys.argv[1], encoding="utf-8") as handle:
     manifest = json.load(handle)
 
 seen = set()
 for skill in manifest.get("skills", []):
-    if skill.get("status") not in {"active", "maintenance"}:
-        continue
     path = PurePosixPath(skill.get("path", ""))
     if path.is_absolute() or ".." in path.parts or path.name != "SKILL.md" or len(path.parts) < 2:
         raise SystemExit(f"invalid skill path in manifest: {path}")
+    installed_candidate = skill.get("status") == "candidate" and any(
+        (Path(target) / str(path.parent)).is_dir() for target in sys.argv[2:]
+    )
+    if skill.get("status") not in {"active", "maintenance"} and not installed_candidate:
+        continue
+    source = Path(sys.argv[1]).parent / str(path)
+    if not source.is_file() or source.is_symlink():
+        raise SystemExit(f"selected skill path is missing or not a regular file: {path}")
     directory = str(path.parent)
     if directory not in seen:
         print(directory)
@@ -1305,12 +1323,16 @@ prepare_private_skills_source() {
 }
 
 install_private_skills() {
-    if [[ "$MINIMAL_MODE" == "true" ]]; then
+    if [[ "$MINIMAL_MODE" == "true" && "$PRESERVE_EXISTING" != "true" ]]; then
         log_info "Minimal mode: skipping private agent skills"
         return 0
     fi
 
     if ! prepare_private_skills_source; then
+        if [[ "$PRESERVE_EXISTING" == "true" && "$DRY_RUN" != "true" && "${DOTFILES_SKIP_PRIVATE_SKILLS:-0}" != "1" && -z "${CI:-}" ]]; then
+            log_error "Private skills could not be prepared; refusing a partial preserving install"
+            return 1
+        fi
         return 0
     fi
 
@@ -1319,35 +1341,75 @@ install_private_skills() {
             log_error "python3 is required to read the private skills manifest"
             CHECK_FAILURES=$((CHECK_FAILURES + 1))
         else
-            log_warning "python3 is required to install private agent skills"
+            log_error "python3 is required to install private agent skills"
+            return 1
         fi
         return 0
     fi
 
     local source="$DOTFILES_DIR/private/skills"
-    local skill_dirs
-    if ! skill_dirs="$(private_skill_dirs "$source/manifest.json")"; then
-        if [[ "$CHECK_MODE" == "true" ]]; then
+    local targets=("$@")
+    [[ "${#targets[@]}" -gt 0 ]] || targets=("$HOME/.agents/skills")
+    local selected=() expected=() skill_dirs skill_dir relative target parent file_list source_list
+    file_list="$(mktemp)"
+    source_list="$(mktemp)"
+    # Validate every destination before updating any harness. Never follow a
+    # directory symlink into another harness, checkout, or unmanaged location.
+    for target in "${targets[@]}"; do
+        local selection_targets=()
+        [[ "$PRESERVE_EXISTING" != "true" ]] || selection_targets=("$target")
+        if ! skill_dirs="$(private_skill_dirs "$source/manifest.json" "${selection_targets[@]}")"; then
+            rm -f "$file_list" "$source_list"
             log_error "Private skills manifest is invalid"
-            CHECK_FAILURES=$((CHECK_FAILURES + 1))
-        else
-            log_warning "Private skills manifest is invalid; skipping"
+            return 1
         fi
-        return 0
-    fi
-
-    log_step "Installing active private agent skills..."
-    local skill_dir relative
-    while IFS= read -r skill_dir; do
-        [[ -n "$skill_dir" ]] || continue
+        selected=() expected=()
+        while IFS= read -r skill_dir; do
+            [[ -n "$skill_dir" ]] || continue
+            selected+=("$skill_dir")
+            expected+=("$skill_dir/SKILL.md")
+        done <<< "$skill_dirs"
+        [[ "${#selected[@]}" -gt 0 ]] || continue
+        if ! git -C "$source" ls-files --error-unmatch -- "${expected[@]}" >/dev/null \
+            || ! git -C "$source" ls-files -z -- "${selected[@]}" > "$source_list"; then
+            rm -f "$file_list" "$source_list"
+            log_error "Could not enumerate tracked private skill files"
+            return 1
+        fi
         while IFS= read -r -d '' relative; do
             if [[ -L "$source/$relative" || ! -f "$source/$relative" ]]; then
-                log_warning "Skipping non-regular skill file: $relative"
-                continue
+                rm -f "$file_list" "$source_list"
+                log_error "Tracked skill file is missing or not regular: $relative"
+                return 1
             fi
-            install_file "$source/$relative" "$HOME/.agents/skills/$relative"
-        done < <(git -C "$source" ls-files -z -- "$skill_dir")
-    done <<< "$skill_dirs"
+            parent="$(dirname "$target/$relative")"
+            while [[ "$parent" != "$HOME" && "$parent" != "/" ]]; do
+                if [[ -L "$parent" || ( -e "$parent" && ! -d "$parent" ) ]]; then
+                    rm -f "$file_list" "$source_list"
+                    log_error "Unsafe skill destination parent: $parent"
+                    return 1
+                fi
+                parent="$(dirname "$parent")"
+            done
+            if [[ -d "$target/$relative" ]]; then
+                rm -f "$file_list" "$source_list"
+                log_error "Directory where a skill file is required: $target/$relative"
+                return 1
+            fi
+            printf '%s\0%s\0' "$relative" "$target" >> "$file_list"
+        done < "$source_list"
+    done
+    rm -f "$source_list"
+    log_step "Installing selected private agent skills..."
+    while IFS= read -r -d '' relative && IFS= read -r -d '' target; do
+        if [[ "$CHECK_MODE" != "true" && "$BACKUP_ONLY" != "true" && -f "$target/$relative" && ! -L "$target/$relative" ]] \
+            && cmp -s "$source/$relative" "$target/$relative" \
+            && { [[ -x "$source/$relative" && -x "$target/$relative" ]] || [[ ! -x "$source/$relative" && ! -x "$target/$relative" ]]; }; then
+            continue
+        fi
+        install_file "$source/$relative" "$target/$relative"
+    done < "$file_list"
+    rm -f "$file_list"
 }
 
 backup_local_overrides() {
@@ -1446,6 +1508,89 @@ run_doctor() {
     log_success "Runtime dependencies are present"
 }
 
+# This mode never materializes legacy symlinks: following one could change an
+# active config, another checkout, or a shared executable outside this HOME.
+additive_target_available() {
+    local target="$1" parent
+    if [[ -e "$target" || -L "$target" ]]; then
+        log_info "Keeping existing path: $target"
+        return 1
+    fi
+    parent="$(dirname "$target")"
+    while [[ "$parent" != "$HOME" && "$parent" != "/" ]]; do
+        if [[ -L "$parent" || ( -e "$parent" && ! -d "$parent" ) ]]; then
+            log_info "Keeping existing parent path: $parent"
+            return 1
+        fi
+        parent="$(dirname "$parent")"
+    done
+    return 0
+}
+
+install_additive_file() {
+    local source="$1" target="$2"
+    additive_target_available "$target" || return 0
+    if [[ ! -f "$source" || -L "$source" ]]; then
+        log_error "Additive source is missing or not a regular file: $source"
+        return 1
+    fi
+    install_file "$source" "$target"
+}
+
+kitty_theme_additions_safe() {
+    local line
+    [[ "$OS" == "macos" ]] || return 1
+    [[ -f "$HOME/.config/kitty/kitty.conf" && -f "$HOME/.config/kitty/current-theme.conf" ]] || return 1
+    cmp -s "$HOME/.config/kitty/kitty.conf" "$DOTFILES_DIR/darwin/kitty.conf" || return 1
+    cmp -s "$HOME/.config/kitty/current-theme.conf" "$DOTFILES_DIR/common/themes/current-theme.conf" || return 1
+    # An include glob (or a missing selected theme) could activate a new file.
+    # Permit the known single-theme include graph only, even if repo defaults change.
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        if [[ "$line" =~ ^[[:space:]]*(include|globinclude|envinclude|geninclude)[[:space:]] ]]; then
+            [[ "$line" == "include current-theme.conf" ]] || return 1
+        fi
+    done < "$DOTFILES_DIR/darwin/kitty.conf"
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        [[ "$line" =~ ^[[:space:]]*(include|globinclude|envinclude|geninclude)[[:space:]] ]] && return 1
+    done < "$DOTFILES_DIR/common/themes/current-theme.conf"
+    return 0
+}
+
+install_preserving_existing() {
+    log_step "Keeping existing appearance, shortcuts, commands, and active configs"
+    log_info "Skipping packages, shell/editor configs, plugins, Git/SSH policy, schedules, and AI context"
+
+    install_private_skills "$HOME/.agents/skills" "$HOME/.codex/skills" "$HOME/.claude/skills"
+
+    if kitty_theme_additions_safe; then
+        local theme
+        for theme in "$DOTFILES_DIR/common/themes/"*.conf; do
+            [[ "$(basename "$theme")" == "current-theme.conf" ]] && continue
+            install_additive_file "$theme" "$HOME/.config/kitty/$(basename "$theme")"
+        done
+    else
+        log_info "Keeping Kitty theme directory unchanged (custom, missing, or unverified active config)"
+    fi
+
+    local helper name
+    for helper in sudo-askpass vim-plug-update; do
+        name="$helper.sh"
+        if command -v "$helper" >/dev/null 2>&1; then
+            log_info "Keeping existing command: $helper"
+            continue
+        fi
+        install_additive_file "$DOTFILES_DIR/scripts/$name" "$HOME/.local/bin/$helper"
+    done
+
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_success "Preview complete; no files changed"
+    else
+        log_success "Preserving install complete; existing Mac configs and tools were retained"
+        [[ -n "$AUDIT_LOG" ]] && log_info "Audit log: $AUDIT_LOG"
+    fi
+    log_info "No shell reload is needed; manual helpers run only when explicitly invoked"
+}
+
 # Main installation function
 main() {
     echo -e "${CYAN}"
@@ -1465,6 +1610,11 @@ main() {
 
     if [[ "$DRY_RUN" == "true" ]]; then
         log_warning "DRY RUN MODE - No changes will be made"
+    fi
+
+    if [[ "$PRESERVE_EXISTING" == "true" ]]; then
+        install_preserving_existing
+        return
     fi
 
     # Install packages if requested
