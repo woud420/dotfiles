@@ -51,7 +51,19 @@ printf 'nvim %s\n' "$*" >> "${DOTFILES_INSTALL_TEST_LOG:?}"
 exit 0
 STUB
 
-chmod +x "$STUB_DIR/vim" "$STUB_DIR/nvim"
+# A temporary HOME does not isolate the launchd/systemd session or networking.
+for command_name in launchctl systemctl; do
+    cat > "$STUB_DIR/$command_name" <<'STUB'
+#!/usr/bin/env bash
+exit 0
+STUB
+done
+cat > "$STUB_DIR/curl" <<'STUB'
+#!/usr/bin/env bash
+exit 1
+STUB
+
+chmod +x "$STUB_DIR/"*
 
 fail() {
     printf 'FAIL: %s\n' "$1" >&2
