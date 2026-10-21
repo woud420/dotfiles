@@ -15,13 +15,16 @@ packages, desktop configuration, and visual style.
 
 ## Get started
 
-Clone the repository, then preview the mode that fits the machine:
+From the directory where you keep your projects, clone the repository, then
+preview the mode that fits the machine:
 
 ```bash
-git clone https://github.com/woud420/dotfiles.git ~/workspace/projects/dotfiles
-cd ~/workspace/projects/dotfiles
+git clone https://github.com/woud420/dotfiles.git
+cd dotfiles
 ./install.sh --help
 ```
+
+The checkout can live anywhere; the installer resolves its own directory.
 
 | Goal | Preview | Apply |
 | --- | --- | --- |

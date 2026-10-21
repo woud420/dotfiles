@@ -12,11 +12,15 @@
 - Private skills require Python 3 and GitHub SSH access to the private skillpack.
   Set `DOTFILES_SKIP_PRIVATE_SKILLS=1` explicitly when installing without it.
 
+From the directory where you keep your projects:
+
 ```bash
-git clone https://github.com/woud420/dotfiles.git ~/workspace/projects/dotfiles
-cd ~/workspace/projects/dotfiles
+git clone https://github.com/woud420/dotfiles.git
+cd dotfiles
 ./install.sh --help
 ```
+
+The checkout can live anywhere; the installer resolves its own directory.
 
 ## Choose a mode
 
