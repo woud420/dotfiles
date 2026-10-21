@@ -1,375 +1,70 @@
 # Dotfiles
 
-Personal dotfiles for macOS and Linux with modular shell functions, git workflows, and kubectl shortcuts.
+Personal macOS and Linux configuration for a consistent shell, editor, and Git
+workflow. Shared behavior lives in `common/`; macOS and Linux keep their own
+packages, desktop configuration, and visual style.
 
-## 🚀 Quick Install
+- **Shell:** Zsh for interactive use, Bash for fallback and servers, with shared
+  functions and fuzzy Git and Kubernetes commands.
+- **Editor:** Neovim loads the shared Vim configuration, mappings, and plugins.
+- **Terminal and desktop:** Kitty on both platforms; SwayFX, Waybar, Rofi, Mako,
+  and Firefox styling on Arch.
+- **Installation:** regular file copies, path-preserving backups, an audit log,
+  and separate preview, drift-check, and dependency-check modes.
+- **Agents:** shared context files and a pinned private skillpack.
+
+## Get started
+
+Clone the repository, then preview the mode that fits the machine:
 
 ```bash
-# Clone and install
 git clone https://github.com/woud420/dotfiles.git ~/workspace/projects/dotfiles
 cd ~/workspace/projects/dotfiles
-./install.sh
-
-# Or use make
-make install
-```
-
-### Installation Options
-
-```bash
-./install.sh --minimal      # Minimal config for servers/containers
-./install.sh --no-packages  # Skip package installation
-./install.sh --preserve-existing --dry-run # Preview additions without replacing active config
-./install.sh --preserve-existing           # Keep current appearance, shortcuts, and behavior
-./install.sh --dry-run      # Preview what will be installed
-./install.sh --check        # Compare managed live files with the repo
-./install.sh --backup-only  # Snapshot managed files without installing
-./install.sh --doctor       # Check runtime dependencies
-
-# Make targets
-make install              # Full installation
-make install-minimal      # Minimal config
-make install-no-packages  # Config files only
-make install-preserve-existing # Keep current setup; sync skills and add safe helpers/themes
-make install-dry-run      # Preview changes
-make check-live           # Detect missing or changed managed files
-make backup               # Create a path-preserving live backup
-make doctor               # Check commands, portals, fonts, and themes
-```
-
-### Remote Installation
-
-```bash
-# Minimal quick-install (shallow-clones the repo and copies server configs)
-curl -sSL https://raw.githubusercontent.com/woud420/dotfiles/master/scripts/quick-install.sh | bash
-
-# Or clone and run the full installer
-git clone https://github.com/woud420/dotfiles.git && cd dotfiles && ./install.sh --minimal
-```
-
-## 📁 Directory Structure
-
-```
-dotfiles/
-├── common/                  # Cross-platform configurations
-│   ├── shell/              # Shell configs (.bashrc, .zshrc)
-│   ├── git/                # Git configuration
-│   ├── shell-functions/    # Modular functions & aliases
-│   └── themes/             # Color themes (Catppuccin)
-├── darwin/                 # macOS specific
-│   ├── Brewfile           # Homebrew packages
-│   └── kitty.conf         # macOS kitty config
-├── linux/                  # Linux specific
-│   ├── debian/            # Ubuntu/Debian packages
-│   ├── arch/              # Arch Linux packages
-│   ├── fedora/            # Fedora/RHEL packages
-│   └── alpine/            # Alpine Linux packages
-├── private/
-│   └── skills/             # Private agent skillpack submodule
-└── install.sh             # Universal installer
-```
-
-## 🔧 What Gets Installed
-
-### Configuration Files
-
-| File | Installed Location | Description |
-|------|-------------------|-------------|
-| `.bashrc` | `~/.bashrc` | Bash configuration with prompt, colors, functions |
-| `.zshrc` | `~/.zshrc` | Zsh configuration with Catppuccin theme |
-| `.bash_profile` | `~/.bash_profile` | Bash profile (sources .bashrc) |
-| `.bashrc.server` | `~/.bashrc` | Conservative bash config for servers (minimal mode) |
-| `.gitconfig` | `~/.gitconfig` | Git aliases and fuzzy commands |
-| `commit-template.md` | `~/.config/git/commit-template.md` | Default structured git commit template |
-| `.gitignore_global` | `~/.config/git/ignore` | Global git ignores |
-| `.gnu_aliases` | `~/.gnu_aliases` | GNU coreutils aliases for macOS |
-| `.dircolors` | `~/.dircolors` | Directory colors |
-| `common/git/hooks/*` | `~/.config/git/hooks/*` | Personal global Git hooks |
-| `common/ssh/config` | `~/.ssh/config.dotfiles` | Shared SSH defaults (Include'd from `~/.ssh/config`) |
-| `kitty.conf` | `~/.config/kitty/kitty.conf` | Kitty terminal config |
-| `htoprc` | `~/.config/htop/htoprc` | htop configuration |
-| `.vim/*` | `~/.vim/` | Vim config, settings, and CoC settings |
-| `common/nvim/init.vim` | `~/.config/nvim/init.vim` | Neovim bridge to the Vim config |
-| `.vim/coc-settings.json` | `~/.vim/` and `~/.config/nvim/` | CoC LSP settings (both editors) |
-| `scripts/sudo-askpass.sh` | `~/.local/bin/sudo-askpass` | GUI sudo prompt helper |
-| `linux/arch/firefox/*` | Active Firefox profile | Desktop-matched browser chrome and settings pages |
-| `private/skills` active profile | `~/.agents/skills/` | Git-tracked private agent skills |
-
-### Shell Functions
-
-All shell functions are installed to `~/.config/shell-functions/`:
-
-| File | Purpose | Key Commands |
-|------|---------|--------------|
-| `editor.sh` | Editor defaults | `vi`, `vim`, `vimdiff` use Neovim when available |
-| `which.sh` | Command lookup | Includes shell aliases and functions |
-| `sudo.sh` | GUI sudo prompts | Exports `SUDO_ASKPASS` (use `sudo -A`) |
-| `macos-clipboard.sh` | Clipboard parity | `pbcopy`/`pbpaste` on Linux (wl-clipboard) |
-| `kubectl-aliases.sh` | Kubernetes | `k` (kubectl); `kctx` lives in the shell rc files |
-
-The remaining function files (`git.sh`, `git-aliases.sh`, `docker.sh`,
-`docker-aliases.sh`, `k8s.sh`, `ssh.sh`, `utils.sh`, `fuzzy-vim.sh`,
-`modern-tools-aliases.sh`, `secrets.sh`, `system-aliases.sh`) are currently
-**disabled stubs** - kept in place so they can be restored incrementally
-without breaking installs.
-
-### Git Aliases (in .gitconfig)
-
-```bash
-git ch          # Fuzzy branch checkout with preview
-git flog        # Interactive commit browser
-git fadd        # Fuzzy file staging with diff preview
-git llog        # Fuzzy search through commit history
-git st          # status
-git cm          # commit -m
-git lg          # Pretty log with graph
-```
-
-### Kubectl Aliases
-
-```bash
-k               # kubectl
-kctx            # Switch context with fzf
-```
-
-## 📦 Packages
-
-### macOS (Homebrew)
-
-Core tools: `awscli`, `bash`, `coreutils`, `git`, `fzf`, `fd`, `ripgrep`, `htop`, `neovim`, `tree`, `wget`
-Development: `node`, `python`, `rust`, `poetry`, `virtualenv`
-Kubernetes: `kubernetes-cli`, `helm`, `k9s`, `eksctl`, `minikube`
-Infrastructure: `terraformer`, `tflint`
-Apps: `docker-desktop` (bundles the docker CLI), `slack`, `spotify`
-
-### Linux
-
-Equivalent packages are automatically installed based on distribution:
-- **Debian/Ubuntu**: Via apt from `linux/debian/packages.list`
-- **Arch/Manjaro**: Via pacman from `linux/arch/packages.list`
-- **Fedora/RHEL**: Via dnf/yum from `linux/fedora/packages.list`
-- **Alpine**: Via apk from `linux/alpine/packages.list`
-
-## 🎨 Features
-
-### Shell Prompt
-- **Catppuccin Mocha** color theme
-- Git branch and status indicators
-- Current directory with smart truncation
-- Kubernetes context awareness
-- Python virtual environment display
-
-Example prompt:
-```
-⭐ [jm@~/projects/dotfiles] main ➔
-```
-
-### Fuzzy Everything
-- **Git branches**: `git ch` for interactive checkout
-- **Git commits**: `git flog` to browse history
-- **Git staging**: `git fadd` to stage files
-- **Kubernetes**: `kctx` for context switching
-
-### GNU Tools on macOS
-Automatically aliases GNU versions to replace BSD utilities:
-- `ls` → `gls` with colors
-- `grep` → `ggrep`
-- `sed` → `gsed`
-- And more...
-
-## 🔒 Backup
-
-The installer automatically backs up existing configs to:
-```
-~/.dotfiles-backup-YYYYMMDD_HHMMSS/
-```
-
-Backups mirror home-directory paths under `files/` and include an
-`install-audit.tsv`. Create a snapshot without changing live files with:
-
-```bash
-make backup
-```
-
-Restore one file after inspecting a backup:
-
-```bash
-cp -a ~/.dotfiles-backup-YYYYMMDD_HHMMSS/files/.config/waybar/config \
-  ~/.config/waybar/config
-```
-
-To clean old backups (30+ days):
-```bash
-make clean-backup
-```
-
-## 🧭 Machine Convergence
-
-`install.sh` is the single entry point for every machine. It detects the OS
-and distribution and installs the right layer on top of `common/`:
-
-- macOS: `darwin/` (Brewfile, kitty)
-- Linux: `linux/<distro>/` packages plus, on Arch, the full desktop
-  configuration under `linux/arch/.config/` (Sway, Waybar, GTK, kitty theme
-  overlays)
-
-Installs are always copies (never symlinks) with path-preserving backups and
-an audit log. Preview any run with `./install.sh --dry-run`, then use
-`./install.sh --check` to prove every managed live copy matches the repo.
-
-On Arch, the installer also discovers the active profile from Firefox's
-`profiles.ini` and installs the tracked `userChrome.css`, `userContent.css`,
-and `user.js`. Launch Firefox once before the first install so the profile
-exists, and restart Firefox after those files change.
-
-This converges personal interactive machines on Zsh, Kitty, and Neovim while
-keeping Bash available as a fallback. The history of this effort is recorded
-in `docs/machine-convergence-plan.md`.
-
-### Keep an existing Mac setup
-
-Use `./install.sh --preserve-existing --dry-run` to preview, then
-`./install.sh --preserve-existing` when ready. This is an additive install:
-it leaves active Mac configs and existing helper/theme paths in place, including
-your shell initialization, Git credential helpers and hooks, SSH policy,
-editor mappings, highlighting, language-server settings, plugin versions,
-and tools. It skips package installation, plugin builds/downloads,
-AI context updates, terminal reloads, and automatic update scheduling.
-
-Active and maintenance private skills are updated from the checked-out,
-Git-tracked skillpack into `~/.agents/skills`, `~/.codex/skills`, and
-`~/.claude/skills`. Already-installed registered candidate skills are refreshed
-in their existing destinations too; other candidates are not installed.
-Changed skill files are backed up first; target-only files and skills remain
-in place. All selected source files and target directory paths are checked
-before copying, and directory
-symlinks are rejected. `DOTFILES_SKIP_PRIVATE_SKILLS=1` explicitly skips skills
-(for example, in public CI). The installer uses the prepared submodule revision
-rather than fetching an untested version during installation. Fetch/advance the
-submodule before testing if a newer version is wanted.
-
-Apart from skill updates, the only additions are the manual `sudo-askpass`
-and `vim-plug-update` helpers, when those command names are unused, and missing named Kitty themes
-when both the Mac Kitty config and selected theme match the verified repo
-defaults. The selected theme is never installed or replaced in this mode.
-Custom or unverified Kitty configs get no theme additions. Existing targets,
-command-name collisions, and symlinked/non-directory parent paths are skipped.
-The helpers are not invoked, added to shell startup, or scheduled automatically.
-
-This mode intentionally keeps local differences instead of converging active
-configs to the repo defaults. Plain `--check` / `make check-live` still reports
-those differences; it does not certify compatibility. `--preserve-existing`
-can be combined with `--dry-run`, `--no-packages`, and the historical `--copy`
-option, but not with `--minimal`, `--check`, `--backup-only`, or `--doctor`.
-Use the separate `--backup-only` mode for a full snapshot if wanted.
-
-Normal `./install.sh` and `--no-packages` retain their full-install behavior,
-including the Git/SSH/editor changes and plugin update schedule. Choose the
-preserving mode explicitly to retain an existing workflow.
-
-## 🐳 Container Usage
-
-The installer auto-detects container environments and uses minimal mode:
-```bash
-# In a Docker container
-./install.sh  # Automatically uses --minimal
-```
-
-## ⚙️ Environment Detection
-
-The installer automatically detects:
-- **OS**: macOS, Linux (Ubuntu, Debian, Arch, Fedora, Alpine, etc.)
-- **Environment**: Local, SSH session, Docker container
-- **Shell**: Bash, Zsh
-- **Available tools**: Adjusts configs based on what's available
-
-## 🔧 Customization
-
-### Local Overrides
-Machine-specific config lives outside the repo and survives reinstalls:
-
-- `~/.bashrc.local` / `~/.zshrc.local` - sourced at the end of the shell configs
-- `~/.gitconfig.local` - included last by `.gitconfig`, so identity or
-  tool-specific settings win over the shared config
-- `~/.ssh/config` - machine-specific host entries and identity files stay in
-  this local file; shared defaults are pulled in first via
-  `Include ~/.ssh/config.dotfiles`. OpenSSH keeps the first value it reads, so
-  change a shared scalar default such as `ForwardAgent` in `common/ssh/config`
-  rather than trying to override it in a later local host block.
-
-### Personal Git Hooks
-
-The installed `.gitconfig` sets `core.hooksPath = ~/.config/git/hooks`.
-Installed hooks are intentionally general and local-only:
-
-- `pre-commit` runs repo hooks like `.husky/pre-commit` first, then blocks
-  likely secrets, conflict markers, oversized files, and generated-looking
-  files (lockfiles allowlisted; override with `JM_ALLOW_GENERATED_EDITS=1`).
-- `pre-push` runs repo hooks first, then an explicit repo check when configured.
-
-```bash
-JM_GIT_HOOKS=0 git commit ...              # Skip personal hooks once
-git config jm.hooks.runRepoHooks false     # Don't run repo-controlled hooks in an untrusted clone
-git config jm.hooks.prePushCommand "make check"
-make install-git-hooks                     # Install only the hooks
-```
-
-### Minimal mode
-`--minimal` (auto-enabled in containers) installs the server bashrc and core
-configs only: it skips packages, vim/nvim plugins, desktop configs, the
-sudo-askpass helper, and AI context files, but still installs terminal
-(kitty/htop) configs.
-
-### AI Context
-The installer copies `common/ai-context/` files into place:
-`~/AGENTS.md` and an OS-specific `~/MACHINE.md`; `~/.claude/CLAUDE.md` is
-only seeded when absent (an existing customized one is left alone).
-Machine state snapshots are generated on demand with
-`scripts/refresh-machine-state.sh`.
-
-### Private Agent Skills
-
-`private/skills` is a submodule pinned to a commit in the private
-`woud420/skills` repository. The public dotfiles repository exposes the SSH
-URL and pinned commit ID, but no private skill contents or credentials.
-
-On a normal install, `install.sh` initializes the submodule when needed and
-copies only Git-tracked skills marked `active` or `maintenance` in its
-`manifest.json` into `~/.agents/skills/`. Candidate skills, untracked files,
-and repository metadata are not installed. Existing managed files are covered
-by the normal backup and `--check` behavior; target-only skills are left alone.
-
-Initialization requires GitHub SSH access to the private repository. Public CI
-sets `DOTFILES_SKIP_PRIVATE_SKILLS=1` and never requests private credentials.
-The same variable can explicitly skip private skills on another machine.
-
-```bash
-# Initialize manually or repair an unavailable private checkout
-git submodule update --init --checkout -- private/skills
-
-# Advance the pinned skillpack revision intentionally
-git submodule update --remote --checkout -- private/skills
-git add private/skills
-```
-
-## 📚 Requirements
-
-- **macOS**: Homebrew (auto-installed if missing)
-- **Linux**: sudo access for package installation
-- **All systems**: Git, Bash 4+
-
-## 🚑 Troubleshooting
-
-```bash
-# Check what would be installed
-./install.sh --dry-run
-
-# Skip package installation
-./install.sh --no-packages
-
-# Force minimal mode
-./install.sh --minimal
-
-# View installer help
 ./install.sh --help
 ```
+
+| Goal | Preview | Apply |
+| --- | --- | --- |
+| Set up a personal workstation | `./install.sh --dry-run` | `./install.sh` |
+| Keep an existing Mac workflow; refresh skills and add unused helpers | `./install.sh --preserve-existing --dry-run` | `./install.sh --preserve-existing` |
+| Use repo configuration with packages managed separately | `./install.sh --no-packages --dry-run` | `./install.sh --no-packages` |
+| Set up a server or container | `./install.sh --minimal --dry-run` | `./install.sh --minimal` |
+
+Full installation replaces managed configuration and can install editor plugins,
+change Git/SSH defaults, and schedule weekly plugin updates. `--no-packages`
+only skips the package-manager step. Choose `--preserve-existing` explicitly
+when keeping the current Mac setup.
+
+Start with the [installation guide](docs/operations/installation.md) for
+prerequisites, private-skill access, platform notes, and verification. Linux
+requires Bash 4+; macOS supports the system Bash 3.2.
+
+## Everyday commands
+
+```bash
+git ch          # Choose a branch with fzf
+git flog        # Browse commits interactively
+git fadd        # Stage files with a diff preview
+kctx            # Choose a Kubernetes context with fzf
+```
+
+After a full install, `vi`, `vim`, and `vimdiff` prefer Neovim when available.
+See the [configuration reference](docs/contracts/configuration.md) for installed
+paths and the [customization guide](docs/operations/customization.md) for local
+overrides, Git hooks, and themes.
+
+## Documentation
+
+The [documentation index](docs/README.md) follows the same five-category layout
+as Kickstart:
+
+| Category | Read it for |
+| --- | --- |
+| [Architecture](docs/architecture/README.md) | Repository layout, platform layers, and installation flow |
+| [Contracts](docs/contracts/README.md) | Installer modes, managed paths, and compatibility boundaries |
+| [Operations](docs/operations/README.md) | Installation, customization, skills, backup, recovery, and validation |
+| [Decisions](docs/decisions/README.md) | Accepted choices and historical convergence context |
+| [Ideas](docs/ideas/README.md) | Future proposals and their lifecycle |
+
+For maintenance, use the [backup and recovery guide](docs/operations/maintenance.md).
+For repository changes, use the [validation guide](docs/operations/validation.md).

@@ -1,6 +1,11 @@
+> **Historical planning record.** Retained as context for the
+> [machine-convergence decision](../machine-convergence.md), not current
+> installation guidance. Proposals, branch names, paths, and commands below
+> may have been superseded; use the [operations guides](../../operations/README.md).
+
 > **Status (2026-07):** historical/archived. This is the negotiated two-agent
 > plan that the convergence executed; the decisions that superseded parts of it
-> are listed in the status header of `docs/machine-convergence-plan.md`. The
+> are listed in the status header of [initial scope](initial-scope.md). The
 > planned backup-restore deliverable was descoped - restores are manual from
 > the path-preserving `~/.dotfiles-backup-*` directories using the audit log.
 

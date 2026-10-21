@@ -1,18 +1,10 @@
-# Linux Specific Configurations
+# Linux configuration
 
-This directory contains configurations specific to Linux systems, organized by distribution.
+Distro package inventories and machine context live in `debian/`, `arch/`,
+`fedora/`, and `alpine/`. `common/` holds Linux Kitty and systemd configuration.
+The Arch layer also includes the SwayFX desktop and Firefox styling.
 
-## Directory Structure
-
-- `debian/` - Debian-based distributions (Ubuntu, Mint, etc.)
-- `arch/` - Arch Linux and derivatives
-- `fedora/` - Fedora/RHEL/CentOS
-- `common/` - Configs that work across all Linux distros
-
-## Contents
-
-Each distro directory may contain:
-- Package lists (apt, pacman, dnf)
-- System service configs
-- X11/Wayland configs
-- Distribution-specific shell configurations
+- [Installation and server/container modes](../docs/operations/installation.md).
+- [Arch desktop guide](../docs/operations/arch-desktop.md).
+- [Installed paths and platform boundaries](../docs/contracts/configuration.md).
+- [Maintenance and recovery](../docs/operations/maintenance.md).
