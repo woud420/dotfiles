@@ -1,3 +1,8 @@
+> **Historical planning record.** Retained as context for the
+> [machine-convergence decision](../machine-convergence.md), not current
+> installation guidance. Proposals, branch names, paths, and commands below
+> may have been superseded; use the [operations guides](../../operations/README.md).
+
 # Dotfiles Unification Research Prompt
 
 You are analyzing a dotfiles repository (~/workspace/dotfiles) to produce a

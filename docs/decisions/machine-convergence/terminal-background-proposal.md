@@ -1,3 +1,8 @@
+> **Historical planning record.** Retained as context for the
+> [machine-convergence decision](../machine-convergence.md), not current
+> installation guidance. Proposals, branch names, paths, and commands below
+> may have been superseded; use the [operations guides](../../operations/README.md).
+
 > **Status (2026-07):** historical example of container-based theme derivation.
 > `scripts/dotfiles.py` and `machines/` were removed; the shipped theme is the
 > Arch-only overlay in `linux/arch/.config/kitty/` (#2A1E2E).
@@ -41,4 +46,4 @@ Proposed change:
 
 ## Tradeoff
 
-Adds a small piece of machinery to the installer (one `add_glob` call gated on the directory existing) — minor scope creep, but it's the right hook for the per-machine deltas the convergence plan in `docs/machine-convergence-plan.md` already anticipates ("machine identity" classification).
+Adds a small piece of machinery to the installer (one `add_glob` call gated on the directory existing) — minor scope creep, but it's the right hook for the per-machine deltas the convergence plan in [initial scope](initial-scope.md) already anticipates ("machine identity" classification).

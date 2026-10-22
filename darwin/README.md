@@ -1,9 +1,10 @@
-# macOS (Darwin) Specific Configurations
+# macOS configuration
 
-This directory contains configurations specific to macOS systems.
+[`Brewfile`](Brewfile) defines Homebrew packages and apps. [`kitty.conf`](kitty.conf)
+provides macOS terminal settings; `launchd/` holds the plugin update schedule and
+`ai-context/` holds machine guidance.
 
-## Contents
-
-- `Brewfile` - Homebrew packages and casks
-- Kitty terminal configs with macOS-specific keybindings (cmd+)
-- System preferences and defaults
+- [Installation and mode selection](../docs/operations/installation.md).
+- [Keep an existing Mac workflow](../docs/operations/installation.md#existing-mac-workflow).
+- [Customization](../docs/operations/customization.md).
+- [Maintenance and plugin scheduling](../docs/operations/maintenance.md).

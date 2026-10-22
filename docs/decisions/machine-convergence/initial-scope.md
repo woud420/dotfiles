@@ -1,3 +1,8 @@
+> **Historical planning record.** Retained as context for the
+> [machine-convergence decision](../machine-convergence.md), not current
+> installation guidance. Proposals, branch names, paths, and commands below
+> may have been superseded; use the [operations guides](../../operations/README.md).
+
 > **Status (2026-07):** historical. The convergence happened on
 > `converge/jm-home-box-laptop`; decisions that supersede parts of this plan:
 > `install.sh` is the single install tool (`scripts/dotfiles.py` and
@@ -5,7 +10,7 @@
 > by the Arch-only overlay in `linux/arch/.config/kitty/`, and machine-local
 > runtime state lives in `~/.bashrc.local` / `~/.zshrc.local` /
 > `~/.gitconfig.local` rather than the repo. The negotiated two-agent plan this
-> executed is archived in `docs/convergence/combined-plan.md`.
+> executed is archived in [merge plan](merge-plan.md).
 
 # Machine Convergence Plan
 
