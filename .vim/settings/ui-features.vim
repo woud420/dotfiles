@@ -1,66 +1,82 @@
 " ===== Custom UI Features =====
-" This file contains custom UI enhancements like floating windows and popups
+" Floating/popup views for registers, marks and buffers. Neovim uses a
+" floating window (nvim_open_win); Vim 8.2+ uses popup_create.
 
-" Define custom highlight groups for popups (Catppuccin Mocha inspired)
+" Highlight groups for the popups (Catppuccin Mocha inspired)
 augroup PopupHighlights
   autocmd!
-  " Main popup background - darker for contrast
   autocmd ColorScheme * highlight RegisterPopup guibg=#1e1e2e guifg=#cdd6f4 ctermbg=234 ctermfg=252
-  " Border - subtle blue accent
   autocmd ColorScheme * highlight RegisterPopupBorder guibg=#313244 guifg=#89b4fa ctermbg=236 ctermfg=117
-  " Alternative styles you can try:
-  " Darker with green accent:
-  " autocmd ColorScheme * highlight RegisterPopup guibg=#11111b guifg=#a6e3a1 
-  " autocmd ColorScheme * highlight RegisterPopupBorder guifg=#a6e3a1
-  " Purple accent:
-  " autocmd ColorScheme * highlight RegisterPopup guibg=#181825 guifg=#cba6f7
-  " autocmd ColorScheme * highlight RegisterPopupBorder guifg=#cba6f7
 augroup END
+highlight RegisterPopup guibg=#1e1e2e guifg=#cdd6f4 ctermbg=234 ctermfg=252
+highlight RegisterPopupBorder guibg=#313244 guifg=#89b4fa ctermbg=236 ctermfg=117
 
-" Show registers in a floating window (upper right corner)
-" Requires Vim 8.2+ with popup support
-function! ShowRegistersPopup()
-  " Check if popups are supported
-  if !has('popupwin')
-    echo "Popup windows require Vim 8.2+"
-    return
+" Show lines in a float. pos is 'topright', 'topleft' or 'center'.
+function! s:ShowPopup(lines, title, pos) abort
+  if has('nvim')
+    call s:NvimFloat(a:lines, a:title, a:pos)
+  elseif has('popupwin')
+    call s:VimPopup(a:lines, a:title, a:pos)
+  else
+    echo 'Popups require Neovim or Vim 8.2+'
   endif
-  
-  " Get register contents
-  let reg_output = execute('registers')
-  let reg_lines = split(reg_output, '\n')
-  
-  " Create custom highlight groups for the popup
-  highlight RegisterPopup guibg=#1e1e2e guifg=#cdd6f4 ctermbg=234 ctermfg=252
-  highlight RegisterPopupBorder guibg=#313244 guifg=#89b4fa ctermbg=236 ctermfg=117
-  
-  " Create popup in upper right corner
-  let popup_id = popup_create(reg_lines, {
-    \ 'pos': 'topright',
-    \ 'line': 1,
-    \ 'col': &columns - 2,
+endfunction
+
+function! s:NvimFloat(lines, title, pos) abort
+  let width = min([max(map(copy(a:lines), 'strdisplaywidth(v:val)') + [30]) + 2, &columns - 4])
+  let height = min([max([len(a:lines), 1]), 20, &lines - 4])
+  let buf = nvim_create_buf(v:false, v:true)
+  call nvim_buf_set_lines(buf, 0, -1, v:true, a:lines)
+  call setbufvar(buf, '&bufhidden', 'wipe')
+  let opts = {'relative': 'editor', 'width': width, 'height': height,
+        \ 'style': 'minimal', 'border': 'rounded',
+        \ 'title': a:title, 'title_pos': 'center'}
+  if a:pos ==# 'topright'
+    let opts.row = 1
+    let opts.col = &columns - width - 2
+  elseif a:pos ==# 'topleft'
+    let opts.row = 1
+    let opts.col = 2
+  else
+    let opts.row = max([(&lines - height) / 2 - 1, 0])
+    let opts.col = max([(&columns - width) / 2, 0])
+  endif
+  let win = nvim_open_win(buf, v:true, opts)
+  call nvim_set_option_value('winhighlight', 'Normal:RegisterPopup,FloatBorder:RegisterPopupBorder', {'win': win})
+  nnoremap <buffer> <silent> q <Cmd>close<CR>
+  nnoremap <buffer> <silent> <Esc> <Cmd>close<CR>
+endfunction
+
+function! s:VimPopup(lines, title, pos) abort
+  let opts = {
     \ 'minwidth': 30,
-    \ 'maxwidth': 40,
-    \ 'maxheight': 15,
+    \ 'maxwidth': 60,
+    \ 'maxheight': 20,
     \ 'border': [1, 1, 1, 1],
     \ 'borderchars': ['─', '│', '─', '│', '╭', '╮', '╯', '╰'],
-    \ 'title': ' 📋 Registers ',
+    \ 'title': a:title,
     \ 'close': 'click',
-    \ 'padding': [1, 2, 1, 2],
+    \ 'padding': [0, 1, 0, 1],
     \ 'highlight': 'RegisterPopup',
     \ 'borderhighlight': ['RegisterPopupBorder'],
     \ 'scrollbar': 1,
     \ 'mapping': 0,
     \ 'time': 10000,
     \ 'moved': 'any'
-    \ })
-  
-  " Allow closing with Esc
-  call popup_filter_menu(popup_id, 'ShowRegistersFilter')
+    \ }
+  if a:pos ==# 'topright'
+    call extend(opts, {'pos': 'topright', 'line': 1, 'col': &columns - 2})
+  elseif a:pos ==# 'topleft'
+    call extend(opts, {'pos': 'topleft', 'line': 2, 'col': 5})
+  else
+    call extend(opts, {'pos': 'center'})
+  endif
+  let popup_id = popup_create(a:lines, opts)
+  call popup_filter_menu(popup_id, 'ShowPopupFilter')
 endfunction
 
-" Filter function to handle Esc key
-function! ShowRegistersFilter(id, key)
+" Vim popup filter: Esc closes
+function! ShowPopupFilter(id, key) abort
   if a:key == "\<Esc>"
     call popup_close(a:id)
     return 1
@@ -68,95 +84,17 @@ function! ShowRegistersFilter(id, key)
   return 0
 endfunction
 
-" Alternative: Show registers in a preview window (works in older Vim)
-function! ShowRegistersPreview()
-  " Save current window
-  let curr_win = winnr()
-  
-  " Create small window in upper right
-  topleft 10vnew
-  wincmd L
-  vertical resize 35
-  
-  " Set window properties
-  setlocal previewwindow
-  setlocal buftype=nofile
-  setlocal bufhidden=delete
-  setlocal noswapfile
-  setlocal nowrap
-  setlocal nonumber
-  setlocal norelativenumber
-  
-  " Insert register content
-  put =execute('registers')
-  normal! gg
-  
-  " Map q and Esc to close
-  nnoremap <buffer> q :close<CR>
-  nnoremap <buffer> <Esc> :close<CR>
-  
-  " Return to original window
-  execute curr_win . 'wincmd w'
+function! ShowRegistersPopup() abort
+  call s:ShowPopup(split(execute('registers'), '\n'), ' 📋 Registers ', 'topright')
+endfunction
+
+function! ShowMarksPopup() abort
+  call s:ShowPopup(split(execute('marks'), '\n'), ' 🔖 Marks ', 'center')
+endfunction
+
+function! ShowBuffersPopup() abort
+  call s:ShowPopup(split(execute('ls'), '\n'), ' 📁 Buffers ', 'topleft')
 endfunction
 
 " ===== Key Mappings =====
-
-" Show registers popup
 nnoremap <silent> <leader>r :call ShowRegistersPopup()<CR>
-
-" Quick register access with visual feedback
-" Shows registers when pressing " in normal mode
-" (uncomment if you want this behavior)
-" nnoremap " :call ShowRegistersPopup()<CR>"
-
-" ===== Additional UI Features =====
-
-" Show marks in a floating window
-function! ShowMarksPopup()
-  if !has('popupwin')
-    echo "Popup windows require Vim 8.2+"
-    return
-  endif
-  
-  let marks_output = execute('marks')
-  let marks_lines = split(marks_output, '\n')
-  
-  call popup_create(marks_lines, {
-    \ 'pos': 'center',
-    \ 'minwidth': 40,
-    \ 'maxheight': 20,
-    \ 'border': [],
-    \ 'title': ' 🔖 Marks ',
-    \ 'close': 'click',
-    \ 'padding': [0, 1, 0, 1],
-    \ })
-endfunction
-
-" Show buffer list in a floating window
-function! ShowBuffersPopup()
-  if !has('popupwin')
-    echo "Popup windows require Vim 8.2+"
-    return
-  endif
-  
-  let buffers_output = execute('ls')
-  let buffer_lines = split(buffers_output, '\n')
-  
-  call popup_create(buffer_lines, {
-    \ 'pos': 'topleft',
-    \ 'line': 2,
-    \ 'col': 5,
-    \ 'minwidth': 50,
-    \ 'maxheight': 15,
-    \ 'border': [],
-    \ 'title': ' 📁 Buffers ',
-    \ 'close': 'click',
-    \ 'padding': [0, 1, 0, 1],
-    \ })
-endfunction
-
-" Optional: Auto-show registers on " press (commented out by default)
-" augroup RegisterPreview
-"   autocmd!
-"   autocmd CmdlineEnter : if getcmdtype() == '"' | call ShowRegistersPopup() | endif
-" augroup END

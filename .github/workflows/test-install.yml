@@ -116,6 +116,7 @@ jobs:
             for f in .vim/vimrc .vim/plugins.vim .vim/mappings.vim .vim/settings.vim; do
               test -f ~/$f && ! test -L ~/$f && echo "PASS: $f (copied)" || { echo "FAIL: $f"; exit 1; }
             done
+            ! test -e ~/.vimrc && echo "PASS: no ~/.vimrc shadowing ~/.vim/vimrc"
             ls ~/.config/shell-functions/*.sh > /dev/null && echo "PASS: shell-functions deployed"
 
             echo "=== Kitty ==="

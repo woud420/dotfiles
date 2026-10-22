@@ -57,6 +57,12 @@ tree
 vim
 wget
 zsh
+# Editor tooling: tree-sitter parsers (nvim-treesitter), coc-pyright
+# format/lint, shellcheck diagnostics through coc-sh
+tree-sitter-cli
+python-black
+python-pylint
+shellcheck
 # Modern alternatives
 bat
 eza

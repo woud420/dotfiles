@@ -25,6 +25,11 @@ if [[ ! -r "$HOME/.vim/vimrc" ]]; then
     exit 1
 fi
 
+if [[ -e "$HOME/.vimrc" || -L "$HOME/.vimrc" ]]; then
+    printf '%s/.vimrc exists and shadows ~/.vim/vimrc for plain vim. Run ./install.sh --no-packages to retire it.\n' "$HOME" >&2
+    exit 1
+fi
+
 if [[ ! -r "$HOME/.config/nvim/init.vim" ]]; then
     printf 'Missing %s/.config/nvim/init.vim. Run ./install.sh --no-packages first.\n' "$HOME" >&2
     exit 1

@@ -69,11 +69,19 @@ A regular full install deploys `~/.local/bin/vim-plug-update` and schedules
 weekly updates through launchd on macOS or a systemd user timer when available
 on Linux. Minimal and preserving installs do not activate that schedule.
 
-To update manually after reviewing the [updater](../../scripts/vim-plug-update.sh):
+The updater upgrades vim-plug, updates the plugins listed in `plugins.vim`,
+removes plugin directories no longer listed there (`PlugClean!`), rebuilds
+tree-sitter parsers when `tree-sitter-cli` is installed, and updates CoC
+extensions. To run it manually after reviewing the
+[updater](../../scripts/vim-plug-update.sh):
 
 ```bash
 ~/.local/bin/vim-plug-update
 ```
+
+Inside Neovim, `:checkhealth nvim-treesitter coc` reports the parser toolchain
+and the CoC service; `:TSUpdate` rebuilds parsers and `:CocUpdate` refreshes
+extensions on demand.
 
 To inspect scheduling:
 

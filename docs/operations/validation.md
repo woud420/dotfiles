@@ -49,7 +49,10 @@ make check-editor
 
 This requires both Vim and Neovim plus installed configuration under the selected
 `HOME`. The [script](../../scripts/check-editor-parity.sh) loads both editors
-against `scripts/editor-parity.vim` and compares their CoC settings.
+against `scripts/editor-parity.vim` and compares their CoC settings, and fails
+when a `~/.vimrc` exists because Vim would skip `~/.vim/vimrc`.
+For plugin and language-server health in Neovim, use
+`:checkhealth nvim-treesitter coc`.
 Use a prepared temporary home when validating without a live installation;
 the check does not create the editor configuration for you.
 

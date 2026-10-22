@@ -51,7 +51,11 @@ fi
 # Basic FZF configuration if available
 if command -v fzf >/dev/null 2>&1; then
     export FZF_DEFAULT_OPTS="--layout=reverse --border"
-    [ -f ~/.fzf.bash ] && source ~/.fzf.bash
+    if [ -f ~/.fzf.bash ]; then
+        source ~/.fzf.bash
+    else
+        eval "$(fzf --bash 2>/dev/null)"
+    fi
 fi
 
 # Load shell functions if available

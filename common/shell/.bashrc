@@ -138,8 +138,13 @@ export FZF_DEFAULT_OPTS="
   --border
 "
 
-# Source FZF if available
-[ -f ~/.fzf.bash ] && source ~/.fzf.bash
+# fzf key bindings (Ctrl-R / Ctrl-T / Alt-C) and completion: the git installer
+# writes ~/.fzf.bash; pacman/brew builds expose the same via `fzf --bash` (>= 0.48)
+if [ -f ~/.fzf.bash ]; then
+    source ~/.fzf.bash
+elif command -v fzf >/dev/null 2>&1; then
+    eval "$(fzf --bash 2>/dev/null)"
+fi
 
 # PATH helper - prevents duplicates
 path_prepend() {
@@ -164,14 +169,7 @@ if [ -d ~/.config/shell-functions ]; then
     done
 fi
 
-# Enable color support for ls and grep
-if [ -x /usr/bin/dircolors ]; then
-    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
-    alias ls='ls --color=auto'
-    alias grep='grep --color=auto'
-    alias fgrep='fgrep --color=auto'
-    alias egrep='egrep --color=auto'
-fi
+# ls/grep color aliases and LS_COLORS come from ~/.gnu_aliases (shared with zsh)
 
 # Common aliases
 alias ll='ls -alF'

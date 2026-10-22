@@ -22,6 +22,7 @@ mkdir -p \
     "$STUB_DIR"
 
 printf 'pre-install bashrc\n' > "$TEST_HOME/.bashrc"
+printf 'stale vimrc\n' > "$TEST_HOME/.vimrc"
 cat > "$TEST_HOME/.ssh/config" <<'SSH_CONFIG'
 Host github.com
   User git
@@ -104,6 +105,7 @@ assert_regular_copy "$TEST_HOME/.bashrc" "$ROOT_DIR/common/shell/.bashrc"
 assert_regular_copy "$TEST_HOME/.zshrc" "$ROOT_DIR/common/shell/.zshrc"
 assert_regular_copy "$TEST_HOME/.gitconfig" "$ROOT_DIR/common/git/.gitconfig"
 assert_regular_copy "$TEST_HOME/.vim/vimrc" "$ROOT_DIR/.vim/vimrc"
+[[ ! -e "$TEST_HOME/.vimrc" ]] || fail "stale ~/.vimrc was not retired (it shadows ~/.vim/vimrc)"
 assert_regular_copy "$TEST_HOME/.config/nvim/init.vim" "$ROOT_DIR/common/nvim/init.vim"
 assert_regular_copy "$TEST_HOME/.config/nvim/coc-settings.json" "$ROOT_DIR/.vim/coc-settings.json"
 
@@ -144,6 +146,7 @@ grep -q $'\tcopy\t' "$AUDIT_LOG" || fail "audit log has no copy action"
 ! grep -q $'\tlink\t' "$AUDIT_LOG" || fail "audit log must not contain link actions"
 grep -q "$ROOT_DIR/common/nvim/init.vim" "$AUDIT_LOG" || fail "audit log does not include neovim init"
 grep -q '^pre-install bashrc$' "$INSTALL_BACKUP/files/.bashrc" || fail "pre-install bashrc was not backed up"
+grep -q '^stale vimrc$' "$INSTALL_BACKUP/files/.vimrc" || fail "stale ~/.vimrc was not backed up before removal"
 grep -q 'IdentityFile ~/.ssh/github_ed25519' "$INSTALL_BACKUP/files/.ssh/config" \
     || fail "machine-local SSH config was not backed up"
 

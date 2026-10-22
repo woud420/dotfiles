@@ -54,7 +54,8 @@ themselves are copied. Recovery is manual: there is no `--restore` option or
 ## Check and doctor scope
 
 `--check` reports missing files, changed contents, symlink targets where copies
-are expected, and missing executable permissions for executable source files.
+are expected, missing executable permissions for executable source files, and a
+`~/.vimrc` that would shadow `~/.vim/vimrc`.
 It also checks for legacy parent symlinks into the checkout and the shared SSH
 Include directive. Missing source files are warned about and skipped.
 
@@ -68,7 +69,9 @@ A nonzero exit status indicates reported drift. Intentional differences after
 does not prove visual parity, keybinding behavior, plugin health, or compatibility
 with a particular machine's workflow.
 
-`--doctor` checks Bash, Git, Zsh, Kitty, Neovim, ripgrep, and fzf. On Arch it
+`--doctor` checks Bash, Git, Zsh, Kitty, Neovim, ripgrep, and fzf, and warns
+about missing editor tooling (`tree-sitter`, `black`, `pylint`, `shellcheck`) or
+a `~/.vimrc` that shadows `~/.vim/vimrc`. On Arch it
 also checks desktop commands, portals, the GTK theme, FiraCode Nerd Font, and a
 SwayFX runtime. Docker and kubectl are optional checks there. Missing required
 components produce a nonzero exit status; minimal servers can intentionally

@@ -22,6 +22,7 @@ preserving mode has its own limited [scope](installer.md#preserving-an-existing-
 | `linux/arch/.config/kitty/*.conf` | `~/.config/kitty/` | Arch theme overrides |
 | `common/htop/htoprc` | `~/.config/htop/htoprc` | htop settings |
 | `.vim/` configuration files and `settings/*.vim` | `~/.vim/` | Vimscript, mappings, plugins, and CoC JSON |
+| (none) | `~/.vimrc` | Backed up and removed: Vim ignores `~/.vim/vimrc` while any `~/.vimrc` exists |
 | `common/nvim/init.vim` | `~/.config/nvim/init.vim` | Loads `~/.vim/vimrc` |
 | `.vim/coc-settings.json` | `~/.config/nvim/coc-settings.json` | CoC settings shared with Vim |
 | `scripts/sudo-askpass.sh`, `scripts/vim-plug-update.sh` | `~/.local/bin/sudo-askpass`, `~/.local/bin/vim-plug-update` | GUI sudo helper and plugin updater |
@@ -51,11 +52,17 @@ distinguishes active modules from deliberately disabled stubs.
 | `git st`, `git cm`, `git lg` | Status, commit, and graph log shortcuts | Git |
 | `k`, `kctx` | kubectl shortcut and fuzzy context selection | kubectl; fzf for `kctx` |
 | `pbcopy`, `pbpaste` on Linux | Clipboard parity through wl-clipboard | `wl-copy`, `wl-paste` |
+| `Ctrl-R`, `Ctrl-T`, `Alt-C` | fzf history search, file picker, and directory jump in Bash and Zsh | fzf 0.48+ (`fzf --zsh`, `fzf --bash`) or `~/.fzf.*` from the git installer |
+| `ls`, `grep` | Colored output with the shared dircolors palette in both shells | GNU coreutils; `gls`/`gdircolors` on macOS |
 | `sudo -A` | Uses the installed askpass helper when configured | Helper and a supported GUI prompt tool |
 
 `EDITOR` and `VISUAL` prefer Neovim when it is available. Both editors use
 shared Vimscript settings and `~/.vim/plugged`; Neovim reads its CoC JSON from
-`~/.config/nvim/`.
+`~/.config/nvim/`. Neovim adds tree-sitter highlighting and indentation through
+nvim-treesitter's `main` branch, which needs `tree-sitter-cli` plus a C
+compiler to build parsers under `~/.local/share/nvim/site/`; without the CLI the
+regex syntax files keep highlighting. CoC format-on-save for Python calls
+`black`, and linting calls `pylint`; both come from the platform package lists.
 
 ## Local ownership
 

@@ -962,6 +962,33 @@ compile_coc_nvim() {
     fi
 }
 
+# Vim ignores ~/.vim/vimrc whenever ~/.vimrc exists, so a stale ~/.vimrc
+# silently loads a different config than Neovim. Back it up and remove it.
+retire_legacy_vimrc() {
+    local legacy="$HOME/.vimrc"
+    [[ -e "$legacy" || -L "$legacy" ]] || return 0
+
+    if [[ "$CHECK_MODE" == "true" ]]; then
+        CHECKED_FILES=$((CHECKED_FILES + 1))
+        log_error "Legacy file shadows ~/.vim/vimrc: $legacy"
+        CHECK_FAILURES=$((CHECK_FAILURES + 1))
+        return 0
+    fi
+    if [[ "$BACKUP_ONLY" == "true" ]]; then
+        backup_file "$legacy"
+        return 0
+    fi
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_info "Would back up and remove: $legacy (shadows ~/.vim/vimrc)"
+        return 0
+    fi
+
+    backup_file "$legacy"
+    rm -f "$legacy"
+    audit_action "remove" "" "$legacy" "legacy ~/.vimrc shadowed ~/.vim/vimrc"
+    log_warning "Removed $legacy (backed up); Vim now loads ~/.vim/vimrc"
+}
+
 # Install vim + nvim configuration
 install_vim_config() {
     log_step "Installing vim configuration..."
@@ -969,6 +996,9 @@ install_vim_config() {
     if [[ "$DRY_RUN" == "false" ]] && ! state_only_mode; then
         mkdir -p "$HOME/.vim/settings"
     fi
+
+    # ~/.vim/vimrc is the only Vim entry point (Neovim loads it via init.vim).
+    retire_legacy_vimrc
 
     # install_file handles dry-run logging itself
     install_file "$DOTFILES_DIR/.vim/vimrc" "$HOME/.vim/vimrc"
@@ -1109,7 +1139,7 @@ run_vim_in_pty() {
 # Compare installed plugin dirs against what plugins.vim declares.
 report_plug_count() {
     local expected installed
-    expected="$(grep -c "^Plug '" "$HOME/.vim/plugins.vim" 2>/dev/null || echo 0)"
+    expected="$(grep -c "^[[:space:]]*Plug '" "$HOME/.vim/plugins.vim" 2>/dev/null || echo 0)"
     # shellcheck disable=SC2012
     installed="$(ls -1 "$HOME/.vim/plugged" 2>/dev/null | wc -l | tr -d ' ')"
     if [[ "$installed" -ge "$expected" && "$expected" -gt 0 ]]; then
@@ -1455,6 +1485,19 @@ doctor_optional_command() {
     fi
 }
 
+# Editor tooling the shared Vim/Neovim config calls into. Missing tools
+# degrade silently (no tree-sitter parsers, failing format-on-save), so
+# name what each one unlocks.
+doctor_editor_tool() {
+    local command="$1"
+    local purpose="$2"
+    if command -v "$command" >/dev/null 2>&1; then
+        log_success "$command ($purpose)"
+    else
+        log_warning "Editor tool not found: $command ($purpose)"
+    fi
+}
+
 run_doctor() {
     log_step "Checking runtime dependencies..."
 
@@ -1463,6 +1506,14 @@ run_doctor() {
     for command in "${common_commands[@]}"; do
         doctor_require_command "$command"
     done
+
+    doctor_editor_tool tree-sitter "builds nvim-treesitter parsers; pacman/brew: tree-sitter-cli"
+    doctor_editor_tool black "coc-pyright format on save; pacman: python-black, brew: black"
+    doctor_editor_tool pylint "coc-pyright linting; pacman: python-pylint, brew: pylint"
+    doctor_editor_tool shellcheck "shell diagnostics through coc-sh"
+    if [[ -e "$HOME/.vimrc" || -L "$HOME/.vimrc" ]]; then
+        log_warning "~/.vimrc exists and shadows ~/.vim/vimrc; ./install.sh backs it up and removes it"
+    fi
 
     if is_arch_family; then
         local desktop_commands=(

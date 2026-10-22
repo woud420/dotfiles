@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Weekly vim plugin maintenance: vim-plug, plugins, and coc extensions.
+# Weekly vim plugin maintenance: vim-plug, plugins, tree-sitter parsers, and
+# coc extensions.
 # Installed to ~/.local/bin/vim-plug-update by install.sh.
 # Scheduled by vim-plug-update.timer (Linux/systemd) or
 # com.woud420.vim-plug-update (macOS/launchd).
@@ -25,6 +26,18 @@ run_bounded() {
 
 log "Updating vim-plug and plugins..."
 run_bounded nvim --headless -c 'PlugUpgrade' -c 'PlugUpdate --sync' -c 'qa!' 2>&1 \
+    | tr '\r' '\n' | grep -v '^[[:space:]]*$' || true
+
+log "Removing plugins no longer listed in plugins.vim..."
+run_bounded nvim --headless -c 'PlugClean!' -c 'qa!' 2>&1 \
+    | tr '\r' '\n' | grep -v '^[[:space:]]*$' || true
+
+# nvim-treesitter (main) installs parsers asynchronously, so the :TSUpdate
+# post-update hook is cut short by the qa! above; run it synchronously here.
+log "Updating tree-sitter parsers..."
+run_bounded nvim --headless \
+    -c 'lua local ok, ts = pcall(require, "nvim-treesitter"); if ok and vim.fn.executable("tree-sitter") == 1 then ts.update(nil, { summary = true }):wait(600000) else print("tree-sitter-cli missing; parsers not updated") end' \
+    -c 'qa!' 2>&1 \
     | tr '\r' '\n' | grep -v '^[[:space:]]*$' || true
 
 log "Updating coc extensions..."
