@@ -19,7 +19,8 @@
   "colors.enable": true,
 
   "python.linting.enabled": true,
-  "python.linting.pylintEnabled": true,
+  "python.linting.ruffEnabled": true,
+  "python.linting.pylintEnabled": false,
   "python.formatting.provider": "black",
 
   "typescript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces": true,

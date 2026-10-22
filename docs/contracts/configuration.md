@@ -62,7 +62,7 @@ shared Vimscript settings and `~/.vim/plugged`; Neovim reads its CoC JSON from
 nvim-treesitter's `main` branch, which needs `tree-sitter-cli` plus a C
 compiler to build parsers under `~/.local/share/nvim/site/`; without the CLI the
 regex syntax files keep highlighting. CoC format-on-save for Python calls
-`black`, and linting calls `pylint`; both come from the platform package lists.
+`black`, and linting calls `ruff`; both come from the platform package lists.
 
 ## Local ownership
 

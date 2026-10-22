@@ -70,7 +70,7 @@ does not prove visual parity, keybinding behavior, plugin health, or compatibili
 with a particular machine's workflow.
 
 `--doctor` checks Bash, Git, Zsh, Kitty, Neovim, ripgrep, and fzf, and warns
-about missing editor tooling (`tree-sitter`, `black`, `pylint`, `shellcheck`) or
+about missing editor tooling (`tree-sitter`, `black`, `ruff`, `shellcheck`) or
 a `~/.vimrc` that shadows `~/.vim/vimrc`. On Arch it
 also checks desktop commands, portals, the GTK theme, FiraCode Nerd Font, and a
 SwayFX runtime. Docker and kubectl are optional checks there. Missing required

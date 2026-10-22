@@ -1509,7 +1509,7 @@ run_doctor() {
 
     doctor_editor_tool tree-sitter "builds nvim-treesitter parsers; pacman/brew: tree-sitter-cli"
     doctor_editor_tool black "coc-pyright format on save; pacman: python-black, brew: black"
-    doctor_editor_tool pylint "coc-pyright linting; pacman: python-pylint, brew: pylint"
+    doctor_editor_tool ruff "coc-pyright linting; pacman: ruff, brew: ruff"
     doctor_editor_tool shellcheck "shell diagnostics through coc-sh"
     if [[ -e "$HOME/.vimrc" || -L "$HOME/.vimrc" ]]; then
         log_warning "~/.vimrc exists and shadows ~/.vim/vimrc; ./install.sh backs it up and removes it"
