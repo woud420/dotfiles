@@ -30,6 +30,11 @@ if vim.fn.executable("tree-sitter") == 1 then
   ts.install(ensure_installed)
 end
 
+-- Tree-sitter indentation is still experimental upstream and misjudges Python
+-- (dedent after return, continuation lines) and YAML nesting. Those two keep
+-- Vim's built-in indent scripts, which is also what Vim uses on the laptop.
+local builtin_indent = { python = true, yaml = true }
+
 -- Highlight and indent with tree-sitter whenever a parser exists for the
 -- buffer's filetype. vim.treesitter.start() disables regex syntax for that
 -- buffer, matching the old `additional_vim_regex_highlighting = false`.
@@ -40,7 +45,7 @@ vim.api.nvim_create_autocmd("FileType", {
     if not vim.treesitter.language.add(lang) then
       return
     end
-    if pcall(vim.treesitter.start, args.buf, lang) then
+    if pcall(vim.treesitter.start, args.buf, lang) and not builtin_indent[lang] then
       vim.bo[args.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
     end
   end,
