@@ -1032,11 +1032,12 @@ install_vim_config() {
             seed_vim_plug
             # vim-plug needs a real terminal: ex mode (-e/-es) aborts with E31
             # and installs nothing, so allocate a pty via script(1).
+            # GIT_CONFIG_GLOBAL=/dev/null: see the neovim step; anonymous HTTPS clones
             if command -v script >/dev/null 2>&1; then
-                run_vim_in_pty vim -N -u "$HOME/.vim/vimrc" -c 'PlugInstall --sync' -c 'qa!' \
+                GIT_CONFIG_GLOBAL=/dev/null run_vim_in_pty vim -N -u "$HOME/.vim/vimrc" -c 'PlugInstall --sync' -c 'qa!' \
                     || log_warning "vim plugin install failed; run :PlugInstall manually"
             else
-                vim -e -N -u "$HOME/.vim/vimrc" --not-a-term -c 'PlugInstall --sync' -c 'qa!' </dev/null \
+                GIT_CONFIG_GLOBAL=/dev/null vim -e -N -u "$HOME/.vim/vimrc" --not-a-term -c 'PlugInstall --sync' -c 'qa!' </dev/null \
                     || log_warning "vim plugin install failed; run :PlugInstall manually"
             fi
             report_plug_count
@@ -1184,7 +1185,10 @@ install_neovim_config() {
         seed_vim_plug
         # --sync waits for the clones; %print echoes vim-plug's result buffer so a
         # failed clone (network, git config, build hook) is visible in the log.
-        nvim --headless -c 'PlugInstall --sync' -c '%print' -c 'qa!' </dev/null \
+        # GIT_CONFIG_GLOBAL=/dev/null: the deployed ~/.gitconfig rewrites GitHub
+        # URLs to SSH, which needs a key; public plugin clones work anonymously
+        # over HTTPS, so a fresh machine or CI runner can bootstrap without one.
+        GIT_CONFIG_GLOBAL=/dev/null nvim --headless -c 'PlugInstall --sync' -c '%print' -c 'qa!' </dev/null \
             || log_warning "nvim plugin install failed; run :PlugInstall manually"
         report_plug_count
 
