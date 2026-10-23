@@ -325,9 +325,11 @@ jobs:
       - name: Validate Neovim config (headless load with plugins)
         run: |
           nvim --version | head -1
-          errors=$(nvim --headless -c 'qa!' 2>&1 | tr -d '\r')
-          if [ -n "$errors" ]; then echo "FAIL: Neovim startup output:"; echo "$errors"; exit 1; fi
-          echo "PASS: Neovim starts silently"
+          # First start kicks off the async tree-sitter parser build (progress
+          # lines); anything else on startup is an error.
+          output=$(nvim --headless -c 'qa!' 2>&1 | tr -d '\r' | grep -v '^\[nvim-treesitter' || true)
+          if [ -n "$output" ]; then echo "FAIL: Neovim startup output:"; echo "$output"; exit 1; fi
+          echo "PASS: Neovim starts without errors"
           nvim --headless \
             -c 'lua local miss = {}; for _, p in ipairs({ "vim-airline", "catppuccin", "fzf", "fzf.vim", "vim-polyglot", "coc.nvim", "nvim-treesitter" }) do local spec = vim.g.plugs[p]; if not (spec and vim.fn.isdirectory(spec.dir) == 1) then miss[#miss + 1] = p end end; if #miss > 0 then io.stderr:write("FAIL: missing plugins " .. table.concat(miss, " ") .. "\n"); os.exit(1) end; if vim.g.colors_name ~= "catppuccin_mocha" then io.stderr:write("FAIL: colorscheme " .. tostring(vim.g.colors_name) .. "\n"); os.exit(1) end; print("PASS: plugins installed, colorscheme catppuccin_mocha")' \
             -c 'qa!' 2>&1 | tr -d '\r'
