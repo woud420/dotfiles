@@ -1,4 +1,4 @@
-let g:airline_theme = 'catppuccin_mocha'
+" Leave g:airline_theme unset so Airline follows the active colorscheme.
 
 " Airline Setup
 " let g:airline_extensions = ['branch']
