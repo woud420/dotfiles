@@ -7,7 +7,6 @@ set laststatus=2
 " Catppuccin theme settings
 let g:catppuccin_flavour = 'mocha' " latte, frappe, macchiato, mocha
 silent! colorscheme catppuccin_mocha
-let g:airline_theme = 'catppuccin_mocha' " airline palette shipped by catppuccin/vim
 
 " catppuccin/vim predates tree-sitter captures. Neovim links most @captures to
 " the classic groups, but @variable (and the .parameter/.member captures that
@@ -25,15 +24,6 @@ if has('nvim')
   augroup END
   call s:TreesitterVariableColor()
 endif
-
-" let g:airline_extensions = ['branch']
-" let g:airline_extensions = ['branch', 'hunks', 'whitespace']
-" let g:airline#extensions#default#enabled = 1
-" let g:airline#extensions#branch#enabled = 1
-" let g:airline_section_b = '%{airline#extensions#branch#get_head()}'
-" let g:airline_section_b = '%{&fileencoding}[unix]'
-let g:airline_section_x = '' " I just don't need to know the executable
-let g:airline_section_z = '%p%% ln: %l/%L ~> %c'
 
 " Global defaults
 set tabstop=4

@@ -15,6 +15,7 @@ source ~/.vim/plugins.vim
 
 " 2. Appearance - Colors, themes, UI elements (after plugins are loaded)
 source ~/.vim/settings/appearance.vim
+source ~/.vim/settings/airline.vim
 
 " 3. Performance - Speed optimizations (early for best effect)
 source ~/.vim/settings/performance.vim
