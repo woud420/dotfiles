@@ -31,4 +31,22 @@ if [ "$(uname -s)" = "Darwin" ]; then
   elif [ -x /usr/bin/dircolors ] || [ -x /bin/dircolors ]; then
     eval "$(dircolors -b ~/.dircolors)"
   fi
+else
+  # GNU userland (Linux): colored ls/grep plus the shared dircolors palette,
+  # for both bash and zsh
+  if command -v dircolors >/dev/null 2>&1; then
+    if [ -r ~/.dircolors ]; then
+      eval "$(dircolors -b ~/.dircolors)"
+    else
+      eval "$(dircolors -b)"
+    fi
+  fi
+  if ls --group-directories-first -d . >/dev/null 2>&1; then
+    alias ls='ls --color=auto --group-directories-first'
+  else
+    alias ls='ls --color=auto'   # busybox ls (Alpine) lacks the grouping flag
+  fi
+  alias grep='grep --color=auto'
+  alias fgrep='fgrep --color=auto'
+  alias egrep='egrep --color=auto'
 fi

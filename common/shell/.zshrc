@@ -148,7 +148,14 @@ export FZF_DEFAULT_OPTS="
   --layout=reverse
   --border
 "
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+# fzf key bindings (Ctrl-R / Ctrl-T / Alt-C) and completion: the git installer
+# writes ~/.fzf.zsh; pacman/brew builds expose the same via `fzf --zsh` (>= 0.48)
+# (-t 0: skip when there is no terminal, e.g. `zsh -ic`, where ZLE cannot start)
+if [[ -f ~/.fzf.zsh ]]; then
+  source ~/.fzf.zsh
+elif [[ -t 0 ]] && command -v fzf >/dev/null 2>&1; then
+  eval "$(fzf --zsh 2>/dev/null)"
+fi
 
 # Load custom shell functions
 for f in ~/.config/shell-functions/*.sh(N); do

@@ -63,7 +63,7 @@ nnoremap <silent> <leader>c  :call FzfCommands()<CR>
 nnoremap <silent> <leader>h  :Helptags<CR>
 nnoremap <silent> <leader>m  :Marks<CR>
 nnoremap <silent> <leader>:  :History:<CR>
-nnoremap <silent> <leader>"  :Registers<CR>
+" Registers live in ui-features.vim (<leader>r); fzf.vim has no :Registers command
 
 " File type specific
 nnoremap <silent> <leader>t  :Filetypes<CR>
@@ -82,7 +82,11 @@ command! -bang -nargs=? GFiles
   \   }), <bang>0)
 
 " Files in git root (if in git repo, otherwise current directory)
-command! -bang ProjectFiles call fzf#vim#files(FugitiveExtractGitDir(expand('%:p:h')) != '' ? FugitiveWorkTree() : '.', <bang>0)
+function! s:GitRootOrCwd() abort
+  let root = systemlist('git rev-parse --show-toplevel 2>/dev/null')
+  return (v:shell_error || empty(root)) ? '.' : root[0]
+endfunction
+command! -bang ProjectFiles call fzf#vim#files(s:GitRootOrCwd(), fzf#vim#with_preview(), <bang>0)
 
 " Enhanced ripgrep command with preview
 command! -bang -nargs=* Rg
@@ -175,8 +179,8 @@ endfunction
 function! s:execute_command_directly(cmd)
   " Execute the command directly without showing command line
   try
-    execute cmd
+    execute a:cmd
   catch
-    echo "Command failed: " . cmd
+    echo "Command failed: " . a:cmd . " (" . v:exception . ")"
   endtry
 endfunction

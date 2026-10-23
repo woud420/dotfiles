@@ -8,14 +8,22 @@ set laststatus=2
 let g:catppuccin_flavour = 'mocha' " latte, frappe, macchiato, mocha
 silent! colorscheme catppuccin_mocha
 
-" let g:airline_extensions = ['branch']
-" let g:airline_extensions = ['branch', 'hunks', 'whitespace']
-" let g:airline#extensions#default#enabled = 1
-" let g:airline#extensions#branch#enabled = 1
-" let g:airline_section_b = '%{airline#extensions#branch#get_head()}'
-" let g:airline_section_b = '%{&fileencoding}[unix]'
-let g:airline_section_x = '' " I just don't need to know the executable
-let g:airline_section_z = '%p%% ln: %l/%L ~> %c'
+" catppuccin/vim predates tree-sitter captures. Neovim links most @captures to
+" the classic groups, but @variable (and the .parameter/.member captures that
+" inherit from it) keep Neovim's stock grey; use the theme's text colour instead.
+if has('nvim')
+  function! s:TreesitterVariableColor() abort
+    let fg = synIDattr(hlID('Normal'), 'fg#')
+    if !empty(fg)
+      execute 'highlight @variable guifg=' . fg
+    endif
+  endfunction
+  augroup CatppuccinTreesitter
+    autocmd!
+    autocmd ColorScheme * call s:TreesitterVariableColor()
+  augroup END
+  call s:TreesitterVariableColor()
+endif
 
 " Global defaults
 set tabstop=4

@@ -49,7 +49,10 @@ make check-editor
 
 This requires both Vim and Neovim plus installed configuration under the selected
 `HOME`. The [script](../../scripts/check-editor-parity.sh) loads both editors
-against `scripts/editor-parity.vim` and compares their CoC settings.
+against `scripts/editor-parity.vim` and compares their CoC settings, and fails
+when a `~/.vimrc` exists because Vim would skip `~/.vim/vimrc`.
+For plugin and language-server health in Neovim, use
+`:checkhealth nvim-treesitter coc`.
 Use a prepared temporary home when validating without a live installation;
 the check does not create the editor configuration for you.
 
@@ -69,7 +72,10 @@ the check does not create the editor configuration for you.
 The [install workflow](../../.github/workflows/test-install.yml) runs shell syntax,
 ShellCheck, Git-config/JSON parsing, and temporary-home installer tests. It also
 has Arch and Debian container jobs and a macOS job, checking deployed copies and
-platform/editor configuration.
+platform/editor configuration. The macOS job also installs Neovim, fzf and
+tree-sitter-cli with Homebrew, loads the Neovim config with its plugins, builds
+two tree-sitter parsers, runs the editor parity script, and checks the zsh fzf
+fallback under a pty.
 
 Use an actual CI run for the tested revision before claiming hosted coverage.
 These jobs validate fixtures and runner environments; visual checks and real

@@ -1,37 +1,36 @@
 {
-  "suggest.enablePreview": true,
   "suggest.maxCompleteItemCount": 20,
   "suggest.noselect": false,
   "suggest.preferCompleteThanJumpPlaceholder": true,
   "suggest.acceptSuggestionOnCommitCharacter": true,
-  
+
   "diagnostic.errorSign": "✘",
   "diagnostic.warningSign": "⚠",
   "diagnostic.infoSign": "ℹ",
   "diagnostic.hintSign": "➤",
   "diagnostic.virtualText": true,
   "diagnostic.checkCurrentLine": true,
-  
+
   "signature.enable": true,
   "signature.target": "float",
-  
+
   "hover.target": "float",
-  
+
+  "colors.enable": true,
+
   "python.linting.enabled": true,
-  "python.linting.pylintEnabled": true,
+  "python.linting.ruffEnabled": true,
+  "python.linting.pylintEnabled": false,
   "python.formatting.provider": "black",
-  
+
   "typescript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces": true,
   "javascript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces": true,
-  
-  "languageserver": {
-    "bash": {
-      "command": "bash-language-server",
-      "args": ["start"],
-      "filetypes": ["sh", "bash"]
-    }
-  },
-  
-  "coc.preferences.formatOnSaveFiletypes": ["python", "javascript", "typescript", "json", "jsonc", "yaml", "rust"],
-  "coc.preferences.colorSupport": true
+
+  "[python]": { "coc.preferences.formatOnSave": true },
+  "[javascript]": { "coc.preferences.formatOnSave": true },
+  "[typescript]": { "coc.preferences.formatOnSave": true },
+  "[json]": { "coc.preferences.formatOnSave": true },
+  "[jsonc]": { "coc.preferences.formatOnSave": true },
+  "[yaml]": { "coc.preferences.formatOnSave": true },
+  "[rust]": { "coc.preferences.formatOnSave": true }
 }

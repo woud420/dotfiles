@@ -11,6 +11,9 @@
   what the selected platform requests.
 - Private skills require Python 3 and GitHub SSH access to the private skillpack.
   Set `DOTFILES_SKIP_PRIVATE_SKILLS=1` explicitly when installing without it.
+- Editor plugins are cloned anonymously over HTTPS with the global Git config
+  bypassed, so the shared `url.insteadOf` SSH rewrite does not block a machine
+  that has no GitHub key yet.
 
 From the directory where you keep your projects:
 

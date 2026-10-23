@@ -116,6 +116,7 @@ jobs:
             for f in .vim/vimrc .vim/plugins.vim .vim/mappings.vim .vim/settings.vim; do
               test -f ~/$f && ! test -L ~/$f && echo "PASS: $f (copied)" || { echo "FAIL: $f"; exit 1; }
             done
+            ! test -e ~/.vimrc && echo "PASS: no ~/.vimrc shadowing ~/.vim/vimrc"
             ls ~/.config/shell-functions/*.sh > /dev/null && echo "PASS: shell-functions deployed"
 
             echo "=== Kitty ==="
@@ -312,12 +313,44 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: brew install vim
+        # Mirrors the editor tooling the Brewfile requests so the Neovim config,
+        # plugins and tree-sitter parsers are exercised on macOS, not just copied.
+        run: brew install vim neovim fzf ripgrep tree-sitter-cli
 
       - name: Run install.sh
         shell: bash
         run: |
           ./install.sh --no-packages 2>&1 | tee /tmp/install.log
+
+      - name: Validate Neovim config (headless load with plugins)
+        run: |
+          nvim --version | head -1
+          # The first headless start builds the tree-sitter parsers synchronously
+          # (progress lines); anything else on startup is an error.
+          output=$(nvim --headless -c 'qa!' 2>&1 | tr -d '\r' | grep -v '^\[nvim-treesitter' || true)
+          if [ -n "$output" ]; then echo "FAIL: Neovim startup output:"; echo "$output"; exit 1; fi
+          echo "PASS: Neovim starts without errors"
+          nvim --headless \
+            -c 'lua local miss = {}; for _, p in ipairs({ "vim-airline", "catppuccin", "fzf", "fzf.vim", "vim-polyglot", "coc.nvim", "nvim-treesitter" }) do local spec = vim.g.plugs[p]; if not (spec and vim.fn.isdirectory(spec.dir) == 1) then miss[#miss + 1] = p end end; if #miss > 0 then io.stderr:write("FAIL: missing plugins " .. table.concat(miss, " ") .. "\n"); os.exit(1) end; if vim.g.colors_name ~= "catppuccin_mocha" then io.stderr:write("FAIL: colorscheme " .. tostring(vim.g.colors_name) .. "\n"); os.exit(1) end; print("PASS: plugins installed, colorscheme catppuccin_mocha")' \
+            -c 'qa!' 2>&1 | tr -d '\r'
+
+      - name: Build tree-sitter parsers (macOS toolchain)
+        run: |
+          nvim --headless \
+            -c 'lua local ts = require("nvim-treesitter"); local want = vim.g.dotfiles_treesitter_languages; ts.install(want):wait(600000); local have = ts.get_installed(); local miss = {}; for _, l in ipairs(want) do if not vim.list_contains(have, l) then miss[#miss + 1] = l end end; if #miss > 0 then io.stderr:write("FAIL: parsers missing " .. table.concat(miss, " ") .. "\n"); os.exit(1) end; print("PASS: all " .. #want .. " configured parsers installed: " .. table.concat(have, " "))' \
+            -c 'qa!' 2>&1 | tr -d '\r' | grep -v '^\[nvim-treesitter' | grep -v '^\s*$'
+          nvim --headless "+checkhealth nvim-treesitter" "+w! /tmp/ts-health.txt" "+qa!" 2>/dev/null
+          grep -E 'OK|ERROR|WARNING' /tmp/ts-health.txt | head -20
+          ! grep -q 'ERROR' /tmp/ts-health.txt || { echo "FAIL: nvim-treesitter health reports errors"; exit 1; }
+
+      - name: Editor parity (Vim and Neovim load the same config)
+        run: ./scripts/check-editor-parity.sh
+
+      - name: Zsh fzf fallback under a pty (brew fzf has no ~/.fzf.zsh)
+        run: |
+          out=$(script -q /dev/null zsh -ic 'print "widgets=$(zle -la | grep -c fzf)"' 2>&1 | tr -d '\r' | grep -o 'widgets=[0-9]*' | tail -1)
+          echo "$out"
+          [ "${out#widgets=}" -ge 3 ] 2>/dev/null && echo "PASS: fzf zsh widgets bound" || { echo "FAIL: fzf zsh widgets missing"; exit 1; }
 
       - name: Verify file deployments (copies, never symlinks)
         run: |
