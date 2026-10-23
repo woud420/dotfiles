@@ -19,15 +19,25 @@ end
 
 -- Parsers built on first start; already-installed ones are skipped. The weekly
 -- vim-plug-update job runs the synchronous update() so parsers track the
--- plugin revision, and `:TSUpdate` does the same by hand.
+-- plugin revision, and `:TSUpdate` does the same by hand. The list is exposed
+-- as g:dotfiles_treesitter_languages so scripts and CI can check it.
 local ensure_installed = {
   "bash", "css", "dockerfile", "go", "html", "javascript", "json", "lua",
   "markdown", "markdown_inline", "python", "rust", "terraform", "toml", "tsx",
   "typescript", "vim", "vimdoc", "yaml",
 }
+vim.g.dotfiles_treesitter_languages = ensure_installed
 
+-- Interactive sessions build in the background. Headless runs (install.sh,
+-- vim-plug-update, CI, parity checks) wait for the build instead: each parser
+-- is installed before its queries, so quitting mid-build leaves a parser
+-- without queries that `:checkhealth nvim-treesitter` reports until
+-- `:TSUpdate` rebuilds it.
 if vim.fn.executable("tree-sitter") == 1 then
-  ts.install(ensure_installed)
+  local task = ts.install(ensure_installed)
+  if #vim.api.nvim_list_uis() == 0 then
+    task:wait(600000)
+  end
 end
 
 -- Tree-sitter indentation is still experimental upstream and misjudges Python

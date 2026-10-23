@@ -325,8 +325,8 @@ jobs:
       - name: Validate Neovim config (headless load with plugins)
         run: |
           nvim --version | head -1
-          # First start kicks off the async tree-sitter parser build (progress
-          # lines); anything else on startup is an error.
+          # The first headless start builds the tree-sitter parsers synchronously
+          # (progress lines); anything else on startup is an error.
           output=$(nvim --headless -c 'qa!' 2>&1 | tr -d '\r' | grep -v '^\[nvim-treesitter' || true)
           if [ -n "$output" ]; then echo "FAIL: Neovim startup output:"; echo "$output"; exit 1; fi
           echo "PASS: Neovim starts without errors"
@@ -337,7 +337,7 @@ jobs:
       - name: Build tree-sitter parsers (macOS toolchain)
         run: |
           nvim --headless \
-            -c 'lua local ts = require("nvim-treesitter"); local ok = ts.install({ "python", "bash" }):wait(300000); local have = ts.get_installed(); if not (ok and vim.list_contains(have, "python") and vim.list_contains(have, "bash")) then io.stderr:write("FAIL: parsers " .. vim.inspect(have) .. "\n"); os.exit(1) end; print("PASS: parsers " .. table.concat(have, " "))' \
+            -c 'lua local ts = require("nvim-treesitter"); local want = vim.g.dotfiles_treesitter_languages; ts.install(want):wait(600000); local have = ts.get_installed(); local miss = {}; for _, l in ipairs(want) do if not vim.list_contains(have, l) then miss[#miss + 1] = l end end; if #miss > 0 then io.stderr:write("FAIL: parsers missing " .. table.concat(miss, " ") .. "\n"); os.exit(1) end; print("PASS: all " .. #want .. " configured parsers installed: " .. table.concat(have, " "))' \
             -c 'qa!' 2>&1 | tr -d '\r' | grep -v '^\[nvim-treesitter' | grep -v '^\s*$'
           nvim --headless "+checkhealth nvim-treesitter" "+w! /tmp/ts-health.txt" "+qa!" 2>/dev/null
           grep -E 'OK|ERROR|WARNING' /tmp/ts-health.txt | head -20

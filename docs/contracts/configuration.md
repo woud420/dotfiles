@@ -61,7 +61,10 @@ shared Vimscript settings and `~/.vim/plugged`; Neovim reads its CoC JSON from
 `~/.config/nvim/`. Neovim adds tree-sitter highlighting and indentation through
 nvim-treesitter's `main` branch, which needs `tree-sitter-cli` plus a C
 compiler to build parsers under `~/.local/share/nvim/site/`; without the CLI the
-regex syntax files keep highlighting. Python and YAML keep Vim's built-in
+regex syntax files keep highlighting. Interactive sessions build missing
+parsers in the background; headless runs (the installer, the weekly updater,
+CI) wait for the build so no parser is left without its queries. Python and
+YAML keep Vim's built-in
 indent scripts in both editors because tree-sitter indentation is still
 experimental for them. CoC format-on-save for Python calls
 `black`, and linting calls `ruff`; both come from the platform package lists.
