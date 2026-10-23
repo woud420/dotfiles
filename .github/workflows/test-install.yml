@@ -329,10 +329,8 @@ jobs:
           if [ -n "$errors" ]; then echo "FAIL: Neovim startup output:"; echo "$errors"; exit 1; fi
           echo "PASS: Neovim starts silently"
           nvim --headless \
-            -c 'let s:want = ["vim-airline", "catppuccin", "fzf", "fzf.vim", "vim-polyglot", "coc.nvim", "nvim-treesitter"]' \
-            -c 'for s:p in s:want | if !isdirectory(g:plugs[s:p].dir) | echoerr "missing plugin " . s:p | cquit 1 | endif | endfor' \
-            -c 'if get(g:, "colors_name", "") !=# "catppuccin_mocha" | echoerr "colorscheme not applied" | cquit 1 | endif' \
-            -c 'echo "PASS: plugins installed, colorscheme catppuccin_mocha"' -c 'qa!' 2>&1 | tr -d '\r'
+            -c 'lua local miss = {}; for _, p in ipairs({ "vim-airline", "catppuccin", "fzf", "fzf.vim", "vim-polyglot", "coc.nvim", "nvim-treesitter" }) do local spec = vim.g.plugs[p]; if not (spec and vim.fn.isdirectory(spec.dir) == 1) then miss[#miss + 1] = p end end; if #miss > 0 then io.stderr:write("FAIL: missing plugins " .. table.concat(miss, " ") .. "\n"); os.exit(1) end; if vim.g.colors_name ~= "catppuccin_mocha" then io.stderr:write("FAIL: colorscheme " .. tostring(vim.g.colors_name) .. "\n"); os.exit(1) end; print("PASS: plugins installed, colorscheme catppuccin_mocha")' \
+            -c 'qa!' 2>&1 | tr -d '\r'
 
       - name: Build tree-sitter parsers (macOS toolchain)
         run: |

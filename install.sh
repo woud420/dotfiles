@@ -1182,7 +1182,10 @@ install_neovim_config() {
     if command -v nvim >/dev/null 2>&1; then
         log_step "Installing neovim plugins..."
         seed_vim_plug
-        nvim --headless +PlugInstall +qall </dev/null || log_warning "nvim plugin install failed; run :PlugInstall manually"
+        # --sync waits for the clones; %print echoes vim-plug's result buffer so a
+        # failed clone (network, git config, build hook) is visible in the log.
+        nvim --headless -c 'PlugInstall --sync' -c '%print' -c 'qa!' </dev/null \
+            || log_warning "nvim plugin install failed; run :PlugInstall manually"
         report_plug_count
 
         compile_coc_nvim

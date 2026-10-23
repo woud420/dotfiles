@@ -186,6 +186,6 @@ run_installer "$DRY_HOME" "$TMP_DIR/dry-backup" --dry-run --no-packages > "$TMP_
 
 # vim step defers to nvim when nvim exists (stubbed here), so no vim invocation
 ! grep -q '^vim ' "$STUB_LOG" || fail "vim should not be invoked when nvim is present"
-grep -q '^nvim --headless +PlugInstall +qall$' "$STUB_LOG" || fail "nvim plugin install was not invoked"
+grep -q '^nvim --headless -c PlugInstall --sync -c %print -c qa!$' "$STUB_LOG" || fail "nvim plugin install was not invoked"
 
 printf 'Installer test passed.\n'
