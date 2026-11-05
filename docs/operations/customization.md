@@ -44,6 +44,20 @@ instead of maintaining a separate mapping set. The installer copies CoC settings
 to both editors. Follow the [editor validation procedure](validation.md#editor-changes)
 after changing behavior.
 
+## Commit messages
+
+The shared Git config points `commit.template` at
+`~/.config/git/commit-template.md`, copied from
+[`common/git/commit-template.md`](../../common/git/commit-template.md) during a
+full install. It provides a commented guide to
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/), including
+optional scope, body, breaking-change markers, and trailers.
+
+Run `git commit` to open the template in your editor. With Git's default comment
+handling, the guidance is removed from the saved message. `git commit -m` and
+the `git cm` alias supply a message directly and bypass the template. The template
+provides guidance; it does not enforce a commit format.
+
 ## Personal Git hooks
 
 The shared `.gitconfig` sets `core.hooksPath = ~/.config/git/hooks`.
