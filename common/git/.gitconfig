@@ -12,7 +12,7 @@
 [alias]
 	st = status -sb
 	lg = log --stat
-	diff-master = !echo "diff master...origin/master:" && git diff master...origin/master --stat && echo "" && echo "diff origin/master...master:" && git diff origin/master...master --stat
+	diff-master = "!f() { b=$(git symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null); b=${b#origin/}; if [ -z \"$b\" ]; then for c in main master; do if git show-ref -q --verify \"refs/remotes/origin/$c\"; then b=$c; break; fi; done; fi; b=${b:-master}; echo \"diff $b...origin/$b:\" && git diff \"$b...origin/$b\" --stat && echo \"\" && echo \"diff origin/$b...$b:\" && git diff \"origin/$b...$b\" --stat; }; f"
 
 	cm = commit -m
 	ca = commit --amend
