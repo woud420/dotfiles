@@ -1540,7 +1540,7 @@ run_doctor() {
     done
 
     doctor_editor_tool tree-sitter "builds nvim-treesitter parsers; pacman/brew: tree-sitter-cli"
-    doctor_editor_tool ruff "coc-pyright format on save and linting; pacman: ruff, brew: ruff"
+    doctor_editor_tool ruff "ruff server for Python linting and format on save; pacman: ruff, brew: ruff"
     doctor_editor_tool shellcheck "shell diagnostics through coc-sh"
     doctor_optional_command mise
     if [[ -e "$HOME/.vimrc" || -L "$HOME/.vimrc" ]]; then
