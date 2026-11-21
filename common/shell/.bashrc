@@ -1,6 +1,9 @@
 # ~/.bashrc - Bash configuration for servers
 # Adapted from zshrc for consistent experience
 
+# Cargo binaries for every shell, including non-interactive ones (e.g. `ssh host cargo ...`)
+[ -d "$HOME/.cargo/bin" ] && case ":$PATH:" in *":$HOME/.cargo/bin:"*) ;; *) PATH="$HOME/.cargo/bin:$PATH" ;; esac
+
 # If not running interactively, don't do anything
 case $- in
     *i*) ;;
