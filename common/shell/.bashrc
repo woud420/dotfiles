@@ -211,6 +211,6 @@ kctx() {
 [ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
 
 # Machine-local overrides - kept out of the repo, survives reinstalls
-if [ -f "$HOME/.bashrc.local" ]; then
-  . "$HOME/.bashrc.local"
+if [ -f "$HOME/.config/shell/local.sh" ]; then
+  . "$HOME/.config/shell/local.sh"
 fi

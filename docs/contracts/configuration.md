@@ -71,7 +71,7 @@ experimental for them. CoC format-on-save for Python calls
 
 ## Local ownership
 
-`.bashrc.local` and `.zshrc.local` are local extension points.
+`.config/shell/local.sh` is the local extension point.
 The local SSH file retains machine host entries and identity paths, but its
 prepended shared Include affects precedence. See
 [customization](../operations/customization.md) before changing defaults.

@@ -1481,8 +1481,7 @@ backup_local_overrides() {
 
     local file
     for file in \
-        "$HOME/.bashrc.local" \
-        "$HOME/.zshrc.local" \
+        "$HOME/.config/shell/local.sh" \
         "$HOME/.ssh/config"; do
         backup_file "$file"
     done
