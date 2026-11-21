@@ -4,6 +4,7 @@ curl
 docker
 docker-compose
 git
+github-cli
 gzip
 htop
 make

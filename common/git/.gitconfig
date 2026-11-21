@@ -85,7 +85,10 @@
 	required = true
 [core]
 	hooksPath = ~/.config/git/hooks
-# Machine-local overrides (identity and tool-specific settings).
-# Values here win because git reads includes last.
-[include]
-	path = ~/.gitconfig.local
+# GitHub over HTTPS authenticates through gh (run `gh auth login` once per machine)
+[credential "https://github.com"]
+	helper =
+	helper = !gh auth git-credential
+[credential "https://gist.github.com"]
+	helper =
+	helper = !gh auth git-credential

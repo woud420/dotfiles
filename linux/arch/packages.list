@@ -9,6 +9,7 @@ docker-compose
 fd
 fzf
 git
+github-cli
 gzip
 htop
 jq

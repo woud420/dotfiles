@@ -1483,7 +1483,6 @@ backup_local_overrides() {
     for file in \
         "$HOME/.bashrc.local" \
         "$HOME/.zshrc.local" \
-        "$HOME/.gitconfig.local" \
         "$HOME/.ssh/config"; do
         backup_file "$file"
     done

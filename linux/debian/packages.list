@@ -9,6 +9,7 @@ docker-compose
 fd-find
 fzf
 git
+gh
 gzip
 htop
 jq
