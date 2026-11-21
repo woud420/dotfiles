@@ -145,7 +145,10 @@ path_prepend() {
   done
 }
 
-path_prepend "/opt/homebrew/bin" "/usr/local/bin" "/usr/local/sbin" "$HOME/bin" "$HOME/.local/bin" "$HOME/.cargo/bin"
+path_prepend "/usr/local/sbin" "/usr/local/bin"
+# Homebrew only exists on macOS
+[[ "$OSTYPE" == darwin* ]] && path_prepend "/opt/homebrew/sbin" "/opt/homebrew/bin"
+path_prepend "$HOME/bin" "$HOME/.local/bin" "$HOME/.cargo/bin"
 
 # mise (version manager for Python, Node, etc.)
 if command -v mise >/dev/null 2>&1; then
