@@ -4,7 +4,7 @@ IgnoreUnknown UseKeychain
 Host *
   AddKeysToAgent yes
   UseKeychain yes
-  ForwardAgent yes
+  ForwardAgent no
   ServerAliveInterval 60
   ServerAliveCountMax 5
 
