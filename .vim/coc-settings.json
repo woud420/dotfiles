@@ -18,10 +18,11 @@
 
   "colors.enable": true,
 
-  "python.linting.enabled": true,
-  "python.linting.ruffEnabled": true,
-  "python.linting.pylintEnabled": false,
-  "python.formatting.provider": "black",
+  "python.linting.enabled": false,
+  "python.formatting.provider": "none",
+  "languageserver": {
+    "ruff": { "command": "ruff", "args": ["server"], "filetypes": ["python"] }
+  },
 
   "typescript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces": true,
   "javascript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces": true,

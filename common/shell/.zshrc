@@ -9,16 +9,21 @@ PROMPT_EOL_MARK=''
 
 # Git branch info setup
 autoload -Uz vcs_info
+
+# Over SSH, prefix the tab title with the host name
+TITLE_HOST=''
+[[ -n "$SSH_CONNECTION" ]] && TITLE_HOST='%m: '
+
 precmd() {
   vcs_info
   # Set tab title to show current directory (last 2 path components)
-  print -Pn "\e]0;%2~\a"
+  print -Pn "\e]0;${TITLE_HOST}%2~\a"
 }
 
 # Show running command in tab title
 preexec() {
   # Show command being executed (first word only for simplicity)
-  print -Pn "\e]0;%2~ ▶ ${1%% *}\a"
+  print -Pn "\e]0;${TITLE_HOST}%2~ ▶ ${1%% *}\a"
 }
 
 zstyle ':vcs_info:*' enable git
@@ -106,8 +111,12 @@ function dynamic_time_prompt() {
 function build_prompt() {
   local GIT_INFO="$(pretty_git)"
   local PWD_INFO="$(pretty_pwd)"
+  # Theme red (ANSI color 1) so the badge and root follow each terminal's palette
+  local LEAD='⭐'
+  [[ -n "$SSH_CONNECTION" ]] && LEAD='%B%F{red}%S %m %s%f%b'
+  local USER_COLOR="%(!.%B%F{red}.${ROSEWATER})"
 
-  PROMPT="⭐ ${MAUVE}[${ROSEWATER}%n${MAUVE}@${TEAL}${PWD_INFO}${MAUVE}] ${PEACH}${GIT_INFO}${RESET}➔ "
+  PROMPT="${LEAD} ${MAUVE}[${USER_COLOR}%n%b${MAUVE}@${TEAL}${PWD_INFO}${MAUVE}] ${PEACH}${GIT_INFO}${RESET}➔ "
 }
 
 precmd_functions+=(build_prompt)
@@ -190,6 +199,6 @@ if [[ -d "$HOME/.bun" ]]; then
 fi
 
 # Machine-local overrides - kept out of the repo, survives reinstalls
-if [[ -f "$HOME/.zshrc.local" ]]; then
-  . "$HOME/.zshrc.local"
+if [[ -f "$HOME/.config/shell/local.sh" ]]; then
+  . "$HOME/.config/shell/local.sh"
 fi

@@ -66,12 +66,12 @@ parsers in the background; headless runs (the installer, the weekly updater,
 CI) wait for the build so no parser is left without its queries. Python and
 YAML keep Vim's built-in
 indent scripts in both editors because tree-sitter indentation is still
-experimental for them. CoC format-on-save for Python calls
-`black`, and linting calls `ruff`; both come from the platform package lists.
+experimental for them. CoC runs `ruff server` for Python linting and
+format on save; ruff comes from the platform package lists.
 
 ## Local ownership
 
-`.bashrc.local` and `.zshrc.local` are local extension points.
+`.config/shell/local.sh` is the local extension point.
 The local SSH file retains machine host entries and identity paths, but its
 prepended shared Include affects precedence. See
 [customization](../operations/customization.md) before changing defaults.

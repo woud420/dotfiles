@@ -6,8 +6,7 @@ Keep machine-specific settings in files outside the repository:
 
 | Local file | Use |
 | --- | --- |
-| `~/.bashrc.local` | Bash-only exports, paths, aliases, and functions; sourced at the end |
-| `~/.zshrc.local` | Zsh-only exports, paths, aliases, and functions; sourced at the end |
+| `~/.config/shell/local.sh` | Exports, paths, aliases, and functions; sourced at the end by zsh and bash |
 | `~/.ssh/config` | Machine host entries and identity-file paths |
 
 SSH has different precedence: the installer prepends

@@ -1481,8 +1481,7 @@ backup_local_overrides() {
 
     local file
     for file in \
-        "$HOME/.bashrc.local" \
-        "$HOME/.zshrc.local" \
+        "$HOME/.config/shell/local.sh" \
         "$HOME/.ssh/config"; do
         backup_file "$file"
     done
@@ -1541,8 +1540,7 @@ run_doctor() {
     done
 
     doctor_editor_tool tree-sitter "builds nvim-treesitter parsers; pacman/brew: tree-sitter-cli"
-    doctor_editor_tool black "coc-pyright format on save; pacman: python-black, brew: black"
-    doctor_editor_tool ruff "coc-pyright linting; pacman: ruff, brew: ruff"
+    doctor_editor_tool ruff "ruff server for Python linting and format on save; pacman: ruff, brew: ruff"
     doctor_editor_tool shellcheck "shell diagnostics through coc-sh"
     doctor_optional_command mise
     if [[ -e "$HOME/.vimrc" || -L "$HOME/.vimrc" ]]; then

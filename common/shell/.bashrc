@@ -34,6 +34,10 @@ if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
     TEAL=$(tput setaf 116)
     PEACH=$(tput setaf 215)
     SOFT_GRAY=$(tput setaf 243)
+    # Theme red (ANSI color 1) so the SSH badge and root follow each terminal's palette
+    THEME_RED=$(tput setaf 1)
+    BOLD=$(tput bold)
+    REVERSE=$(tput rev)
     RESET=$(tput sgr0)
 else
     # No color support, use empty strings
@@ -42,6 +46,9 @@ else
     TEAL=""
     PEACH=""
     SOFT_GRAY=""
+    THEME_RED=""
+    BOLD=""
+    REVERSE=""
     RESET=""
 fi
 
@@ -113,8 +120,14 @@ dynamic_time_prompt() {
 # Build the prompt - bash version
 build_prompt() {
     local GIT_INFO=$(parse_git_branch)
+    local LEAD="⭐"
+    local USER_COLOR="${ROSEWATER}"
+    if [ -n "$SSH_CONNECTION" ]; then
+        LEAD="\[\e]0;\h: \w\a${BOLD}${THEME_RED}${REVERSE}\] \h \[${RESET}\]"
+    fi
+    [ "$EUID" -eq 0 ] && USER_COLOR="${BOLD}${THEME_RED}"
     # Note: In bash, we need to escape the $ in the function call
-    PS1="⭐ \[${MAUVE}\][\[${ROSEWATER}\]\u\[${MAUVE}\]@\[${TEAL}\]\$(pretty_pwd)\[${MAUVE}\]]\[${PEACH}\]${GIT_INFO}\[${RESET}\] ➔ "
+    PS1="${LEAD} \[${MAUVE}\][\[${USER_COLOR}\]\u\[${RESET}${MAUVE}\]@\[${TEAL}\]\$(pretty_pwd)\[${MAUVE}\]]\[${PEACH}\]${GIT_INFO}\[${RESET}\] ➔ "
 
     # Optional: Add time to right side of prompt (requires special handling in bash)
     # For simpler setup, we'll skip the right prompt
@@ -211,6 +224,6 @@ kctx() {
 [ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
 
 # Machine-local overrides - kept out of the repo, survives reinstalls
-if [ -f "$HOME/.bashrc.local" ]; then
-  . "$HOME/.bashrc.local"
+if [ -f "$HOME/.config/shell/local.sh" ]; then
+  . "$HOME/.config/shell/local.sh"
 fi
