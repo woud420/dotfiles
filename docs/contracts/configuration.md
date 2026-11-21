@@ -71,8 +71,7 @@ experimental for them. CoC format-on-save for Python calls
 
 ## Local ownership
 
-`.bashrc.local` and `.zshrc.local` are local extension points. Git has none; every
-machine shares `common/git/.gitconfig`.
+`.bashrc.local` and `.zshrc.local` are local extension points.
 The local SSH file retains machine host entries and identity paths, but its
 prepended shared Include affects precedence. See
 [customization](../operations/customization.md) before changing defaults.

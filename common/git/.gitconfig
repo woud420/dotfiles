@@ -85,7 +85,6 @@
 	required = true
 [core]
 	hooksPath = ~/.config/git/hooks
-# GitHub over HTTPS authenticates through gh (run `gh auth login` once per machine)
 [credential "https://github.com"]
 	helper =
 	helper = !gh auth git-credential

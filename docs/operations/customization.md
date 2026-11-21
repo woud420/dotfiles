@@ -10,10 +10,6 @@ Keep machine-specific settings in files outside the repository:
 | `~/.zshrc.local` | Zsh-only exports, paths, aliases, and functions; sourced at the end |
 | `~/.ssh/config` | Machine host entries and identity-file paths |
 
-Git has no local override file: every machine uses
-[`common/git/.gitconfig`](../../common/git/.gitconfig). GitHub over HTTPS
-authenticates through `gh`, so run `gh auth login` once per machine.
-
 SSH has different precedence: the installer prepends
 `Include ~/.ssh/config.dotfiles`, and OpenSSH keeps the first scalar value it
 reads. A later local `Host` block cannot override a shared scalar already set
