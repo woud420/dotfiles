@@ -7,6 +7,12 @@ autoload -Uz colors && colors
 setopt prompt_subst
 PROMPT_EOL_MARK=''
 
+# History, matching .bashrc (ignore duplicates and space-prefixed commands)
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=20000
+SAVEHIST=20000
+setopt append_history hist_ignore_dups hist_ignore_space
+
 # Git branch info setup
 autoload -Uz vcs_info
 
