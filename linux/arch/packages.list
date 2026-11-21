@@ -61,7 +61,7 @@ vim
 wget
 zsh
 # Editor tooling: tree-sitter parsers (nvim-treesitter), coc-pyright
-# format (black) and lint (ruff), shellcheck diagnostics through coc-sh
+# format and lint (ruff), shellcheck diagnostics through coc-sh
 tree-sitter-cli
 python-black
 ruff
