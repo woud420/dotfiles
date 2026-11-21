@@ -171,8 +171,12 @@ path_prepend() {
     done
 }
 
-path_prepend "/usr/local/bin" "/usr/local/sbin" "/opt/homebrew/bin" \
-    "$HOME/bin" "$HOME/.local/bin" "$HOME/.cargo/bin"
+path_prepend "/usr/local/sbin" "/usr/local/bin"
+# Homebrew only exists on macOS
+if [[ "$OSTYPE" == darwin* ]]; then
+    path_prepend "/opt/homebrew/sbin" "/opt/homebrew/bin"
+fi
+path_prepend "$HOME/bin" "$HOME/.local/bin" "$HOME/.cargo/bin"
 export PATH
 
 # Load custom shell functions
