@@ -9,6 +9,7 @@ let g:coc_global_extensions = [
   \ 'coc-docker',
   \ 'coc-sh',
   \ 'coc-rust-analyzer',
+  \ 'coc-clangd',
   \ 'coc-html',
   \ 'coc-css',
   \ 'coc-prettier',

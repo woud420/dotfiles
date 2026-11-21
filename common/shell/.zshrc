@@ -145,9 +145,23 @@ path_prepend() {
   done
 }
 
+path_append() {
+  local dir
+  for dir in "$@"; do
+    [[ -d "$dir" ]] || continue
+    case ":$PATH:" in
+      *":$dir:"*) ;;
+      *) PATH="$PATH:$dir" ;;
+    esac
+  done
+}
+
 path_prepend "/usr/local/sbin" "/usr/local/bin"
-# Homebrew only exists on macOS
-[[ "$OSTYPE" == darwin* ]] && path_prepend "/opt/homebrew/sbin" "/opt/homebrew/bin"
+# macOS only: Homebrew, plus llvm last so Apple's clang and clangd stay the default
+if [[ "$OSTYPE" == darwin* ]]; then
+  path_prepend "/opt/homebrew/sbin" "/opt/homebrew/bin"
+  path_append "/opt/homebrew/opt/llvm/bin"
+fi
 path_prepend "$HOME/bin" "$HOME/.local/bin" "$HOME/.cargo/bin"
 
 # mise (version manager for Python, Node, etc.)

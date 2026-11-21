@@ -21,3 +21,5 @@ vim
 neovim
 wget
 zsh
+clang
+clang-extra-tools
