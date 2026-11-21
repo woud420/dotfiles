@@ -1224,6 +1224,33 @@ install_optional_tools() {
             log_info "Would install fzf"
         fi
     fi
+
+    # mise: fall back to the upstream installer where distro repos lack it (Debian/Fedora)
+    if [[ "$OS" == "linux" && "$INSTALL_PACKAGES" == "true" ]] \
+        && ! command -v mise >/dev/null 2>&1 && [[ ! -x "$HOME/.local/bin/mise" ]]; then
+        install_mise_fallback
+    fi
+}
+
+install_mise_fallback() {
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_info "Would install mise to ~/.local/bin/mise with the upstream installer (https://mise.run)"
+        return 0
+    fi
+
+    log_info "Installing mise to ~/.local/bin/mise..."
+    local script
+    if ! script="$(mktemp "${TMPDIR:-/tmp}/mise-install.XXXXXX")"; then
+        log_warning "Could not create a temporary file; skipping mise"
+        return 0
+    fi
+    if curl -fsSL https://mise.run -o "$script" \
+        && MISE_INSTALL_PATH="$HOME/.local/bin/mise" sh "$script"; then
+        log_success "Installed mise to ~/.local/bin/mise"
+    else
+        log_warning "mise install failed; see https://mise.jdx.dev/installing-mise.html"
+    fi
+    rm -f "$script"
 }
 
 # Install AI context files (CLAUDE.md, MACHINE.md, AGENTS.md)
@@ -1518,6 +1545,7 @@ run_doctor() {
     doctor_editor_tool black "coc-pyright format on save; pacman: python-black, brew: black"
     doctor_editor_tool ruff "coc-pyright linting; pacman: ruff, brew: ruff"
     doctor_editor_tool shellcheck "shell diagnostics through coc-sh"
+    doctor_optional_command mise
     if [[ -e "$HOME/.vimrc" || -L "$HOME/.vimrc" ]]; then
         log_warning "~/.vimrc exists and shadows ~/.vim/vimrc; ./install.sh backs it up and removes it"
     fi
