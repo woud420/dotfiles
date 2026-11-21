@@ -8,20 +8,7 @@ Keep machine-specific settings in files outside the repository:
 | --- | --- |
 | `~/.bashrc.local` | Bash-only exports, paths, aliases, and functions; sourced at the end |
 | `~/.zshrc.local` | Zsh-only exports, paths, aliases, and functions; sourced at the end |
-| `~/.gitconfig.local` | Git identity, credential helpers, and machine/tool policy; included last |
 | `~/.ssh/config` | Machine host entries and identity-file paths |
-
-Example Git identity in `~/.gitconfig.local`:
-
-```gitconfig
-[user]
-    name = Your Name
-    email = <your-email-address>
-```
-
-An include that appears later can override scalar Git settings; multivalued
-settings such as credential helpers may need an explicit reset before a local
-replacement. Keep credentials and machine socket paths out of shared config.
 
 SSH has different precedence: the installer prepends
 `Include ~/.ssh/config.dotfiles`, and OpenSSH keeps the first scalar value it

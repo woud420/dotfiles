@@ -44,7 +44,7 @@ Backups default to `~/.dotfiles-backup-YYYYMMDD_HHMMSS/`. Set
 
 Backups retain the first saved copy of a target within that backup directory.
 `--backup-only` also includes `.bashrc.local`, `.zshrc.local`,
-`.gitconfig.local`, and `.ssh/config` when present. It snapshots files visited
+and `.ssh/config` when present. It snapshots files visited
 by the selected platform/mode, not the entire home directory.
 
 The systemd timer enablement link is scheduling metadata; configuration files
