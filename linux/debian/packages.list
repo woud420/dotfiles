@@ -28,3 +28,7 @@ vim
 neovim
 wget
 zsh
+clang
+clangd
+clang-format
+clang-tidy

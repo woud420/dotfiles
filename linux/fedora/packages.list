@@ -30,5 +30,7 @@ vim
 neovim
 wget
 zsh
+clang
+clang-tools-extra
 # Modern alternatives
 bat

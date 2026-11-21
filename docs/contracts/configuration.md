@@ -67,7 +67,8 @@ CI) wait for the build so no parser is left without its queries. Python and
 YAML keep Vim's built-in
 indent scripts in both editors because tree-sitter indentation is still
 experimental for them. CoC runs `ruff server` for Python linting and
-format on save; ruff comes from the platform package lists.
+format on save; ruff comes from the platform package lists. C and C++ use
+`clangd` through coc-clangd.
 
 ## Local ownership
 
