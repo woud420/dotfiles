@@ -8,9 +8,9 @@ the supported options.
 
 | Option | Behavior |
 | --- | --- |
-| No option | Full installation: packages, managed configuration, plugins, optional tools, context, skills, and plugin update scheduling |
+| No option | Full installation: packages, managed configuration, plugins, optional tools, context, skills, rtk setup for installed assistants, and plugin update scheduling |
 | `--no-packages` | Skips OS package installation; retains the other full-install steps, including plugin and optional fzf downloads |
-| `--minimal` | Uses server Bash; skips packages, desktop/Firefox, plugin installation/scheduling, optional tools, askpass, agent context, and private skills |
+| `--minimal` | Uses server Bash; skips packages, desktop/Firefox, plugin installation/scheduling, optional tools, askpass, agent context, rtk setup, and private skills |
 | `--preserve-existing` | Keeps active configuration; syncs selected skills and adds eligible unused helpers and themes |
 | `--dry-run` | Reports planned actions without applying them; combine with the mode being previewed |
 | `--check` | Compares managed live files with repository sources and reports drift |

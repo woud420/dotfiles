@@ -1309,6 +1309,45 @@ install_ai_context() {
     # DOTFILES_DIR=$DOTFILES_DIR scripts/refresh-machine-state.sh
 }
 
+# Register rtk with each installed assistant; `rtk init` is idempotent
+setup_rtk() {
+    [[ "$MINIMAL_MODE" == "true" ]] && return 0
+    command -v rtk >/dev/null 2>&1 || return 0
+    # Another tool is also named rtk; only rtk-ai/rtk has `rtk gain`
+    if ! rtk gain >/dev/null 2>&1; then
+        log_warning "rtk on PATH is not rtk-ai/rtk (rtk gain failed); skipping rtk setup"
+        return 0
+    fi
+
+    log_step "Setting up rtk..."
+    local agent flag show_flag status
+    for agent in claude codex; do
+        command -v "$agent" >/dev/null 2>&1 || continue
+        if [[ "$agent" == "codex" ]]; then
+            flag="--codex"; show_flag="--codex"
+        else
+            flag="--auto-patch"; show_flag=""
+        fi
+        if [[ "$CHECK_MODE" == "true" ]]; then
+            CHECKED_FILES=$((CHECKED_FILES + 1))
+            # shellcheck disable=SC2086
+            status="$(rtk init --show -g $show_flag 2>&1)"
+            if grep -E '^\[[^]]*\] (Hook|RTK\.md|Global|settings\.json)' <<<"$status" | grep -qv '^\[ok\]'; then
+                log_error "rtk is not fully set up for $agent (see: rtk init --show -g $show_flag)"
+                CHECK_FAILURES=$((CHECK_FAILURES + 1))
+            fi
+        elif [[ "$DRY_RUN" == "true" ]]; then
+            log_info "Would run: rtk init -g $flag --no-trust-filters"
+        elif [[ "$BACKUP_ONLY" != "true" ]]; then
+            if rtk init -g "$flag" --no-trust-filters </dev/null >/dev/null 2>&1; then
+                log_success "rtk set up for $agent"
+            else
+                log_warning "rtk init failed for $agent; run: rtk init -g $flag"
+            fi
+        fi
+    done
+}
+
 private_skill_dirs() {
     local manifest="$1"
     shift
@@ -1544,6 +1583,7 @@ run_doctor() {
     doctor_editor_tool clangd "coc-clangd for C and C++; macOS: Command Line Tools, pacman: clang"
     doctor_editor_tool shellcheck "shell diagnostics through coc-sh"
     doctor_optional_command mise
+    doctor_optional_command rtk
     if [[ -e "$HOME/.vimrc" || -L "$HOME/.vimrc" ]]; then
         log_warning "~/.vimrc exists and shadows ~/.vim/vimrc; ./install.sh backs it up and removes it"
     fi
@@ -1733,6 +1773,7 @@ main() {
     install_optional_tools      # 9. Optional tools (fzf, etc.) - last
     install_ai_context          # 10. AI context files (CLAUDE.md, AGENTS.md, MACHINE.md)
     install_private_skills      # 11. Active skills from the authenticated private submodule
+    setup_rtk                   # 12. rtk hooks for installed assistants (after AI context)
     backup_local_overrides
 
     if [[ "$CHECK_MODE" == "true" ]]; then

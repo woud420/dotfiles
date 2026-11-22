@@ -1,5 +1,6 @@
-# Desktop packages unavailable from the official Arch repositories.
+# Packages unavailable from the official Arch repositories.
 swayfx
 nordic-theme
 slack-desktop
 spotify
+rtk
