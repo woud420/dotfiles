@@ -51,4 +51,19 @@ Waybar Docker/Kubernetes modules need their respective CLIs. The optional mail
 counter stays disabled until its local `mailsecrets.py` is present; keep those
 credentials outside version control.
 
+## Retire the old machine-state hook
+
+If you enabled the optional refresh hook on an earlier release, inspect
+`/etc/pacman.d/hooks/90-refresh-ai-context.hook`. If its `Exec` still calls
+the retired `scripts/refresh-machine-state.sh`, disable it before the next
+package transaction by renaming it outside pacman's `.hook` filename pattern.
+
+```bash
+sudo mv -i /etc/pacman.d/hooks/90-refresh-ai-context.hook \
+  /etc/pacman.d/hooks/90-refresh-ai-context.hook.disabled
+```
+
+The installer leaves system hooks in place. Existing
+`ai-context/machine-state.md` snapshots remain local and Git ignores them.
+
 For backups and recovery, use the [maintenance guide](maintenance.md).

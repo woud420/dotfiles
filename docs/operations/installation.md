@@ -39,7 +39,11 @@ the weekly plugin update schedule.
 ```
 
 This installs the shared configuration plus the current platform's package and
-configuration layer. `make install` runs the same installer.
+configuration layer. `make install` runs the same installer. When `codex` or
+`claude` is on `PATH`, the full install backs up and replaces that assistant's
+global instructions. If yours include personal rules or imports, review
+[upgrading agent instructions](maintenance.md#upgrading-agent-instructions)
+before applying.
 
 ### Existing Mac workflow
 

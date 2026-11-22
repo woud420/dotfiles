@@ -1,8 +1,7 @@
 # Agent Context
 
-Shared instructions for AI coding assistants. The dotfiles installer writes
-this file, followed by notes about the current machine, into each installed
-assistant's global instructions (`~/.codex/AGENTS.md`, `~/.claude/CLAUDE.md`).
+The dotfiles installer combines these shared instructions with this machine's
+notes in each installed assistant's global instructions.
 
 ## Developer Profile
 
@@ -55,5 +54,11 @@ architecture/     design docs
 
 ## Session Wrap-up
 
-At the end of a substantive session, run the `session-review` skill and pass
-any skill problems it finds to `skill-improve`.
+Run `session-review` at the natural end of every substantive session. At the
+start of a session, offer `$session-review` if the previous session did
+substantive work and missed its review. Pass any skill problems to `skill-improve`.
+
+If `session-review` is unavailable on this machine, perform the review manually.
+Verify claimed outcomes and requested artifacts, check Git and privacy hygiene,
+and report any gaps. If `skill-improve` is unavailable, report skill problems
+directly to the user.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise the preserving installer against disposable sources and homes."""
+"""Exercise installer skill selection and preservation against disposable sources and homes."""
 from pathlib import Path
 import hashlib
 import json
@@ -41,7 +41,7 @@ with tempfile.TemporaryDirectory(prefix='dotfiles-preserve-test.') as temporary:
     source = temp / 'source'
     source.mkdir()
     shutil.copy2(ROOT / 'install.sh', source / 'install.sh')
-    for directory in ['common/themes', 'darwin']:
+    for directory in ['common', 'darwin', 'linux', '.vim']:
         shutil.copytree(ROOT / directory, source / directory)
     (source / 'scripts').mkdir(exist_ok=True)
     for name in ['sudo-askpass.sh', 'vim-plug-update.sh']:
@@ -65,8 +65,12 @@ with tempfile.TemporaryDirectory(prefix='dotfiles-preserve-test.') as temporary:
     write(stubs / 'python3', '#!/bin/sh\nexec ' + "'" + sys.executable.replace("'", "'\\''") + "'" + ' "$@"\n', executable=True)
     results = []
 
-    def invoke(home, *args, expected=0, skip_skills=False):
+    def invoke(home, *args, expected=0, skip_skills=False, profiles=None):
         env = os.environ.copy()
+        for variable in ['CODEX_HOME', 'CLAUDE_CONFIG_DIR']:
+            env.pop(variable, None)
+        if profiles:
+            env.update(profiles)
         env.update(HOME=str(home), PATH=str(stubs) + ':/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin',
                    DOTFILES_SKIP_PRIVATE_SKILLS='1' if skip_skills else '0', CI='', KITTY_PID='',
                    CALL_LOG=str(calls), DOTFILES_BACKUP_DIR=str(temp / (home.name + '-backup')),
@@ -85,7 +89,7 @@ with tempfile.TemporaryDirectory(prefix='dotfiles-preserve-test.') as temporary:
         for path in ['.zshrc', '.bashrc', '.bash_profile', '.gnu_aliases', '.dircolors', '.gitconfig',
                      '.ssh/config', '.vim/vimrc', '.vim/plugins.vim', '.vim/coc-settings.json',
                      '.config/nvim/init.vim', '.config/nvim/coc-settings.json', '.config/shell-functions/editor.sh',
-                     '.config/git/hooks/pre-commit', 'AGENTS.md', 'MACHINE.md', '.claude/CLAUDE.md']:
+                     '.config/git/hooks/pre-commit', 'AGENTS.md', 'MACHINE.md', '.codex/AGENTS.md', '.claude/CLAUDE.md']:
             write(home / path, 'keep current ' + path + '\n')
         write(home / '.gitconfig', '[alias]\n  st = status\n[credential "https://github.com"]\n  helper = existing-helper\n')
         kitty = home / '.config/kitty'
@@ -199,6 +203,60 @@ with tempfile.TemporaryDirectory(prefix='dotfiles-preserve-test.') as temporary:
     invoke(obstructed, '--preserve-existing', skip_skills=True)
     assert (obstructed / '.local').read_text() == 'keep this non-directory parent\n'
     assert not calls.exists(), calls.read_text() if calls.exists() else ''
+
+    # Exercise a full install with the same public fixture instead of requiring
+    # credentials for the real private submodule. All external tools are stubbed.
+    for command in ['codex', 'claude', 'fzf']:
+        write(stubs / command, '#!/bin/sh\nexit 0\n', executable=True)
+    write(stubs / 'rtk', '''#!/bin/sh
+case "$*" in
+    'gain --help') echo 'Usage: rtk gain [OPTIONS]' ;;
+    'init --show'*) echo '[ok] Global hook: stub' ;;
+esac
+''', executable=True)
+    configured = temp / 'custom-profiles'
+    codex_dir = configured / 'profiles/Codex Work'
+    claude_dir = configured / 'profiles/Claude Work'
+    profiles = {'CODEX_HOME': str(codex_dir), 'CLAUDE_CONFIG_DIR': str(claude_dir)}
+    agent_files = [codex_dir / 'AGENTS.md', claude_dir / 'CLAUDE.md']
+    for path in agent_files:
+        write(path, 'local policy for ' + path.name + '\n')
+    invoke(configured, '--no-packages', profiles=profiles)
+    for path, reference in zip(agent_files, ['@' + str(codex_dir / 'RTK.md'), '@RTK.md']):
+        content = path.read_text()
+        assert content.splitlines()[0] == reference, path
+        assert (source / 'common/ai-context/AGENTS.md').read_text() in content, path
+        assert '\n# Machine: ' in content, path
+        backup = temp / 'custom-profiles-backup/files' / path.relative_to(configured)
+        assert backup.read_text() == 'local policy for ' + path.name + '\n', backup
+    for destination in [configured / '.agents/skills', claude_dir / 'skills']:
+        for name in ['tool-active', 'tool-maintenance']:
+            path = Path(name) / 'SKILL.md'
+            assert (destination / path).read_bytes() == (skills / path).read_bytes()
+        assert not (destination / 'tool-candidate').exists()
+    assert not (codex_dir / 'skills').exists()
+    invoke(configured, '--check', profiles=profiles)
+    for path in agent_files:
+        write(path, 'edited after install\n')
+    check = invoke(configured, '--check', profiles=profiles, expected=1)
+    for path in agent_files:
+        assert 'Changed: ' + str(path) in check.stdout, check.stdout
+    invoke(configured, '--preserve-existing', profiles=profiles)
+    for path in agent_files:
+        assert path.read_text() == 'edited after install\n', path
+    assert (codex_dir / 'skills/tool-active/SKILL.md').read_bytes() == (skills / 'tool-active/SKILL.md').read_bytes()
+    for default in ['.codex/AGENTS.md', '.codex/skills', '.claude/CLAUDE.md', '.claude/skills']:
+        assert not (configured / default).exists(), default
+
+    linked = temp / 'linked-skills'
+    claude_skills = linked / '.claude/skills'
+    claude_skills.parent.mkdir(parents=True)
+    claude_skills.symlink_to('../.agents/skills', target_is_directory=True)
+    invoke(linked, '--no-packages')
+    assert claude_skills.is_symlink()
+    assert (claude_skills / 'tool-active/SKILL.md').read_bytes() == (skills / 'tool-active/SKILL.md').read_bytes()
+    invoke(linked, '--check')
+
     print('Preserving installer checks passed: active configs, skill updates/backups across three harnesses,')
     print('target-only retention, no plugin/package/service calls, idempotence, dry-run, flag validation,')
     print('custom theme protection, command collisions, symlinks, and invalid skill manifests.')

@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Use the disposable HOME's default assistant directories throughout this test.
+unset CODEX_HOME CLAUDE_CONFIG_DIR
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-install-test.XXXXXX")"
+temp_parent="${TMPDIR:-/tmp}"
+TMP_DIR="$(mktemp -d "${temp_parent%/}/dotfiles-install-test.XXXXXX")"
 TEST_HOME="$TMP_DIR/home"
 DRY_HOME="$TMP_DIR/dry-home"
 STUB_DIR="$TMP_DIR/bin"
@@ -65,7 +69,7 @@ exit 1
 STUB
 
 # Assistants and rtk are stubbed so the result doesn't depend on the host
-for command_name in codex claude; do
+for command_name in codex claude fzf; do
     cat > "$STUB_DIR/$command_name" <<'STUB'
 #!/usr/bin/env bash
 exit 0
@@ -74,9 +78,11 @@ done
 cat > "$STUB_DIR/rtk" <<'STUB'
 #!/usr/bin/env bash
 printf 'rtk %s\n' "$*" >> "${DOTFILES_INSTALL_TEST_LOG:?}"
-if [[ "${1:-} ${2:-}" == "init --show" ]]; then
-    printf '[ok] Global hook: stub\n'
-fi
+case "$*" in
+    'gain --help') printf 'Usage: rtk gain [OPTIONS]\n' ;;
+    gain) touch "$HOME/rtk-history.db" ;; # The real command opens its history database.
+    'init --show'*) printf '[ok] Global hook: stub\n' ;;
+esac
 exit 0
 STUB
 
@@ -152,6 +158,10 @@ if [[ "${DOTFILES_SKIP_PRIVATE_SKILLS:-1}" == "0" ]]; then
         "$ROOT_DIR/private/skills/autoresearch/SKILL.md"
     assert_regular_copy "$TEST_HOME/.agents/skills/skillpack-sync/SKILL.md" \
         "$ROOT_DIR/private/skills/skillpack-sync/SKILL.md"
+    for skill in session-review skill-improve; do
+        assert_regular_copy "$TEST_HOME/.claude/skills/$skill/SKILL.md" \
+            "$ROOT_DIR/private/skills/$skill/SKILL.md"
+    done
     [[ ! -e "$TEST_HOME/.agents/skills/archive-triage" ]] \
         || fail "candidate private skill was installed"
 fi
@@ -213,6 +223,7 @@ fi
 run_installer "$DRY_HOME" "$TMP_DIR/dry-backup" --dry-run --no-packages > "$TMP_DIR/dry-run.log"
 [[ -z "$(find "$DRY_HOME" -mindepth 1 -print -quit)" ]] || fail "--dry-run changed HOME"
 [[ ! -e "$TMP_DIR/dry-backup" ]] || fail "--dry-run created a backup directory"
+! grep -Fxq 'rtk gain' "$STUB_LOG" || fail "installer opened RTK usage history to detect the CLI"
 
 # vim step defers to nvim when nvim exists (stubbed here), so no vim invocation
 ! grep -q '^vim ' "$STUB_LOG" || fail "vim should not be invoked when nvim is present"

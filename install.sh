@@ -39,6 +39,32 @@ NC='\033[0m' # No Color
 # Configuration
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKUP_DIR="${DOTFILES_BACKUP_DIR:-$HOME/.dotfiles-backup-$(date +%Y%m%d_%H%M%S)}"
+
+# Keep targets absolute for ancestor checks and backup paths. Preserve symlinks
+# so the installer's usual protection for symlinks into this checkout still runs.
+agent_config_dir() {
+    local path="$1/" part resolved=""
+    [[ "$path" == /* ]] || path="$PWD/$path"
+    while [[ -n "$path" ]]; do
+        part="${path%%/*}"
+        path="${path#*/}"
+        case "$part" in
+            ""|.) ;;
+            ..)
+                if [[ -L "$resolved" ]]; then
+                    resolved="$(cd -P -- "$resolved/.." && pwd -P)" || return 1
+                else
+                    resolved="${resolved%/*}"
+                fi
+                ;;
+            *) resolved="${resolved%/}/$part" ;;
+        esac
+    done
+    printf '%s\n' "${resolved:-/}"
+}
+AGENT_CODEX_DIR="$(agent_config_dir "${CODEX_HOME:-$HOME/.codex}")"
+AGENT_CLAUDE_DIR="$(agent_config_dir "${CLAUDE_CONFIG_DIR:-$HOME/.claude}")"
+
 AUDIT_LOG=""
 INSTALL_ARGS="$*"
 MINIMAL_MODE=false
@@ -1253,6 +1279,14 @@ install_mise_fallback() {
     rm -f "$script"
 }
 
+# Other programs are also named rtk. The gain help identifies rtk-ai without
+# opening its history database, which would write to HOME during a dry run.
+is_rtk_ai() {
+    local help
+    command -v rtk >/dev/null 2>&1 && help="$(rtk gain --help 2>/dev/null)" &&
+        [[ "$help" == *"Usage: rtk gain "* ]]
+}
+
 # Shared instructions plus this machine's notes, written for each installed assistant
 install_ai_context() {
     if [[ "$MINIMAL_MODE" == "true" ]]; then
@@ -1272,7 +1306,7 @@ install_ai_context() {
 
     # rtk init leaves a file alone when its reference line is already present
     local have_rtk=false
-    if command -v rtk >/dev/null 2>&1 && rtk gain >/dev/null 2>&1; then
+    if is_rtk_ai; then
         have_rtk=true
     fi
 
@@ -1280,9 +1314,9 @@ install_ai_context() {
     for agent in claude codex; do
         command -v "$agent" >/dev/null 2>&1 || continue
         if [[ "$agent" == "codex" ]]; then
-            target="$HOME/.codex/AGENTS.md"; ref="@$HOME/.codex/RTK.md"
+            target="${AGENT_CODEX_DIR%/}/AGENTS.md"; ref="@${AGENT_CODEX_DIR%/}/RTK.md"
         else
-            target="$HOME/.claude/CLAUDE.md"; ref="@RTK.md"
+            target="${AGENT_CLAUDE_DIR%/}/CLAUDE.md"; ref="@RTK.md"
         fi
         generated="$(mktemp "${TMPDIR:-/tmp}/dotfiles-agent-context.XXXXXX")"
         {
@@ -1304,14 +1338,14 @@ install_ai_context() {
 setup_rtk() {
     [[ "$MINIMAL_MODE" == "true" ]] && return 0
     command -v rtk >/dev/null 2>&1 || return 0
-    # Another tool is also named rtk; only rtk-ai/rtk has `rtk gain`
-    if ! rtk gain >/dev/null 2>&1; then
-        log_warning "rtk on PATH is not rtk-ai/rtk (rtk gain failed); skipping rtk setup"
+    if ! is_rtk_ai; then
+        log_warning "rtk on PATH is not rtk-ai/rtk; skipping rtk setup"
         return 0
     fi
 
     log_step "Setting up rtk..."
     local agent flag show_flag status
+    local -x CODEX_HOME="$AGENT_CODEX_DIR" CLAUDE_CONFIG_DIR="$AGENT_CLAUDE_DIR"
     for agent in claude codex; do
         command -v "$agent" >/dev/null 2>&1 || continue
         if [[ "$agent" == "codex" ]]; then
@@ -1342,7 +1376,8 @@ setup_rtk() {
 private_skill_dirs() {
     local manifest="$1"
     shift
-    python3 - "$manifest" "$@" <<'PY'
+    # macOS's system Python otherwise writes bytecode under HOME, even on --dry-run.
+    python3 -B - "$manifest" "$@" <<'PY'
 import json
 import sys
 from pathlib import Path, PurePosixPath
@@ -1388,7 +1423,7 @@ prepare_private_skills_source() {
     fi
 
     if [[ "$DRY_RUN" == "true" ]]; then
-        log_info "Would initialize private/skills and install active skills into ~/.agents/skills"
+        log_info "Would initialize private/skills to select the skills to install"
         return 1
     fi
 
@@ -1414,6 +1449,17 @@ prepare_private_skills_source() {
     fi
 
     return 0
+}
+
+# Claude can use a link to the shared skills, even on a first install when
+# the installer has yet to create the shared directory.
+uses_shared_skills_dir() {
+    local target="$1" shared="$2" link
+    [[ "$target" == "$shared" || "$target" -ef "$shared" ]] && return 0
+    [[ -L "$target" ]] || return 1
+    link="$(readlink "$target")" || return 1
+    [[ "$link" == /* ]] || link="${target%/*}/$link"
+    [[ "$(agent_config_dir "$link")" == "$shared" ]]
 }
 
 install_private_skills() {
@@ -1442,8 +1488,14 @@ install_private_skills() {
     fi
 
     local source="$DOTFILES_DIR/private/skills"
-    local targets=("$@")
-    [[ "${#targets[@]}" -gt 0 ]] || targets=("$HOME/.agents/skills")
+    local shared_skills claude_skills="${AGENT_CLAUDE_DIR%/}/skills"
+    shared_skills="$(agent_config_dir "$HOME/.agents/skills")"
+    local targets=("$shared_skills")
+    if [[ "$PRESERVE_EXISTING" == "true" ]]; then
+        targets+=("${AGENT_CODEX_DIR%/}/skills" "$claude_skills")
+    elif command -v claude >/dev/null 2>&1 && ! uses_shared_skills_dir "$claude_skills" "$shared_skills"; then
+        targets+=("$claude_skills")
+    fi
     local selected=() expected=() skill_dirs skill_dir relative target parent file_list source_list
     file_list="$(mktemp)"
     source_list="$(mktemp)"
@@ -1675,7 +1727,7 @@ install_preserving_existing() {
     log_step "Keeping existing appearance, shortcuts, commands, and active configs"
     log_info "Skipping packages, shell/editor configs, plugins, Git/SSH policy, schedules, and AI context"
 
-    install_private_skills "$HOME/.agents/skills" "$HOME/.codex/skills" "$HOME/.claude/skills"
+    install_private_skills
 
     if kitty_theme_additions_safe; then
         local theme
