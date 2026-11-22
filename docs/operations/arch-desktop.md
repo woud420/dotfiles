@@ -1,6 +1,6 @@
 # Arch desktop
 
-The Arch/Manjaro layer adds a SwayFX desktop to the shared shell/editor setup.
+The Arch layer adds a SwayFX desktop to the shared shell/editor setup.
 Its configuration lives in [`linux/arch/`](../../linux/arch/).
 
 ## Components

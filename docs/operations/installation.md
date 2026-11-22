@@ -89,7 +89,7 @@ different copy/backup behavior and does not expose these modes.
 - **macOS:** packages and apps come from [`darwin/Brewfile`](../../darwin/Brewfile).
   Kitty uses the macOS config and shared theme. The full installer installs a
   launchd agent for weekly editor plugin updates.
-- **Arch/Manjaro:** packages come from the native and AUR lists. The full install
+- **Arch:** packages come from the native and AUR lists. The full install
   deploys the desktop and Firefox styling. Launch Firefox once to create a
   profile before installation; see the [Arch guide](arch-desktop.md).
 - **Debian/Ubuntu, Fedora/RHEL/CentOS, Alpine:** packages come from the matching

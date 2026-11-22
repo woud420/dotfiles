@@ -114,9 +114,9 @@ initialization but cannot enumerate its missing contents.
 
 ## Platform and environment selection
 
-macOS uses Homebrew. Linux package branches cover Debian/Ubuntu, Arch/Manjaro,
+macOS uses Homebrew. Linux package branches cover Debian/Ubuntu, Arch,
 Fedora/RHEL/CentOS, and Alpine. Desktop and Firefox configuration are restricted
-to Arch/Manjaro; Firefox needs an existing profile discoverable through
+to Arch; Firefox needs an existing profile discoverable through
 `~/.mozilla/firefox/profiles.ini`.
 
 Containers automatically select minimal mode unless `DOTFILES_FULL_INSTALL`

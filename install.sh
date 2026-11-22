@@ -181,7 +181,7 @@ state_only_mode() {
 }
 
 is_arch_family() {
-    [[ "$DISTRO" == "arch" || "$DISTRO" == "manjaro" ]]
+    [[ "$DISTRO" == "arch" ]]
 }
 
 init_audit() {
@@ -392,7 +392,7 @@ install_packages_linux() {
                 log_info "Would run: apt-get update && install packages from $package_list"
             fi
             ;;
-        arch|manjaro)
+        arch)
             package_list="$DOTFILES_DIR/linux/arch/packages.list"
             if [[ "$DRY_RUN" == "false" ]]; then
                 log_step "Installing packages from $package_list..."

@@ -1,6 +1,6 @@
 # Arch Linux configuration
 
-The Arch/Manjaro layer contains native and AUR package lists, SwayFX/Waybar/GTK/
+The Arch layer contains native and AUR package lists, SwayFX/Waybar/GTK/
 Rofi/Mako configuration, the personal-pink Kitty overlay, and Firefox styling.
 
 - [Desktop setup and verification](../../docs/operations/arch-desktop.md).
