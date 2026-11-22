@@ -1,35 +1,18 @@
-# Machine: MacBook
+# This machine: MacBook
 
-## System
-
-- **OS**: macOS
-- **Package manager**: Homebrew
-- **Shell**: zsh
-- **Terminal**: Kitty
-
-## Primary Use
-
-- Personal projects
-- Mobile development (React Native, iOS)
-- General development
-
-## Package Installation
-
-```bash
-# Homebrew
-brew install <package>
-
-# Cask (GUI apps)
-brew install --cask <app>
-```
-
-## Paths
-
-- Dotfiles: `~/workspace/dotfiles`
-- Projects: `~/workspace/`
+- **OS:** macOS on Apple Silicon
+- **Packages:** Homebrew (`brew install <formula>`, `brew install --cask <app>`);
+  the dotfiles `darwin/Brewfile` lists what is installed
+- **Shell:** zsh
+- **Terminals:** Kitty and Ghostty
+- **Dotfiles:** `~/workspace/projects/dotfiles`
+- **Projects:** `~/workspace/projects/`
+- **Primary use:** personal projects, mobile development (React Native, iOS),
+  general development
 
 ## Notes
 
-- Uses GNU coreutils via Homebrew (aliased to replace BSD tools)
-- Catppuccin theme
-- Brewfile in dotfiles for reproducible setup
+- GNU tools from Homebrew replace the BSD ones through aliases (`ls`, `sed`, `grep`)
+- Apple's `clang` and `clangd` are the defaults; Homebrew's llvm is last on
+  PATH for `clang-format` and `clang-tidy`
+- Catppuccin Mocha theme

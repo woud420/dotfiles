@@ -16,7 +16,7 @@
 #    - Vim/Neovim setup (plugins, CoC compilation)
 #    - Weekly vim plugin update schedule (systemd timer / launchd agent)
 #    - Optional tools (fzf, etc.)
-#    - AI context files (CLAUDE.md, AGENTS.md, MACHINE.md)
+#    - Shared agent instructions for installed assistants (Codex, Claude Code)
 #    - Private agent skills (when the authenticated submodule is available)
 #
 # Features:
@@ -1253,60 +1253,50 @@ install_mise_fallback() {
     rm -f "$script"
 }
 
-# Install AI context files (CLAUDE.md, MACHINE.md, AGENTS.md)
+# Shared instructions plus this machine's notes, written for each installed assistant
 install_ai_context() {
     if [[ "$MINIMAL_MODE" == "true" ]]; then
         log_info "Minimal mode: skipping AI context files"
         return 0
     fi
-
     log_step "Installing AI context files..."
 
-    # ~/.claude/CLAUDE.md is often user-curated (e.g. custom includes);
-    # only seed it when absent instead of clobbering it on every install.
-    local claude_src="$DOTFILES_DIR/common/ai-context/CLAUDE.md"
-    if [[ -f "$claude_src" ]]; then
-        if [[ "$BACKUP_ONLY" == "true" ]]; then
-            backup_file "$HOME/.claude/CLAUDE.md"
-        elif [[ -f "$HOME/.claude/CLAUDE.md" ]] && ! cmp -s "$claude_src" "$HOME/.claude/CLAUDE.md"; then
-            log_info "Keeping existing ~/.claude/CLAUDE.md (differs from repo version; merge manually if wanted)"
-        else
-            install_file "$claude_src" "$HOME/.claude/CLAUDE.md"
-        fi
-    fi
-
-    # AGENTS.md -> ~/AGENTS.md (for Codex/Copilot compatibility)
-    local agents_src="$DOTFILES_DIR/common/ai-context/AGENTS.md"
-    if [[ -f "$agents_src" ]]; then
-        install_file "$agents_src" "$HOME/AGENTS.md"
-    fi
-
-    # OS-specific machine.md -> ~/MACHINE.md
-    local machine_src=""
+    local shared="$DOTFILES_DIR/common/ai-context/AGENTS.md"
+    [[ -f "$shared" ]] || return 0
+    local machine=""
     case "$DISTRO" in
-        arch|manjaro)
-            machine_src="$DOTFILES_DIR/linux/arch/ai-context/machine.md"
-            ;;
-        ubuntu|debian)
-            machine_src="$DOTFILES_DIR/linux/debian/ai-context/machine.md"
-            ;;
-        rhel|centos|fedora)
-            machine_src="$DOTFILES_DIR/linux/fedora/ai-context/machine.md"
-            ;;
-        alpine)
-            machine_src="$DOTFILES_DIR/linux/alpine/ai-context/machine.md"
-            ;;
-        darwin|macos)
-            machine_src="$DOTFILES_DIR/darwin/ai-context/machine.md"
-            ;;
+        arch|manjaro) machine="$DOTFILES_DIR/linux/arch/ai-context/machine.md" ;;
+        darwin|macos) machine="$DOTFILES_DIR/darwin/ai-context/machine.md" ;;
     esac
 
-    if [[ -n "$machine_src" && -f "$machine_src" ]]; then
-        install_file "$machine_src" "$HOME/MACHINE.md"
+    # rtk init leaves a file alone when its reference line is already present
+    local have_rtk=false
+    if command -v rtk >/dev/null 2>&1 && rtk gain >/dev/null 2>&1; then
+        have_rtk=true
     fi
 
-    # Machine state snapshots are generated on demand, not at install time:
-    # DOTFILES_DIR=$DOTFILES_DIR scripts/refresh-machine-state.sh
+    local agent target ref generated
+    for agent in claude codex; do
+        command -v "$agent" >/dev/null 2>&1 || continue
+        if [[ "$agent" == "codex" ]]; then
+            target="$HOME/.codex/AGENTS.md"; ref="@$HOME/.codex/RTK.md"
+        else
+            target="$HOME/.claude/CLAUDE.md"; ref="@RTK.md"
+        fi
+        generated="$(mktemp "${TMPDIR:-/tmp}/dotfiles-agent-context.XXXXXX")"
+        {
+            if [[ "$have_rtk" == "true" ]]; then
+                printf '%s\n\n' "$ref"
+            fi
+            cat "$shared"
+            if [[ -n "$machine" && -f "$machine" ]]; then
+                printf '\n'
+                cat "$machine"
+            fi
+        } > "$generated"
+        install_file "$generated" "$target"
+        rm -f "$generated"
+    done
 }
 
 # Register rtk with each installed assistant; `rtk init` is idempotent
@@ -1771,7 +1761,7 @@ main() {
     install_neovim_config       # 8. Neovim bridge to Vim config
     install_vim_update_schedule # 8b. Weekly plugin update timer (systemd/launchd)
     install_optional_tools      # 9. Optional tools (fzf, etc.) - last
-    install_ai_context          # 10. AI context files (CLAUDE.md, AGENTS.md, MACHINE.md)
+    install_ai_context          # 10. Shared agent instructions for installed assistants
     install_private_skills      # 11. Active skills from the authenticated private submodule
     setup_rtk                   # 12. rtk hooks for installed assistants (after AI context)
     backup_local_overrides

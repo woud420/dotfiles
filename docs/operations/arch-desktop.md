@@ -51,17 +51,4 @@ Waybar Docker/Kubernetes modules need their respective CLIs. The optional mail
 counter stays disabled until its local `mailsecrets.py` is present; keep those
 credentials outside version control.
 
-## Optional machine-state refresh hook
-
-The package-manager hook is opt-in because it writes a local machine-state
-snapshot into this checkout. The installer does not enable it. To install it
-after reviewing [`90-refresh-ai-context.hook`](../../linux/arch/hooks/90-refresh-ai-context.hook):
-
-```bash
-sudo install -d /etc/pacman.d/hooks
-sed -e "s|__DOTFILES_DIR__|$PWD|" -e "s|__DOTFILES_USER__|$USER|" \
-    linux/arch/hooks/90-refresh-ai-context.hook \
-  | sudo tee /etc/pacman.d/hooks/90-refresh-ai-context.hook
-```
-
 For backups and recovery, use the [maintenance guide](maintenance.md).

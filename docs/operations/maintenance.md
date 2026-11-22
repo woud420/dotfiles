@@ -97,15 +97,10 @@ For plugin-install warnings, open Vim/Neovim and run `:PlugInstall`, then retry
 the [editor parity check](validation.md#editor-changes). CoC compilation also
 depends on the build tools described in the installer output.
 
-## Package and machine inventories
+## Package inventories
 
 `make brew-sync` overwrites `darwin/Brewfile` with a dump of the current Mac's
 Homebrew bundle. Review the diff before treating local package state as shared
 configuration.
-
-Run `scripts/refresh-machine-state.sh` when a fresh local agent inventory is
-needed. It writes the detected platform's ignored `ai-context/machine-state.md`
-inside the checkout; the installer does not generate it automatically. Inspect
-machine details before sharing that file.
 
 For skillpack revision maintenance, use the [private-skills guide](private-skills.md).

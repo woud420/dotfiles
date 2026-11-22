@@ -134,8 +134,7 @@ jobs:
             done
 
             echo "=== AI context ==="
-            test -f ~/AGENTS.md && echo "PASS: AGENTS.md"
-            test -f ~/MACHINE.md && echo "PASS: MACHINE.md"
+            ! test -e ~/AGENTS.md && ! test -e ~/MACHINE.md && echo "PASS: no agent context in HOME"
 
             echo "=== Audit log ==="
             ls ~/.dotfiles-backup-*/install-audit.tsv > /dev/null && echo "PASS: install audit written"
@@ -259,8 +258,7 @@ jobs:
             ! test -e ~/.config/sway && echo "PASS: sway config not installed"
 
             echo "=== AI context ==="
-            test -f ~/AGENTS.md && echo "PASS: AGENTS.md"
-            test -f ~/MACHINE.md && echo "PASS: MACHINE.md"
+            ! test -e ~/AGENTS.md && ! test -e ~/MACHINE.md && echo "PASS: no agent context in HOME"
           '
 
       - name: Validate shell configs
@@ -367,8 +365,7 @@ jobs:
           grep -q "FiraCode" ~/.config/kitty/kitty.conf && echo "PASS: FiraCode font (macOS)"
 
           echo "=== AI context ==="
-          test -f ~/AGENTS.md && echo "PASS: AGENTS.md"
-          test -f ~/MACHINE.md && echo "PASS: MACHINE.md"
+          ! test -e ~/AGENTS.md && ! test -e ~/MACHINE.md && echo "PASS: no agent context in HOME"
 
       - name: Validate Vim config
         run: |

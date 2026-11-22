@@ -1,36 +1,17 @@
-# Machine: Arch Linux Workstation
+# This machine: jm-home-box (Arch Linux)
 
-## System
-
-- **OS**: Arch Linux
-- **Package manager**: pacman (AUR: yay)
-- **Shell**: zsh
-- **Display**: Wayland (Sway)
-- **Terminal**: Kitty
-
-## Primary Use
-
-- Personal projects
-- LLC work
-- Development environment
-
-## Package Installation
-
-```bash
-# System packages
-sudo pacman -S <package>
-
-# AUR packages
-yay -S <package>
-```
-
-## Paths
-
-- Dotfiles: `~/workspace/dotfiles`
-- Projects: `~/workspace/`
+- **OS:** Arch Linux
+- **Packages:** pacman (`sudo pacman -S <package>`) and the AUR through yay
+  (`yay -S <package>`)
+- **Shell:** bash is the login shell; zsh is set up the same way
+- **Desktop:** SwayFX (Wayland) with Waybar
+- **Terminal:** Kitty
+- **Dotfiles:** `~/workspace/dotfiles`
+- **Projects:** `~/workspace/`
+- **Primary use:** personal projects, LLC work, development environment
 
 ## Notes
 
-- Uses Sway window manager with Waybar
-- Catppuccin Mocha theme across terminal and applications
-- Modern CLI tools: ripgrep, fd, bat, exa
+- NVIDIA GPU with the `nvidia-open` driver
+- Catppuccin colours with the personal-pink Kitty background
+- Modern CLI tools: ripgrep, fd, bat, eza

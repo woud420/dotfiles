@@ -1,55 +1,69 @@
 # Agent Context
 
-This file provides context for AI coding assistants (Codex, Copilot, Claude, etc.).
+Shared instructions for AI coding assistants. The dotfiles installer writes
+this file, followed by notes about the current machine, into each installed
+assistant's global instructions (`~/.codex/AGENTS.md`, `~/.claude/CLAUDE.md`).
 
-## Developer Profile
+## About Me
 
-- Works across multiple organizations — treat each project independently
-- Uses multiple AI tools depending on task requirements
+- I work across multiple organizations. Treat each project independently and
+  don't carry assumptions between repos or contexts.
 
 ## Tech Stack
 
-### Languages (preference order)
-1. Rust - backend, systems, CLI tools
-2. Python - backend, scripting, automation
-3. TypeScript - frontend applications
-4. Bash - simple scripts only
+Languages, in order of preference:
 
-### Frameworks
-- Frontend: Next.js (TypeScript), React Native
-- Backend: Flask (Python), Actix-web (Rust)
+1. Rust: backend, systems, CLI tools
+2. Python: backend, scripting, automation
+3. TypeScript: frontend
+4. Bash: simple scripts only
 
-### Infrastructure
-- Containers: Docker, Docker Compose
-- Orchestration: Kubernetes
-- IaC: Terraform
-- Package managers: pacman, Homebrew, apt (depending on OS)
+- Frameworks: Next.js and React Native (frontend), Flask (Python backend),
+  Actix-web (Rust backend)
+- Infrastructure: Docker and Docker Compose, Kubernetes (kubectl, k9s, helm),
+  Terraform
 
-## Code Style Guidelines
+## Code Style
 
-- Concise over verbose
-- Explicit over clever
-- No premature abstractions
-- Comments only when logic isn't obvious
-- Error handling at boundaries, not everywhere
-- Tests in `tests/`, source in `src/`
+- Concise over verbose; explicit over clever
+- No premature abstractions; start with the minimal working solution
+- Comments only when the logic isn't obvious
+- Error handling at system boundaries, not everywhere
 
-## Project Structure
+## Project Layout
 
-Preferred layout:
 ```
-src/           - source code
-tests/         - tests
-docker/        - container configs
-k8s/           - kubernetes manifests
-infra/         - terraform and other IaC
-architecture/  - design docs
+src/              source code
+tests/            tests (not alongside source)
+docker/           container configs
+k8s/              Kubernetes manifests
+infra/terraform/  infrastructure as code
+architecture/     design docs
 ```
 
-Prefers git submodules over monorepos.
+- Prefer git submodules over monorepos
+- Keep infrastructure separate from application code
 
-## Communication
+## How to Work With Me
 
-- Direct responses, no filler
-- OS-specific commands only (no multi-platform alternatives unless asked)
-- Honest feedback over false validation
+- Be direct: no filler or excessive caveats
+- Give commands for this machine's OS only (see "This machine" below) unless I
+  ask for alternatives
+- If I'm wrong, say so; I prefer correction over agreement
+- No emojis unless I use them first
+
+## Dotfiles
+
+My dotfiles are github.com/woud420/dotfiles, checked out at the path given
+under "This machine". Look there for my shell setup, git aliases and tooling.
+
+## Session Wrap-up
+
+At the natural end of any substantive session (I say "wrap up", "done" or
+"goodbye", or the work concludes), run the `session-review` skill before
+finishing: verify that claimed outcomes actually happened, artifacts persisted
+at all requested paths, knowledge was captured, and git, secret and privacy
+hygiene held. Hand any improvement signals (a skill misfired, failed to
+trigger, or needed re-explanation) to the `skill-improve` skill. At the start
+of a session, offer to run `session-review` if the previous session did
+substantive work and was not reviewed.

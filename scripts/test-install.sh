@@ -64,6 +64,22 @@ cat > "$STUB_DIR/curl" <<'STUB'
 exit 1
 STUB
 
+# Assistants and rtk are stubbed so the result doesn't depend on the host
+for command_name in codex claude; do
+    cat > "$STUB_DIR/$command_name" <<'STUB'
+#!/usr/bin/env bash
+exit 0
+STUB
+done
+cat > "$STUB_DIR/rtk" <<'STUB'
+#!/usr/bin/env bash
+printf 'rtk %s\n' "$*" >> "${DOTFILES_INSTALL_TEST_LOG:?}"
+if [[ "${1:-} ${2:-}" == "init --show" ]]; then
+    printf '[ok] Global hook: stub\n'
+fi
+exit 0
+STUB
+
 chmod +x "$STUB_DIR/"*
 
 fail() {
@@ -139,6 +155,19 @@ if [[ "${DOTFILES_SKIP_PRIVATE_SKILLS:-1}" == "0" ]]; then
     [[ ! -e "$TEST_HOME/.agents/skills/archive-triage" ]] \
         || fail "candidate private skill was installed"
 fi
+
+for agent_file in "$TEST_HOME/.codex/AGENTS.md" "$TEST_HOME/.claude/CLAUDE.md"; do
+    assert_file "$agent_file"
+    grep -q '^# Agent Context$' "$agent_file" || fail "$agent_file is missing the shared instructions"
+done
+[[ "$(head -1 "$TEST_HOME/.codex/AGENTS.md")" == "@$TEST_HOME/.codex/RTK.md" ]] \
+    || fail "Codex instructions do not start with the rtk reference"
+[[ "$(head -1 "$TEST_HOME/.claude/CLAUDE.md")" == "@RTK.md" ]] \
+    || fail "Claude instructions do not start with the rtk reference"
+[[ ! -e "$TEST_HOME/AGENTS.md" && ! -e "$TEST_HOME/MACHINE.md" ]] \
+    || fail "agent context must not be written to the home folder"
+grep -q '^rtk init -g --codex ' "$STUB_LOG" || fail "rtk was not set up for Codex"
+grep -q '^rtk init -g --auto-patch ' "$STUB_LOG" || fail "rtk was not set up for Claude Code"
 
 AUDIT_LOG="$INSTALL_BACKUP/install-audit.tsv"
 [[ -f "$AUDIT_LOG" ]] || fail "audit log was not created"
