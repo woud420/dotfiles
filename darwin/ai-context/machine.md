@@ -1,4 +1,4 @@
-# This machine: MacBook
+# Machine: MacBook
 
 - **OS:** macOS on Apple Silicon
 - **Packages:** Homebrew (`brew install <formula>`, `brew install --cask <app>`);

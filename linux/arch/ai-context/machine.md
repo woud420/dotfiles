@@ -1,4 +1,4 @@
-# This machine: jm-home-box (Arch Linux)
+# Machine: jm-home-box (Arch Linux)
 
 - **OS:** Arch Linux
 - **Packages:** pacman (`sudo pacman -S <package>`) and the AUR through yay

@@ -159,6 +159,7 @@ fi
 for agent_file in "$TEST_HOME/.codex/AGENTS.md" "$TEST_HOME/.claude/CLAUDE.md"; do
     assert_file "$agent_file"
     grep -q '^# Agent Context$' "$agent_file" || fail "$agent_file is missing the shared instructions"
+    grep -q '^# Machine: ' "$agent_file" || fail "$agent_file is missing the machine notes"
 done
 [[ "$(head -1 "$TEST_HOME/.codex/AGENTS.md")" == "@$TEST_HOME/.codex/RTK.md" ]] \
     || fail "Codex instructions do not start with the rtk reference"

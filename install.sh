@@ -1265,8 +1265,9 @@ install_ai_context() {
     [[ -f "$shared" ]] || return 0
     local machine=""
     case "$DISTRO" in
-        arch|manjaro) machine="$DOTFILES_DIR/linux/arch/ai-context/machine.md" ;;
-        darwin|macos) machine="$DOTFILES_DIR/darwin/ai-context/machine.md" ;;
+        arch) machine="$DOTFILES_DIR/linux/arch/ai-context/machine.md" ;;
+        macos) machine="$DOTFILES_DIR/darwin/ai-context/machine.md" ;;
+        *) if [[ "$OS" == "linux" ]]; then machine="$DOTFILES_DIR/linux/common/ai-context/machine.md"; fi ;;
     esac
 
     # rtk init leaves a file alone when its reference line is already present

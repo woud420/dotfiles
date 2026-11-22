@@ -21,8 +21,9 @@ Languages, in order of preference:
 
 - Frameworks: Vite or anything else Cloudflare-friendly, and React Native
   (frontend); FastAPI (Python backend); Actix-web (Rust backend)
-- Infrastructure: Docker and Docker Compose, Kubernetes (kubectl, k9s, helm),
-  Terraform, and Alchemy (alchemy.run) for TypeScript
+- Infrastructure: Docker and Docker Compose, Kubernetes (kubectl, k9s, helm)
+- Infrastructure as code: Alchemy (alchemy.run) for TypeScript projects,
+  Terraform otherwise
 
 ## Code Style
 
@@ -48,17 +49,11 @@ architecture/     design docs
 ## Communication
 
 - Direct responses: no filler or excessive caveats
-- Commands for this machine's OS only (see "This machine" below) unless asked
+- Commands for this machine's OS only (see "Machine" below) unless asked
   for alternatives
 - Honest feedback over false validation
 
 ## Session Wrap-up
 
-At the natural end of any substantive session (I say "wrap up", "done" or
-"goodbye", or the work concludes), run the `session-review` skill before
-finishing: verify that claimed outcomes actually happened, artifacts persisted
-at all requested paths, knowledge was captured, and git, secret and privacy
-hygiene held. Hand any improvement signals (a skill misfired, failed to
-trigger, or needed re-explanation) to the `skill-improve` skill. At the start
-of a session, offer to run `session-review` if the previous session did
-substantive work and was not reviewed.
+At the end of a substantive session, run the `session-review` skill and pass
+any skill problems it finds to `skill-improve`.
