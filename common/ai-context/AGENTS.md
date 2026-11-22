@@ -4,10 +4,11 @@ Shared instructions for AI coding assistants. The dotfiles installer writes
 this file, followed by notes about the current machine, into each installed
 assistant's global instructions (`~/.codex/AGENTS.md`, `~/.claude/CLAUDE.md`).
 
-## About Me
+## Developer Profile
 
-- I work across multiple organizations. Treat each project independently and
-  don't carry assumptions between repos or contexts.
+- Works across multiple organizations: treat each project independently and
+  don't carry assumptions between repos or contexts
+- Uses multiple AI tools depending on task requirements
 
 ## Tech Stack
 
@@ -15,13 +16,13 @@ Languages, in order of preference:
 
 1. Rust: backend, systems, CLI tools
 2. Python: backend, scripting, automation
-3. TypeScript: frontend
+3. TypeScript: frontend and backend
 4. Bash: simple scripts only
 
-- Frameworks: Next.js and React Native (frontend), Flask (Python backend),
-  Actix-web (Rust backend)
+- Frameworks: Vite or anything else Cloudflare-friendly, and React Native
+  (frontend); FastAPI (Python backend); Actix-web (Rust backend)
 - Infrastructure: Docker and Docker Compose, Kubernetes (kubectl, k9s, helm),
-  Terraform
+  Terraform, and Alchemy (alchemy.run) for TypeScript
 
 ## Code Style
 
@@ -34,9 +35,9 @@ Languages, in order of preference:
 
 ```
 src/              source code
-tests/            tests (not alongside source)
+tests/            tests
 docker/           container configs
-k8s/              Kubernetes manifests
+k8s/              kubernetes manifests
 infra/terraform/  infrastructure as code
 architecture/     design docs
 ```
@@ -44,18 +45,12 @@ architecture/     design docs
 - Prefer git submodules over monorepos
 - Keep infrastructure separate from application code
 
-## How to Work With Me
+## Communication
 
-- Be direct: no filler or excessive caveats
-- Give commands for this machine's OS only (see "This machine" below) unless I
-  ask for alternatives
-- If I'm wrong, say so; I prefer correction over agreement
-- No emojis unless I use them first
-
-## Dotfiles
-
-My dotfiles are github.com/woud420/dotfiles, checked out at the path given
-under "This machine". Look there for my shell setup, git aliases and tooling.
+- Direct responses: no filler or excessive caveats
+- Commands for this machine's OS only (see "This machine" below) unless asked
+  for alternatives
+- Honest feedback over false validation
 
 ## Session Wrap-up
 

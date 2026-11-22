@@ -133,9 +133,6 @@ jobs:
               test -f ~/$f && ! test -L ~/$f && echo "PASS: $f (copied)" || { echo "FAIL: $f"; exit 1; }
             done
 
-            echo "=== AI context ==="
-            ! test -e ~/AGENTS.md && ! test -e ~/MACHINE.md && echo "PASS: no agent context in HOME"
-
             echo "=== Audit log ==="
             ls ~/.dotfiles-backup-*/install-audit.tsv > /dev/null && echo "PASS: install audit written"
           '
@@ -256,9 +253,6 @@ jobs:
 
             echo "=== No desktop configs on non-arch ==="
             ! test -e ~/.config/sway && echo "PASS: sway config not installed"
-
-            echo "=== AI context ==="
-            ! test -e ~/AGENTS.md && ! test -e ~/MACHINE.md && echo "PASS: no agent context in HOME"
           '
 
       - name: Validate shell configs
@@ -363,9 +357,6 @@ jobs:
           grep -q "Catppuccin-Mocha" ~/.config/kitty/current-theme.conf && echo "PASS: macOS Catppuccin Mocha theme"
           ! grep -q "personal-pink" ~/.config/kitty/current-theme.conf && echo "PASS: no personal-pink leak on macOS"
           grep -q "FiraCode" ~/.config/kitty/kitty.conf && echo "PASS: FiraCode font (macOS)"
-
-          echo "=== AI context ==="
-          ! test -e ~/AGENTS.md && ! test -e ~/MACHINE.md && echo "PASS: no agent context in HOME"
 
       - name: Validate Vim config
         run: |

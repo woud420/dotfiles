@@ -7,8 +7,6 @@
 - **Terminals:** Kitty and Ghostty
 - **Dotfiles:** `~/workspace/projects/dotfiles`
 - **Projects:** `~/workspace/projects/`
-- **Primary use:** personal projects, mobile development (React Native, iOS),
-  general development
 
 ## Notes
 

@@ -8,7 +8,6 @@
 - **Terminal:** Kitty
 - **Dotfiles:** `~/workspace/dotfiles`
 - **Projects:** `~/workspace/`
-- **Primary use:** personal projects, LLC work, development environment
 
 ## Notes
 
