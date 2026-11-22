@@ -164,24 +164,25 @@ fi
 
 # PATH helper - prevents duplicates
 path_prepend() {
-    local dir
+    local dir p
     for dir in "$@"; do
         [[ -d "$dir" ]] || continue
-        case ":$PATH:" in
-            *":$dir:"*) ;;
-            *) PATH="$dir:$PATH" ;;
-        esac
+        # Move an existing entry so the order doesn't depend on what set PATH first
+        p=":$PATH:"
+        while [[ "$p" == *":$dir:"* ]]; do p="${p//":$dir:"/:}"; done
+        p="${p#:}"; p="${p%:}"
+        PATH="$dir${p:+:$p}"
     done
 }
 
 path_append() {
-    local dir
+    local dir p
     for dir in "$@"; do
         [[ -d "$dir" ]] || continue
-        case ":$PATH:" in
-            *":$dir:"*) ;;
-            *) PATH="$PATH:$dir" ;;
-        esac
+        p=":$PATH:"
+        while [[ "$p" == *":$dir:"* ]]; do p="${p//":$dir:"/:}"; done
+        p="${p#:}"; p="${p%:}"
+        PATH="${p:+$p:}$dir"
     done
 }
 
