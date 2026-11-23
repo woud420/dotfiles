@@ -76,7 +76,6 @@ cat > "$STUB_DIR/rtk" <<'STUB'
 printf 'rtk %s\n' "$*" >> "${DOTFILES_INSTALL_TEST_LOG:?}"
 case "$*" in
     'gain --help') printf 'Usage: rtk gain [OPTIONS]\n' ;;
-    gain) touch "$HOME/rtk-history.db" ;; # The real command opens its history database.
     'init --show'*) printf '[ok] Global hook: stub\n' ;;
 esac
 exit 0
