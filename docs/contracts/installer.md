@@ -60,11 +60,9 @@ It also checks for legacy parent symlinks into the checkout and the shared SSH
 Include directive. Missing source files are warned about and skipped.
 
 The check covers files selected by the current platform, mode, and available
-skillpack. For each assistant CLI on `PATH`, it compares the global instruction
-file in its [configured directory](configuration.md#managed-paths) against the
-generated instructions. Local edits, including custom Claude instructions,
-count as drift. It checks private skills in `~/.agents/skills` and also in
-Claude's configured `skills/` directory when `claude` is on `PATH`.
+skillpack. Each installed assistant's global instructions must match the
+generated file; local edits count as drift. Private skills are checked in
+`~/.agents/skills`, plus `~/.claude/skills` when `claude` is on `PATH`.
 
 A nonzero exit status indicates reported drift. Intentional differences after
 `--preserve-existing` can therefore fail a regular `--check`. Matching files
@@ -88,8 +86,7 @@ terminal reloads, and automatic update scheduling.
 It can change:
 
 - **Skills:** Git-tracked files in `active` and `maintenance` skills are synced
-  to `~/.agents/skills` and the `skills/` directories under the configured
-  Codex and Claude directories. Registered
+  to `~/.agents/skills`, `~/.codex/skills`, and `~/.claude/skills`. Registered
   `candidate` skills are refreshed only in destinations where that candidate
   is already installed. Changed files are backed up; target-only content remains.
 - **Manual helpers:** `sudo-askpass` and `vim-plug-update` are added under

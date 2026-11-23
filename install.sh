@@ -39,32 +39,6 @@ NC='\033[0m' # No Color
 # Configuration
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKUP_DIR="${DOTFILES_BACKUP_DIR:-$HOME/.dotfiles-backup-$(date +%Y%m%d_%H%M%S)}"
-
-# Keep targets absolute for ancestor checks and backup paths. Preserve symlinks
-# so the installer's usual protection for symlinks into this checkout still runs.
-agent_config_dir() {
-    local path="$1/" part resolved=""
-    [[ "$path" == /* ]] || path="$PWD/$path"
-    while [[ -n "$path" ]]; do
-        part="${path%%/*}"
-        path="${path#*/}"
-        case "$part" in
-            ""|.) ;;
-            ..)
-                if [[ -L "$resolved" ]]; then
-                    resolved="$(cd -P -- "$resolved/.." && pwd -P)" || return 1
-                else
-                    resolved="${resolved%/*}"
-                fi
-                ;;
-            *) resolved="${resolved%/}/$part" ;;
-        esac
-    done
-    printf '%s\n' "${resolved:-/}"
-}
-AGENT_CODEX_DIR="$(agent_config_dir "${CODEX_HOME:-$HOME/.codex}")"
-AGENT_CLAUDE_DIR="$(agent_config_dir "${CLAUDE_CONFIG_DIR:-$HOME/.claude}")"
-
 AUDIT_LOG=""
 INSTALL_ARGS="$*"
 MINIMAL_MODE=false
@@ -1279,8 +1253,7 @@ install_mise_fallback() {
     rm -f "$script"
 }
 
-# Other programs are also named rtk. The gain help identifies rtk-ai without
-# opening its history database, which would write to HOME during a dry run.
+# Only rtk-ai/rtk has `rtk gain`; --help avoids opening its history database
 is_rtk_ai() {
     local help
     command -v rtk >/dev/null 2>&1 && help="$(rtk gain --help 2>/dev/null)" &&
@@ -1314,9 +1287,9 @@ install_ai_context() {
     for agent in claude codex; do
         command -v "$agent" >/dev/null 2>&1 || continue
         if [[ "$agent" == "codex" ]]; then
-            target="${AGENT_CODEX_DIR%/}/AGENTS.md"; ref="@${AGENT_CODEX_DIR%/}/RTK.md"
+            target="$HOME/.codex/AGENTS.md"; ref="@$HOME/.codex/RTK.md"
         else
-            target="${AGENT_CLAUDE_DIR%/}/CLAUDE.md"; ref="@RTK.md"
+            target="$HOME/.claude/CLAUDE.md"; ref="@RTK.md"
         fi
         generated="$(mktemp "${TMPDIR:-/tmp}/dotfiles-agent-context.XXXXXX")"
         {
@@ -1345,7 +1318,6 @@ setup_rtk() {
 
     log_step "Setting up rtk..."
     local agent flag show_flag status
-    local -x CODEX_HOME="$AGENT_CODEX_DIR" CLAUDE_CONFIG_DIR="$AGENT_CLAUDE_DIR"
     for agent in claude codex; do
         command -v "$agent" >/dev/null 2>&1 || continue
         if [[ "$agent" == "codex" ]]; then
@@ -1376,7 +1348,7 @@ setup_rtk() {
 private_skill_dirs() {
     local manifest="$1"
     shift
-    # macOS's system Python otherwise writes bytecode under HOME, even on --dry-run.
+    # -B: no bytecode written under HOME, even on --dry-run
     python3 -B - "$manifest" "$@" <<'PY'
 import json
 import sys
@@ -1451,17 +1423,6 @@ prepare_private_skills_source() {
     return 0
 }
 
-# Claude can use a link to the shared skills, even on a first install when
-# the installer has yet to create the shared directory.
-uses_shared_skills_dir() {
-    local target="$1" shared="$2" link
-    [[ "$target" == "$shared" || "$target" -ef "$shared" ]] && return 0
-    [[ -L "$target" ]] || return 1
-    link="$(readlink "$target")" || return 1
-    [[ "$link" == /* ]] || link="${target%/*}/$link"
-    [[ "$(agent_config_dir "$link")" == "$shared" ]]
-}
-
 install_private_skills() {
     if [[ "$MINIMAL_MODE" == "true" && "$PRESERVE_EXISTING" != "true" ]]; then
         log_info "Minimal mode: skipping private agent skills"
@@ -1488,13 +1449,11 @@ install_private_skills() {
     fi
 
     local source="$DOTFILES_DIR/private/skills"
-    local shared_skills claude_skills="${AGENT_CLAUDE_DIR%/}/skills"
-    shared_skills="$(agent_config_dir "$HOME/.agents/skills")"
-    local targets=("$shared_skills")
-    if [[ "$PRESERVE_EXISTING" == "true" ]]; then
-        targets+=("${AGENT_CODEX_DIR%/}/skills" "$claude_skills")
-    elif command -v claude >/dev/null 2>&1 && ! uses_shared_skills_dir "$claude_skills" "$shared_skills"; then
-        targets+=("$claude_skills")
+    local targets=("$@")
+    if [[ "${#targets[@]}" -eq 0 ]]; then
+        targets=("$HOME/.agents/skills")
+        # Claude Code reads its own skills directory, not ~/.agents/skills
+        if command -v claude >/dev/null 2>&1; then targets+=("$HOME/.claude/skills"); fi
     fi
     local selected=() expected=() skill_dirs skill_dir relative target parent file_list source_list
     file_list="$(mktemp)"
@@ -1727,7 +1686,7 @@ install_preserving_existing() {
     log_step "Keeping existing appearance, shortcuts, commands, and active configs"
     log_info "Skipping packages, shell/editor configs, plugins, Git/SSH policy, schedules, and AI context"
 
-    install_private_skills
+    install_private_skills "$HOME/.agents/skills" "$HOME/.codex/skills" "$HOME/.claude/skills"
 
     if kitty_theme_additions_safe; then
         local theme

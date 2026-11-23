@@ -54,11 +54,5 @@ architecture/     design docs
 
 ## Session Wrap-up
 
-Run `session-review` at the natural end of every substantive session. At the
-start of a session, offer `$session-review` if the previous session did
-substantive work and missed its review. Pass any skill problems to `skill-improve`.
-
-If `session-review` is unavailable on this machine, perform the review manually.
-Verify claimed outcomes and requested artifacts, check Git and privacy hygiene,
-and report any gaps. If `skill-improve` is unavailable, report skill problems
-directly to the user.
+At the end of a substantive session, run the `session-review` skill and pass
+any skill problems it finds to `skill-improve`.
