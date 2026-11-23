@@ -63,6 +63,29 @@ separately when rolling back.
 `make clean-backup` deletes matching home-directory backup directories older
 than 30 days. Inspect them and retain needed snapshots before using it.
 
+## Upgrading agent instructions
+
+On a full install, including `--no-packages`, Codex and Claude receive the
+shared instructions and platform notes whenever their respective CLIs are on
+`PATH`. This replaces existing global instructions, including a customized
+`CLAUDE.md` that older installers kept. Preview with `./install.sh --dry-run`.
+Choose `--preserve-existing` to keep managing those files yourself.
+
+For a default installation, recover previous rules and imports from
+`files/.codex/AGENTS.md` or `files/.claude/CLAUDE.md` in the backup.
+If you set `CODEX_HOME` or `CLAUDE_CONFIG_DIR`, look up the `backup` entry for
+the instruction file in `install-audit.tsv`. Backups mirror paths under
+`$HOME` in `files/` and paths outside it in `files/absolute/`. Compare the
+original with the generated file and restore the rules you need. To include
+rules on future full installs, put the ones you want to share in
+`common/ai-context/AGENTS.md`.
+
+Older installs may also have created `~/AGENTS.md` and `~/MACHINE.md`.
+They remain on disk. Review them for local edits and references from other
+tools before archiving unused copies. On Arch, retire the
+[optional pacman hook](arch-desktop.md#retire-the-old-machine-state-hook)
+if you installed it.
+
 ## Editor plugin updates
 
 A regular full install deploys `~/.local/bin/vim-plug-update` and schedules
@@ -97,15 +120,10 @@ For plugin-install warnings, open Vim/Neovim and run `:PlugInstall`, then retry
 the [editor parity check](validation.md#editor-changes). CoC compilation also
 depends on the build tools described in the installer output.
 
-## Package and machine inventories
+## Package inventories
 
 `make brew-sync` overwrites `darwin/Brewfile` with a dump of the current Mac's
 Homebrew bundle. Review the diff before treating local package state as shared
 configuration.
-
-Run `scripts/refresh-machine-state.sh` when a fresh local agent inventory is
-needed. It writes the detected platform's ignored `ai-context/machine-state.md`
-inside the checkout; the installer does not generate it automatically. Inspect
-machine details before sharing that file.
 
 For skillpack revision maintenance, use the [private-skills guide](private-skills.md).

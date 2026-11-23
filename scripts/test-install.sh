@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Use the disposable HOME's default assistant directories throughout this test.
+unset CODEX_HOME CLAUDE_CONFIG_DIR
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-install-test.XXXXXX")"
+temp_parent="${TMPDIR:-/tmp}"
+TMP_DIR="$(mktemp -d "${temp_parent%/}/dotfiles-install-test.XXXXXX")"
 TEST_HOME="$TMP_DIR/home"
 DRY_HOME="$TMP_DIR/dry-home"
 STUB_DIR="$TMP_DIR/bin"
@@ -62,6 +66,24 @@ done
 cat > "$STUB_DIR/curl" <<'STUB'
 #!/usr/bin/env bash
 exit 1
+STUB
+
+# Assistants and rtk are stubbed so the result doesn't depend on the host
+for command_name in codex claude fzf; do
+    cat > "$STUB_DIR/$command_name" <<'STUB'
+#!/usr/bin/env bash
+exit 0
+STUB
+done
+cat > "$STUB_DIR/rtk" <<'STUB'
+#!/usr/bin/env bash
+printf 'rtk %s\n' "$*" >> "${DOTFILES_INSTALL_TEST_LOG:?}"
+case "$*" in
+    'gain --help') printf 'Usage: rtk gain [OPTIONS]\n' ;;
+    gain) touch "$HOME/rtk-history.db" ;; # The real command opens its history database.
+    'init --show'*) printf '[ok] Global hook: stub\n' ;;
+esac
+exit 0
 STUB
 
 chmod +x "$STUB_DIR/"*
@@ -136,9 +158,27 @@ if [[ "${DOTFILES_SKIP_PRIVATE_SKILLS:-1}" == "0" ]]; then
         "$ROOT_DIR/private/skills/autoresearch/SKILL.md"
     assert_regular_copy "$TEST_HOME/.agents/skills/skillpack-sync/SKILL.md" \
         "$ROOT_DIR/private/skills/skillpack-sync/SKILL.md"
+    for skill in session-review skill-improve; do
+        assert_regular_copy "$TEST_HOME/.claude/skills/$skill/SKILL.md" \
+            "$ROOT_DIR/private/skills/$skill/SKILL.md"
+    done
     [[ ! -e "$TEST_HOME/.agents/skills/archive-triage" ]] \
         || fail "candidate private skill was installed"
 fi
+
+for agent_file in "$TEST_HOME/.codex/AGENTS.md" "$TEST_HOME/.claude/CLAUDE.md"; do
+    assert_file "$agent_file"
+    grep -q '^# Agent Context$' "$agent_file" || fail "$agent_file is missing the shared instructions"
+    grep -q '^# Machine: ' "$agent_file" || fail "$agent_file is missing the machine notes"
+done
+[[ "$(head -1 "$TEST_HOME/.codex/AGENTS.md")" == "@$TEST_HOME/.codex/RTK.md" ]] \
+    || fail "Codex instructions do not start with the rtk reference"
+[[ "$(head -1 "$TEST_HOME/.claude/CLAUDE.md")" == "@RTK.md" ]] \
+    || fail "Claude instructions do not start with the rtk reference"
+[[ ! -e "$TEST_HOME/AGENTS.md" && ! -e "$TEST_HOME/MACHINE.md" ]] \
+    || fail "agent context must not be written to the home folder"
+grep -q '^rtk init -g --codex ' "$STUB_LOG" || fail "rtk was not set up for Codex"
+grep -q '^rtk init -g --auto-patch ' "$STUB_LOG" || fail "rtk was not set up for Claude Code"
 
 AUDIT_LOG="$INSTALL_BACKUP/install-audit.tsv"
 [[ -f "$AUDIT_LOG" ]] || fail "audit log was not created"
@@ -183,6 +223,7 @@ fi
 run_installer "$DRY_HOME" "$TMP_DIR/dry-backup" --dry-run --no-packages > "$TMP_DIR/dry-run.log"
 [[ -z "$(find "$DRY_HOME" -mindepth 1 -print -quit)" ]] || fail "--dry-run changed HOME"
 [[ ! -e "$TMP_DIR/dry-backup" ]] || fail "--dry-run created a backup directory"
+! grep -Fxq 'rtk gain' "$STUB_LOG" || fail "installer opened RTK usage history to detect the CLI"
 
 # vim step defers to nvim when nvim exists (stubbed here), so no vim invocation
 ! grep -q '^vim ' "$STUB_LOG" || fail "vim should not be invoked when nvim is present"

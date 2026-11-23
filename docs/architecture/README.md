@@ -19,7 +19,7 @@ keeping package managers, desktop components, and visual style platform-specific
 | [`linux/`](../../linux/README.md) | Distro packages, shared Linux Kitty/systemd files, and machine context |
 | [`linux/arch/`](../../linux/arch/README.md) | Desktop configuration, Firefox styling, and Kitty overlays |
 | `private/skills/` | Pinned private skillpack submodule, maintained in its own repository |
-| [`scripts/`](../../scripts/) | Installer tests, editor checks, update helpers, and machine-state capture |
+| [`scripts/`](../../scripts/) | Installer tests, editor checks, and update helpers |
 
 ## Installation flow
 
@@ -37,8 +37,8 @@ On the regular path, `--dry-run`, `--check`, and `--backup-only` change how thos
 steps operate. See the [installer contract](../contracts/installer.md) for
 their scope and exclusions.
 
-Managed configuration is copied into the home directory. Live edits therefore
-do not edit the repository. The installer can compare those copies with their
+Managed configuration is copied into the home directory, so live edits leave
+the repository unchanged. The installer can compare those copies with their
 sources; backups retain home-relative paths and an audit log.
 
 ## Configuration boundaries
@@ -48,11 +48,15 @@ sources; backups retain home-relative paths and an audit log.
 - macOS uses `darwin/kitty.conf`; Linux uses `linux/common/kitty.conf`.
   Arch adds its own Kitty theme and desktop layer. Other platforms keep the
   shared Catppuccin theme.
-- Machine-specific shell and Git settings belong in local override files.
+- Machine-specific shell settings belong in `~/.config/shell/local.sh`; every
+  machine shares the Git configuration.
   SSH host entries and identity paths stay in the local SSH configuration.
-- Private skills come from the checked-out submodule revision. Normal installs
-  target `~/.agents/skills`; preserving installs also target Codex and Claude.
-- Machine-state snapshots are generated on demand and ignored by Git.
+- Private skills come from the checked-out submodule revision. Full installs
+  copy them to `~/.agents/skills` and to Claude's skills directory when
+  `claude` is on `PATH`. Preserving installs target all three skill directories
+  described in [private skills](../operations/private-skills.md).
+- Agent instructions are written for each installed assistant from
+  `common/ai-context/AGENTS.md` and the platform's machine notes.
 
 See [configuration paths](../contracts/configuration.md),
 [local customization](../operations/customization.md), and the

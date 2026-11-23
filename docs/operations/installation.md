@@ -39,7 +39,11 @@ the weekly plugin update schedule.
 ```
 
 This installs the shared configuration plus the current platform's package and
-configuration layer. `make install` runs the same installer.
+configuration layer. `make install` runs the same installer. When `codex` or
+`claude` is on `PATH`, the full install backs up and replaces that assistant's
+global instructions. If yours include personal rules or imports, review
+[upgrading agent instructions](maintenance.md#upgrading-agent-instructions)
+before applying.
 
 ### Existing Mac workflow
 
@@ -85,7 +89,7 @@ different copy/backup behavior and does not expose these modes.
 - **macOS:** packages and apps come from [`darwin/Brewfile`](../../darwin/Brewfile).
   Kitty uses the macOS config and shared theme. The full installer installs a
   launchd agent for weekly editor plugin updates.
-- **Arch/Manjaro:** packages come from the native and AUR lists. The full install
+- **Arch:** packages come from the native and AUR lists. The full install
   deploys the desktop and Firefox styling. Launch Firefox once to create a
   profile before installation; see the [Arch guide](arch-desktop.md).
 - **Debian/Ubuntu, Fedora/RHEL/CentOS, Alpine:** packages come from the matching

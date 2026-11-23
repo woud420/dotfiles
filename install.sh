@@ -16,7 +16,7 @@
 #    - Vim/Neovim setup (plugins, CoC compilation)
 #    - Weekly vim plugin update schedule (systemd timer / launchd agent)
 #    - Optional tools (fzf, etc.)
-#    - AI context files (CLAUDE.md, AGENTS.md, MACHINE.md)
+#    - Shared agent instructions for installed assistants (Codex, Claude Code)
 #    - Private agent skills (when the authenticated submodule is available)
 #
 # Features:
@@ -39,6 +39,32 @@ NC='\033[0m' # No Color
 # Configuration
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKUP_DIR="${DOTFILES_BACKUP_DIR:-$HOME/.dotfiles-backup-$(date +%Y%m%d_%H%M%S)}"
+
+# Keep targets absolute for ancestor checks and backup paths. Preserve symlinks
+# so the installer's usual protection for symlinks into this checkout still runs.
+agent_config_dir() {
+    local path="$1/" part resolved=""
+    [[ "$path" == /* ]] || path="$PWD/$path"
+    while [[ -n "$path" ]]; do
+        part="${path%%/*}"
+        path="${path#*/}"
+        case "$part" in
+            ""|.) ;;
+            ..)
+                if [[ -L "$resolved" ]]; then
+                    resolved="$(cd -P -- "$resolved/.." && pwd -P)" || return 1
+                else
+                    resolved="${resolved%/*}"
+                fi
+                ;;
+            *) resolved="${resolved%/}/$part" ;;
+        esac
+    done
+    printf '%s\n' "${resolved:-/}"
+}
+AGENT_CODEX_DIR="$(agent_config_dir "${CODEX_HOME:-$HOME/.codex}")"
+AGENT_CLAUDE_DIR="$(agent_config_dir "${CLAUDE_CONFIG_DIR:-$HOME/.claude}")"
+
 AUDIT_LOG=""
 INSTALL_ARGS="$*"
 MINIMAL_MODE=false
@@ -155,7 +181,7 @@ state_only_mode() {
 }
 
 is_arch_family() {
-    [[ "$DISTRO" == "arch" || "$DISTRO" == "manjaro" ]]
+    [[ "$DISTRO" == "arch" ]]
 }
 
 init_audit() {
@@ -366,7 +392,7 @@ install_packages_linux() {
                 log_info "Would run: apt-get update && install packages from $package_list"
             fi
             ;;
-        arch|manjaro)
+        arch)
             package_list="$DOTFILES_DIR/linux/arch/packages.list"
             if [[ "$DRY_RUN" == "false" ]]; then
                 log_step "Installing packages from $package_list..."
@@ -1253,74 +1279,73 @@ install_mise_fallback() {
     rm -f "$script"
 }
 
-# Install AI context files (CLAUDE.md, MACHINE.md, AGENTS.md)
+# Other programs are also named rtk. The gain help identifies rtk-ai without
+# opening its history database, which would write to HOME during a dry run.
+is_rtk_ai() {
+    local help
+    command -v rtk >/dev/null 2>&1 && help="$(rtk gain --help 2>/dev/null)" &&
+        [[ "$help" == *"Usage: rtk gain "* ]]
+}
+
+# Shared instructions plus this machine's notes, written for each installed assistant
 install_ai_context() {
     if [[ "$MINIMAL_MODE" == "true" ]]; then
         log_info "Minimal mode: skipping AI context files"
         return 0
     fi
-
     log_step "Installing AI context files..."
 
-    # ~/.claude/CLAUDE.md is often user-curated (e.g. custom includes);
-    # only seed it when absent instead of clobbering it on every install.
-    local claude_src="$DOTFILES_DIR/common/ai-context/CLAUDE.md"
-    if [[ -f "$claude_src" ]]; then
-        if [[ "$BACKUP_ONLY" == "true" ]]; then
-            backup_file "$HOME/.claude/CLAUDE.md"
-        elif [[ -f "$HOME/.claude/CLAUDE.md" ]] && ! cmp -s "$claude_src" "$HOME/.claude/CLAUDE.md"; then
-            log_info "Keeping existing ~/.claude/CLAUDE.md (differs from repo version; merge manually if wanted)"
-        else
-            install_file "$claude_src" "$HOME/.claude/CLAUDE.md"
-        fi
-    fi
-
-    # AGENTS.md -> ~/AGENTS.md (for Codex/Copilot compatibility)
-    local agents_src="$DOTFILES_DIR/common/ai-context/AGENTS.md"
-    if [[ -f "$agents_src" ]]; then
-        install_file "$agents_src" "$HOME/AGENTS.md"
-    fi
-
-    # OS-specific machine.md -> ~/MACHINE.md
-    local machine_src=""
+    local shared="$DOTFILES_DIR/common/ai-context/AGENTS.md"
+    [[ -f "$shared" ]] || return 0
+    local machine=""
     case "$DISTRO" in
-        arch|manjaro)
-            machine_src="$DOTFILES_DIR/linux/arch/ai-context/machine.md"
-            ;;
-        ubuntu|debian)
-            machine_src="$DOTFILES_DIR/linux/debian/ai-context/machine.md"
-            ;;
-        rhel|centos|fedora)
-            machine_src="$DOTFILES_DIR/linux/fedora/ai-context/machine.md"
-            ;;
-        alpine)
-            machine_src="$DOTFILES_DIR/linux/alpine/ai-context/machine.md"
-            ;;
-        darwin|macos)
-            machine_src="$DOTFILES_DIR/darwin/ai-context/machine.md"
-            ;;
+        arch) machine="$DOTFILES_DIR/linux/arch/ai-context/machine.md" ;;
+        macos) machine="$DOTFILES_DIR/darwin/ai-context/machine.md" ;;
+        *) if [[ "$OS" == "linux" ]]; then machine="$DOTFILES_DIR/linux/common/ai-context/machine.md"; fi ;;
     esac
 
-    if [[ -n "$machine_src" && -f "$machine_src" ]]; then
-        install_file "$machine_src" "$HOME/MACHINE.md"
+    # rtk init leaves a file alone when its reference line is already present
+    local have_rtk=false
+    if is_rtk_ai; then
+        have_rtk=true
     fi
 
-    # Machine state snapshots are generated on demand, not at install time:
-    # DOTFILES_DIR=$DOTFILES_DIR scripts/refresh-machine-state.sh
+    local agent target ref generated
+    for agent in claude codex; do
+        command -v "$agent" >/dev/null 2>&1 || continue
+        if [[ "$agent" == "codex" ]]; then
+            target="${AGENT_CODEX_DIR%/}/AGENTS.md"; ref="@${AGENT_CODEX_DIR%/}/RTK.md"
+        else
+            target="${AGENT_CLAUDE_DIR%/}/CLAUDE.md"; ref="@RTK.md"
+        fi
+        generated="$(mktemp "${TMPDIR:-/tmp}/dotfiles-agent-context.XXXXXX")"
+        {
+            if [[ "$have_rtk" == "true" ]]; then
+                printf '%s\n\n' "$ref"
+            fi
+            cat "$shared"
+            if [[ -n "$machine" && -f "$machine" ]]; then
+                printf '\n'
+                cat "$machine"
+            fi
+        } > "$generated"
+        install_file "$generated" "$target"
+        rm -f "$generated"
+    done
 }
 
 # Register rtk with each installed assistant; `rtk init` is idempotent
 setup_rtk() {
     [[ "$MINIMAL_MODE" == "true" ]] && return 0
     command -v rtk >/dev/null 2>&1 || return 0
-    # Another tool is also named rtk; only rtk-ai/rtk has `rtk gain`
-    if ! rtk gain >/dev/null 2>&1; then
-        log_warning "rtk on PATH is not rtk-ai/rtk (rtk gain failed); skipping rtk setup"
+    if ! is_rtk_ai; then
+        log_warning "rtk on PATH is not rtk-ai/rtk; skipping rtk setup"
         return 0
     fi
 
     log_step "Setting up rtk..."
     local agent flag show_flag status
+    local -x CODEX_HOME="$AGENT_CODEX_DIR" CLAUDE_CONFIG_DIR="$AGENT_CLAUDE_DIR"
     for agent in claude codex; do
         command -v "$agent" >/dev/null 2>&1 || continue
         if [[ "$agent" == "codex" ]]; then
@@ -1351,7 +1376,8 @@ setup_rtk() {
 private_skill_dirs() {
     local manifest="$1"
     shift
-    python3 - "$manifest" "$@" <<'PY'
+    # macOS's system Python otherwise writes bytecode under HOME, even on --dry-run.
+    python3 -B - "$manifest" "$@" <<'PY'
 import json
 import sys
 from pathlib import Path, PurePosixPath
@@ -1397,7 +1423,7 @@ prepare_private_skills_source() {
     fi
 
     if [[ "$DRY_RUN" == "true" ]]; then
-        log_info "Would initialize private/skills and install active skills into ~/.agents/skills"
+        log_info "Would initialize private/skills to select the skills to install"
         return 1
     fi
 
@@ -1423,6 +1449,17 @@ prepare_private_skills_source() {
     fi
 
     return 0
+}
+
+# Claude can use a link to the shared skills, even on a first install when
+# the installer has yet to create the shared directory.
+uses_shared_skills_dir() {
+    local target="$1" shared="$2" link
+    [[ "$target" == "$shared" || "$target" -ef "$shared" ]] && return 0
+    [[ -L "$target" ]] || return 1
+    link="$(readlink "$target")" || return 1
+    [[ "$link" == /* ]] || link="${target%/*}/$link"
+    [[ "$(agent_config_dir "$link")" == "$shared" ]]
 }
 
 install_private_skills() {
@@ -1451,8 +1488,14 @@ install_private_skills() {
     fi
 
     local source="$DOTFILES_DIR/private/skills"
-    local targets=("$@")
-    [[ "${#targets[@]}" -gt 0 ]] || targets=("$HOME/.agents/skills")
+    local shared_skills claude_skills="${AGENT_CLAUDE_DIR%/}/skills"
+    shared_skills="$(agent_config_dir "$HOME/.agents/skills")"
+    local targets=("$shared_skills")
+    if [[ "$PRESERVE_EXISTING" == "true" ]]; then
+        targets+=("${AGENT_CODEX_DIR%/}/skills" "$claude_skills")
+    elif command -v claude >/dev/null 2>&1 && ! uses_shared_skills_dir "$claude_skills" "$shared_skills"; then
+        targets+=("$claude_skills")
+    fi
     local selected=() expected=() skill_dirs skill_dir relative target parent file_list source_list
     file_list="$(mktemp)"
     source_list="$(mktemp)"
@@ -1684,7 +1727,7 @@ install_preserving_existing() {
     log_step "Keeping existing appearance, shortcuts, commands, and active configs"
     log_info "Skipping packages, shell/editor configs, plugins, Git/SSH policy, schedules, and AI context"
 
-    install_private_skills "$HOME/.agents/skills" "$HOME/.codex/skills" "$HOME/.claude/skills"
+    install_private_skills
 
     if kitty_theme_additions_safe; then
         local theme
@@ -1771,7 +1814,7 @@ main() {
     install_neovim_config       # 8. Neovim bridge to Vim config
     install_vim_update_schedule # 8b. Weekly plugin update timer (systemd/launchd)
     install_optional_tools      # 9. Optional tools (fzf, etc.) - last
-    install_ai_context          # 10. AI context files (CLAUDE.md, AGENTS.md, MACHINE.md)
+    install_ai_context          # 10. Shared agent instructions for installed assistants
     install_private_skills      # 11. Active skills from the authenticated private submodule
     setup_rtk                   # 12. rtk hooks for installed assistants (after AI context)
     backup_local_overrides

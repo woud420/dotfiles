@@ -26,9 +26,15 @@ Public CI sets the same variable and never requests private credentials.
 
 | Installation | Selected skills | Destinations |
 | --- | --- | --- |
-| Full, including `--no-packages` | Manifest `active` and `maintenance` entries | `~/.agents/skills/` |
-| `--preserve-existing` | Active and maintenance; registered candidates already installed at each destination | `~/.agents/skills/`, `~/.codex/skills/`, `~/.claude/skills/` |
+| Full, including `--no-packages` | Manifest `active` and `maintenance` entries | `~/.agents/skills/`, plus Claude's `skills/` directory when `claude` is on `PATH` |
+| `--preserve-existing` | Active and maintenance, plus registered candidates already installed at each destination | `~/.agents/skills/` and both assistants' `skills/` directories, regardless of CLI availability |
 | Minimal | Skipped | None |
+
+Claude's skills directory defaults to `~/.claude/skills/` and moves to
+`$CLAUDE_CONFIG_DIR/skills/` when configured. A full install uses one copy
+when Claude's skills directory already resolves to `~/.agents/skills/`.
+The Codex-specific directory defaults to `~/.codex/skills/` and moves to
+`$CODEX_HOME/skills/` when configured.
 
 Only Git-tracked files in selected skill directories are copied. Untracked files
 and repository metadata are excluded. Target-only files and unrelated installed
@@ -52,6 +58,6 @@ Review the skillpack changes and run its own validation, then run the dotfiles
 applying it. Stage `private/skills` only when intentionally recording that new
 pin in a parent-repository commit.
 
-`--preserve-existing` refreshes all three destinations above. A regular
-`--check` checks managed skills in `~/.agents/skills`; it does not certify the
-Codex/Claude copies or check that the pin is the latest remote revision.
+`--check` compares the destinations selected for a full install against the
+checked-out skillpack. A Codex-specific copy from a preserving install is
+outside that check.

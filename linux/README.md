@@ -1,7 +1,7 @@
 # Linux configuration
 
-Distro package inventories and machine context live in `debian/`, `arch/`,
-`fedora/`, and `alpine/`. `common/` holds Linux Kitty and systemd configuration.
+Distro package inventories live in `debian/`, `arch/`, `fedora/`, and
+`alpine/`; `arch/ai-context/` describes the Arch machine. `common/` holds Linux Kitty and systemd configuration, plus the agent notes for any other Linux (`common/ai-context/`).
 The Arch layer also includes the SwayFX desktop and Firefox styling.
 
 - [Installation and server/container modes](../docs/operations/installation.md).

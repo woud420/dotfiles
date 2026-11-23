@@ -60,9 +60,11 @@ It also checks for legacy parent symlinks into the checkout and the shared SSH
 Include directive. Missing source files are warned about and skipped.
 
 The check covers files selected by the current platform, mode, and available
-skillpack. It normally checks private skills under `~/.agents/skills`, not the
-extra destinations used by preserving installation. An existing customized
-`~/.claude/CLAUDE.md` is retained rather than required to match.
+skillpack. For each assistant CLI on `PATH`, it compares the global instruction
+file in its [configured directory](configuration.md#managed-paths) against the
+generated instructions. Local edits, including custom Claude instructions,
+count as drift. It checks private skills in `~/.agents/skills` and also in
+Claude's configured `skills/` directory when `claude` is on `PATH`.
 
 A nonzero exit status indicates reported drift. Intentional differences after
 `--preserve-existing` can therefore fail a regular `--check`. Matching files
@@ -86,7 +88,8 @@ terminal reloads, and automatic update scheduling.
 It can change:
 
 - **Skills:** Git-tracked files in `active` and `maintenance` skills are synced
-  to `~/.agents/skills`, `~/.codex/skills`, and `~/.claude/skills`. Registered
+  to `~/.agents/skills` and the `skills/` directories under the configured
+  Codex and Claude directories. Registered
   `candidate` skills are refreshed only in destinations where that candidate
   is already installed. Changed files are backed up; target-only content remains.
 - **Manual helpers:** `sudo-askpass` and `vim-plug-update` are added under
@@ -111,9 +114,9 @@ initialization but cannot enumerate its missing contents.
 
 ## Platform and environment selection
 
-macOS uses Homebrew. Linux package branches cover Debian/Ubuntu, Arch/Manjaro,
+macOS uses Homebrew. Linux package branches cover Debian/Ubuntu, Arch,
 Fedora/RHEL/CentOS, and Alpine. Desktop and Firefox configuration are restricted
-to Arch/Manjaro; Firefox needs an existing profile discoverable through
+to Arch; Firefox needs an existing profile discoverable through
 `~/.mozilla/firefox/profiles.ini`.
 
 Containers automatically select minimal mode unless `DOTFILES_FULL_INSTALL`
