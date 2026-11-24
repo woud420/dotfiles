@@ -26,30 +26,19 @@ parse_git_branch() {
     git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/ \1/'
 }
 
-# Colors using tput for better compatibility
-if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
-    # We have color support
-    ROSEWATER=$(tput setaf 217)
-    MAUVE=$(tput setaf 183)
-    TEAL=$(tput setaf 116)
-    PEACH=$(tput setaf 215)
-    SOFT_GRAY=$(tput setaf 243)
-    # Theme red (ANSI color 1) so the SSH badge and root follow each terminal's palette
-    THEME_RED=$(tput setaf 1)
-    BOLD=$(tput bold)
-    REVERSE=$(tput rev)
-    RESET=$(tput sgr0)
+# Plain ANSI codes, so colors work even where the host lacks the terminal's terminfo
+if [ "$TERM" != "dumb" ]; then
+    ROSEWATER=$'\e[38;5;217m'
+    MAUVE=$'\e[38;5;183m'
+    TEAL=$'\e[38;5;116m'
+    PEACH=$'\e[38;5;215m'
+    SOFT_GRAY=$'\e[38;5;243m'
+    # Theme red (ANSI color 1) so the host and root follow each terminal's palette
+    THEME_RED=$'\e[31m'
+    BOLD=$'\e[1m'
+    RESET=$'\e[0m'
 else
-    # No color support, use empty strings
-    ROSEWATER=""
-    MAUVE=""
-    TEAL=""
-    PEACH=""
-    SOFT_GRAY=""
-    THEME_RED=""
-    BOLD=""
-    REVERSE=""
-    RESET=""
+    ROSEWATER="" MAUVE="" TEAL="" PEACH="" SOFT_GRAY="" THEME_RED="" BOLD="" RESET=""
 fi
 
 # Kubernetes context function (optional for servers)
@@ -117,17 +106,40 @@ dynamic_time_prompt() {
     echo "${color}$(date +%H:%M:%S)${RESET}"
 }
 
+# Where this shell runs, decided once: 📦 container, 🏘️ SSH from a private address, 🌐 SSH from elsewhere
+PROMPT_LEAD="⭐" PROMPT_HOST=""
+if [ -f /.dockerenv ] || [ -f /run/.containerenv ]; then
+    PROMPT_LEAD="📦" PROMPT_HOST="${HOSTNAME%%.*}"
+elif [ -n "$SSH_CONNECTION" ]; then
+    read -r ssh_client _ ssh_server _ <<< "$SSH_CONNECTION"
+    case "$ssh_client" in
+        # 🏘️ is narrow by default but drawn wide: print two counted spaces, step back, draw it
+        10.*|192.168.*|172.1[6-9].*|172.2[0-9].*|172.3[01].*|100.6[4-9].*|100.[7-9][0-9].*|100.1[01][0-9].*|100.12[0-7].*|fd*|fe80:*) PROMPT_LEAD='  \[\e[2D🏘️\]' ;;
+        *) PROMPT_LEAD="🌐" ;;
+    esac
+    PROMPT_HOST="${HOSTNAME%%.*}"
+    case "$PROMPT_HOST" in ""|localhost) PROMPT_HOST="$ssh_server" ;; esac
+    unset ssh_client ssh_server
+fi
+
 # Build the prompt - bash version
 build_prompt() {
     local GIT_INFO=$(parse_git_branch)
-    local LEAD="⭐"
+    local LEAD="$PROMPT_LEAD" HOST_INFO="" TITLE=""
     local USER_COLOR="${ROSEWATER}"
-    if [ -n "$SSH_CONNECTION" ]; then
-        LEAD="\[\e]0;\h: \w\a${BOLD}${THEME_RED}${REVERSE}\] \h \[${RESET}\]"
+    if [ -n "$PROMPT_HOST" ]; then
+        HOST_INFO="\[${MAUVE}\][\[${BOLD}${THEME_RED}\]${PROMPT_HOST}\[${RESET}${MAUVE}\]] "
     fi
-    [ "$EUID" -eq 0 ] && USER_COLOR="${BOLD}${THEME_RED}"
+    if [ -n "$SSH_CONNECTION" ]; then
+        TITLE="\[\e]0;${PROMPT_HOST}: \w\a\]"
+    fi
+    # Root: 🔥 lead (containers keep 📦, since they usually run as root) and a red user name
+    if [ "$EUID" -eq 0 ]; then
+        [ "$PROMPT_LEAD" = "📦" ] || LEAD="🔥"
+        USER_COLOR="${BOLD}${THEME_RED}"
+    fi
     # Note: In bash, we need to escape the $ in the function call
-    PS1="${LEAD} \[${MAUVE}\][\[${USER_COLOR}\]\u\[${RESET}${MAUVE}\]@\[${TEAL}\]\$(pretty_pwd)\[${MAUVE}\]]\[${PEACH}\]${GIT_INFO}\[${RESET}\] ➔ "
+    PS1="${TITLE}${LEAD} ${HOST_INFO}\[${MAUVE}\][\[${USER_COLOR}\]\u\[${RESET}${MAUVE}\]@\[${TEAL}\]\$(pretty_pwd)\[${MAUVE}\]]\[${PEACH}\]${GIT_INFO}\[${RESET}\] ➔ "
 
     # Optional: Add time to right side of prompt (requires special handling in bash)
     # For simpler setup, we'll skip the right prompt
