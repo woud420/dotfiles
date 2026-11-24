@@ -1,12 +1,6 @@
 # ~/.bashrc - Bash configuration for servers
 # Adapted from zshrc for consistent experience
 
-# User binaries for every shell, including non-interactive ones (e.g. `ssh host claude ...`)
-for d in "$HOME/.local/bin" "$HOME/.cargo/bin"; do
-    [ -d "$d" ] && case ":$PATH:" in *":$d:"*) ;; *) PATH="$d:$PATH" ;; esac
-done
-unset d
-
 # If not running interactively, don't do anything
 case $- in
     *i*) ;;
