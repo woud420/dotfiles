@@ -216,12 +216,6 @@ function kctx() {
 
 [[ -f "$HOME/.local/bin/env" ]] && . "$HOME/.local/bin/env"
 
-if [[ -d "$HOME/.bun" ]]; then
-  export BUN_INSTALL="$HOME/.bun"
-  path_prepend "$BUN_INSTALL/bin"
-  [[ -s "$BUN_INSTALL/_bun" ]] && source "$BUN_INSTALL/_bun"
-fi
-
 # Machine-local overrides - kept out of the repo, survives reinstalls
 if [[ -f "$HOME/.config/shell/local.sh" ]]; then
   . "$HOME/.config/shell/local.sh"
