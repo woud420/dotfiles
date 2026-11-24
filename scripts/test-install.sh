@@ -75,6 +75,9 @@ for command_name in codex claude fzf; do
 exit 0
 STUB
 done
+# Claude's native installer uses ~/.local/bin; the installer must find it there
+mkdir -p "$TEST_HOME/.local/bin"
+mv "$STUB_DIR/claude" "$TEST_HOME/.local/bin/claude"
 cat > "$STUB_DIR/rtk" <<'STUB'
 #!/usr/bin/env bash
 printf 'rtk %s\n' "$*" >> "${DOTFILES_INSTALL_TEST_LOG:?}"

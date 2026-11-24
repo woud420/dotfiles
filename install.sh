@@ -1760,6 +1760,12 @@ install_preserving_existing() {
 
 # Main installation function
 main() {
+    # Find user-installed CLIs (claude, codex, rtk) even from a non-interactive shell
+    local dir
+    for dir in "$HOME/.local/bin" "$HOME/.cargo/bin"; do
+        if [[ -d "$dir" && ":$PATH:" != *":$dir:"* ]]; then PATH="$dir:$PATH"; fi
+    done
+
     echo -e "${CYAN}"
     echo "╔══════════════════════════════════════════════════════════════╗"
     echo "║                    Dotfiles Installer                       ║"
