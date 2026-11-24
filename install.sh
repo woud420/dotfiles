@@ -1687,7 +1687,7 @@ install_preserving_existing() {
     log_step "Keeping existing appearance, shortcuts, commands, and active configs"
     log_info "Skipping packages, shell/editor configs, plugins, Git/SSH policy, schedules, and AI context"
 
-    install_private_skills "$HOME/.agents/skills" "$HOME/.codex/skills" "$HOME/.claude/skills"
+    install_private_skills "$HOME/.agents/skills" "$HOME/.claude/skills"
 
     if kitty_theme_additions_safe; then
         local theme

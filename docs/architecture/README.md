@@ -51,9 +51,8 @@ sources; backups retain home-relative paths and an audit log.
 - Machine-specific shell settings belong in `~/.config/shell/local.sh`; every
   machine shares the Git configuration.
   SSH host entries and identity paths stay in the local SSH configuration.
-- Private skills come from the checked-out submodule revision. Normal installs
-  target `~/.agents/skills` (and Claude's when installed); preserving installs
-  also target Codex and Claude.
+- Private skills come from the checked-out submodule revision. Installs target
+  `~/.agents/skills`, which Codex reads, and Claude's `~/.claude/skills`.
 - Agent instructions are written for each installed assistant from
   `common/ai-context/AGENTS.md` and the platform's machine notes.
 

@@ -12,7 +12,8 @@ import tempfile
 
 ROOT = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else Path(__file__).resolve().parents[1]
 GIT = shutil.which('git')
-TARGETS = ['.agents/skills', '.codex/skills', '.claude/skills']
+# Codex reads ~/.agents/skills, so ~/.codex/skills is left to Codex
+TARGETS = ['.agents/skills', '.claude/skills']
 
 
 def snapshot(root):
@@ -134,9 +135,10 @@ with tempfile.TemporaryDirectory(prefix='dotfiles-preserve-test.') as temporary:
     assert snapshot(home) == after, 'second install rewrote existing files'
 
     uninstalled = seed('uninstalled-candidate')
-    shutil.rmtree(uninstalled / '.codex/skills/tool-candidate')
+    shutil.rmtree(uninstalled / '.claude/skills/tool-candidate')
     invoke(uninstalled, '--preserve-existing')
-    assert not (uninstalled / '.codex/skills/tool-candidate').exists()
+    assert not (uninstalled / '.claude/skills/tool-candidate').exists()
+    assert not (uninstalled / '.codex/skills').exists()
 
     dry = seed('dry')
     before_dry = snapshot(dry)
@@ -218,7 +220,7 @@ esac
         assert not (destination / 'tool-candidate').exists()
     invoke(full, '--check')
 
-    print('Preserving installer checks passed: active configs, skill updates/backups across three harnesses,')
+    print('Preserving installer checks passed: active configs, skill updates/backups across both skill directories,')
     print('target-only retention, no plugin/package/service calls, idempotence, dry-run, flag validation,')
     print('custom theme protection, command collisions, symlinks, and invalid skill manifests.')
     artifact = os.environ.get('DOTFILES_TEST_REPORT')
