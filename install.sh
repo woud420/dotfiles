@@ -1584,6 +1584,7 @@ run_doctor() {
     doctor_editor_tool ruff "ruff server for Python linting and format on save; pacman: ruff, brew: ruff"
     doctor_editor_tool clangd "coc-clangd for C and C++; macOS: Command Line Tools, pacman: clang"
     doctor_editor_tool shellcheck "shell diagnostics through coc-sh"
+    doctor_optional_command bun
     doctor_optional_command mise
     doctor_optional_command rtk
     if [[ -e "$HOME/.vimrc" || -L "$HOME/.vimrc" ]]; then
