@@ -25,6 +25,29 @@ if has('nvim')
   call s:TreesitterVariableColor()
 endif
 
+" catppuccin/vim defines no float or CoC groups, so Neovim's near-black
+" NormalFloat shows through. Give floats the theme's text on the menu
+" background and reuse its Pmenu colours for CoC's completion menu.
+function! s:FloatColors() abort
+  let fg = synIDattr(synIDtrans(hlID('Normal')), 'fg#')
+  let bg = synIDattr(synIDtrans(hlID('Pmenu')), 'bg#')
+  if !empty(fg) && !empty(bg)
+    execute 'highlight NormalFloat guifg=' . fg . ' guibg=' . bg
+  endif
+  highlight! link FloatBorder PmenuBorder
+  highlight! link CocFloating NormalFloat
+  highlight! link CocFloatBorder FloatBorder
+  highlight! link CocMenuSel PmenuSel
+  highlight! link CocPumSearch Function
+  highlight! link CocPumMenu PmenuExtra
+  highlight! link CocPumDetail PmenuExtra
+endfunction
+augroup CatppuccinFloats
+  autocmd!
+  autocmd ColorScheme * call s:FloatColors()
+augroup END
+call s:FloatColors()
+
 " Global defaults
 set tabstop=4
 set shiftwidth=4
