@@ -114,18 +114,35 @@ function dynamic_time_prompt() {
   echo "%{$color%}%*%{$RESET%}"
 }
 
+# Where this shell runs, decided once: 📦 container, 🏘️ SSH from a private address, 🌐 SSH from elsewhere
+PROMPT_LEAD='⭐' PROMPT_HOST=''
+if [[ -f /.dockerenv || -f /run/.containerenv ]]; then
+  PROMPT_LEAD='📦' PROMPT_HOST="${HOST%%.*}"
+elif [[ -n "$SSH_CONNECTION" ]]; then
+  ssh_parts=(${=SSH_CONNECTION})
+  case "${ssh_parts[1]}" in
+    # 🏘️ is narrow by default but drawn wide; %2{...%} tells zsh it takes two columns
+    10.*|192.168.*|172.1[6-9].*|172.2[0-9].*|172.3[01].*|100.6[4-9].*|100.[7-9][0-9].*|100.1[01][0-9].*|100.12[0-7].*|fd*|fe80:*) PROMPT_LEAD='%2{🏘️%}' ;;
+    *) PROMPT_LEAD='🌐' ;;
+  esac
+  PROMPT_HOST="${HOST%%.*}"
+  [[ -z "$PROMPT_HOST" || "$PROMPT_HOST" == localhost ]] && PROMPT_HOST="${ssh_parts[3]}"
+  unset ssh_parts
+fi
+
 function build_prompt() {
   local GIT_INFO="$(pretty_git)"
   local PWD_INFO="$(pretty_pwd)"
   # Theme red (ANSI color 1) so the host and root follow each terminal's palette
-  local LEAD='⭐' HOST=''
-  if [[ -n "$SSH_CONNECTION" ]]; then
-    LEAD='🌐'
-    HOST="${MAUVE}[%B%F{red}%m%b${MAUVE}] "
-  fi
+  local HOST_INFO=''
+  [[ -n "$PROMPT_HOST" ]] && HOST_INFO="${MAUVE}[%B%F{red}${PROMPT_HOST}%b${MAUVE}] "
   local USER_COLOR="%(!.%B%F{red}.${ROSEWATER})"
 
-  PROMPT="%(!.🔥.${LEAD}) ${HOST}${MAUVE}[${USER_COLOR}%n%b${MAUVE}@${TEAL}${PWD_INFO}${MAUVE}] ${PEACH}${GIT_INFO}${RESET}➔ "
+  # Root: 🔥 lead (containers keep 📦, since they usually run as root) and a red user name
+  local LEAD="%(!.🔥.${PROMPT_LEAD})"
+  [[ "$PROMPT_LEAD" == 📦 ]] && LEAD='📦'
+
+  PROMPT="${LEAD} ${HOST_INFO}${MAUVE}[${USER_COLOR}%n%b${MAUVE}@${TEAL}${PWD_INFO}${MAUVE}] ${PEACH}${GIT_INFO}${RESET}➔ "
 }
 
 precmd_functions+=(build_prompt)
