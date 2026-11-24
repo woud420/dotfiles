@@ -1,12 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Use the disposable HOME's default assistant directories throughout this test.
-unset CODEX_HOME CLAUDE_CONFIG_DIR
-
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-temp_parent="${TMPDIR:-/tmp}"
-TMP_DIR="$(mktemp -d "${temp_parent%/}/dotfiles-install-test.XXXXXX")"
+TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-install-test.XXXXXX")"
 TEST_HOME="$TMP_DIR/home"
 DRY_HOME="$TMP_DIR/dry-home"
 STUB_DIR="$TMP_DIR/bin"
@@ -80,7 +76,6 @@ cat > "$STUB_DIR/rtk" <<'STUB'
 printf 'rtk %s\n' "$*" >> "${DOTFILES_INSTALL_TEST_LOG:?}"
 case "$*" in
     'gain --help') printf 'Usage: rtk gain [OPTIONS]\n' ;;
-    gain) touch "$HOME/rtk-history.db" ;; # The real command opens its history database.
     'init --show'*) printf '[ok] Global hook: stub\n' ;;
 esac
 exit 0

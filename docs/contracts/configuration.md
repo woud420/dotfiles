@@ -30,13 +30,8 @@ preserving mode has its own limited [scope](installer.md#preserving-an-existing-
 | `linux/common/systemd/vim-plug-update.{service,timer}` | `~/.config/systemd/user/` | Linux schedule when systemctl is available |
 | Tracked files in `linux/arch/.config/` | Matching paths under `~/.config/` | Arch desktop, full mode only |
 | `linux/arch/firefox/` theme/settings files | Selected Firefox profile | Arch, with an existing profile |
-| `common/ai-context/AGENTS.md` plus the platform `ai-context/machine.md` | `AGENTS.md` in the Codex directory, `CLAUDE.md` in the Claude directory | Full install manages each assistant whose CLI is on `PATH` |
-| Selected Git-tracked files in `private/skills/` | `~/.agents/skills/` and, when `claude` is on `PATH`, Claude's `skills/` directory | See [private skills](../operations/private-skills.md) for selection and preserving-mode destinations |
-
-Codex uses `CODEX_HOME` (default `~/.codex`). Claude uses `CLAUDE_CONFIG_DIR`
-(default `~/.claude`). Use the same overrides for preview, install, and drift
-checks. A full install backs up and replaces existing global instruction files,
-including customized instructions. See [upgrading agent instructions](../operations/maintenance.md#upgrading-agent-instructions).
+| `common/ai-context/AGENTS.md` plus the platform `ai-context/machine.md` | `~/.codex/AGENTS.md`, `~/.claude/CLAUDE.md` | Agent instructions, for each installed assistant; replaces existing files (backed up) |
+| Selected Git-tracked files in `private/skills/` | `~/.agents/skills/`, plus `~/.claude/skills/` when `claude` is installed | See [private skills](../operations/private-skills.md) for preserving-mode destinations |
 
 ## Shell commands
 

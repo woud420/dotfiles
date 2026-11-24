@@ -38,5 +38,4 @@ __pycache__/
 
 # Cursor generated configuration
 
-# Local snapshots from the retired machine-state generator
-**/ai-context/machine-state.md
+# Generated AI context (machine-specific, not versioned)
