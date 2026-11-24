@@ -117,12 +117,15 @@ function dynamic_time_prompt() {
 function build_prompt() {
   local GIT_INFO="$(pretty_git)"
   local PWD_INFO="$(pretty_pwd)"
-  # Theme red (ANSI color 1) so the badge and root follow each terminal's palette
-  local LEAD='⭐'
-  [[ -n "$SSH_CONNECTION" ]] && LEAD='%B%F{red}%S %m %s%f%b'
+  # Theme red (ANSI color 1) so the host and root follow each terminal's palette
+  local LEAD='⭐' HOST=''
+  if [[ -n "$SSH_CONNECTION" ]]; then
+    LEAD='🌐'
+    HOST="${MAUVE}[%B%F{red}%m%b${MAUVE}] "
+  fi
   local USER_COLOR="%(!.%B%F{red}.${ROSEWATER})"
 
-  PROMPT="${LEAD} ${MAUVE}[${USER_COLOR}%n%b${MAUVE}@${TEAL}${PWD_INFO}${MAUVE}] ${PEACH}${GIT_INFO}${RESET}➔ "
+  PROMPT="%(!.🔥.${LEAD}) ${HOST}${MAUVE}[${USER_COLOR}%n%b${MAUVE}@${TEAL}${PWD_INFO}${MAUVE}] ${PEACH}${GIT_INFO}${RESET}➔ "
 }
 
 precmd_functions+=(build_prompt)

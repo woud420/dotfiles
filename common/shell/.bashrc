@@ -26,30 +26,19 @@ parse_git_branch() {
     git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/ \1/'
 }
 
-# Colors using tput for better compatibility
-if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
-    # We have color support
-    ROSEWATER=$(tput setaf 217)
-    MAUVE=$(tput setaf 183)
-    TEAL=$(tput setaf 116)
-    PEACH=$(tput setaf 215)
-    SOFT_GRAY=$(tput setaf 243)
-    # Theme red (ANSI color 1) so the SSH badge and root follow each terminal's palette
-    THEME_RED=$(tput setaf 1)
-    BOLD=$(tput bold)
-    REVERSE=$(tput rev)
-    RESET=$(tput sgr0)
+# Plain ANSI codes, so colors work even where the host lacks the terminal's terminfo
+if [ "$TERM" != "dumb" ]; then
+    ROSEWATER=$'\e[38;5;217m'
+    MAUVE=$'\e[38;5;183m'
+    TEAL=$'\e[38;5;116m'
+    PEACH=$'\e[38;5;215m'
+    SOFT_GRAY=$'\e[38;5;243m'
+    # Theme red (ANSI color 1) so the host and root follow each terminal's palette
+    THEME_RED=$'\e[31m'
+    BOLD=$'\e[1m'
+    RESET=$'\e[0m'
 else
-    # No color support, use empty strings
-    ROSEWATER=""
-    MAUVE=""
-    TEAL=""
-    PEACH=""
-    SOFT_GRAY=""
-    THEME_RED=""
-    BOLD=""
-    REVERSE=""
-    RESET=""
+    ROSEWATER="" MAUVE="" TEAL="" PEACH="" SOFT_GRAY="" THEME_RED="" BOLD="" RESET=""
 fi
 
 # Kubernetes context function (optional for servers)
@@ -120,14 +109,19 @@ dynamic_time_prompt() {
 # Build the prompt - bash version
 build_prompt() {
     local GIT_INFO=$(parse_git_branch)
-    local LEAD="⭐"
+    local LEAD="⭐" HOST="" TITLE=""
     local USER_COLOR="${ROSEWATER}"
     if [ -n "$SSH_CONNECTION" ]; then
-        LEAD="\[\e]0;\h: \w\a${BOLD}${THEME_RED}${REVERSE}\] \h \[${RESET}\]"
+        LEAD="🌐"
+        HOST="\[${MAUVE}\][\[${BOLD}${THEME_RED}\]\h\[${RESET}${MAUVE}\]] "
+        TITLE="\[\e]0;\h: \w\a\]"
     fi
-    [ "$EUID" -eq 0 ] && USER_COLOR="${BOLD}${THEME_RED}"
+    if [ "$EUID" -eq 0 ]; then
+        LEAD="🔥"
+        USER_COLOR="${BOLD}${THEME_RED}"
+    fi
     # Note: In bash, we need to escape the $ in the function call
-    PS1="${LEAD} \[${MAUVE}\][\[${USER_COLOR}\]\u\[${RESET}${MAUVE}\]@\[${TEAL}\]\$(pretty_pwd)\[${MAUVE}\]]\[${PEACH}\]${GIT_INFO}\[${RESET}\] ➔ "
+    PS1="${TITLE}${LEAD} ${HOST}\[${MAUVE}\][\[${USER_COLOR}\]\u\[${RESET}${MAUVE}\]@\[${TEAL}\]\$(pretty_pwd)\[${MAUVE}\]]\[${PEACH}\]${GIT_INFO}\[${RESET}\] ➔ "
 
     # Optional: Add time to right side of prompt (requires special handling in bash)
     # For simpler setup, we'll skip the right prompt
