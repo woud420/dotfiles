@@ -86,7 +86,7 @@ terminal reloads, and automatic update scheduling.
 It can change:
 
 - **Skills:** Git-tracked files in `active` and `maintenance` skills are synced
-  to `~/.agents/skills`, `~/.codex/skills`, and `~/.claude/skills`. Registered
+  to `~/.agents/skills` and `~/.claude/skills`. Registered
   `candidate` skills are refreshed only in destinations where that candidate
   is already installed. Changed files are backed up; target-only content remains.
 - **Manual helpers:** `sudo-askpass` and `vim-plug-update` are added under
