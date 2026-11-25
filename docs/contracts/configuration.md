@@ -22,6 +22,7 @@ preserving mode has its own limited [scope](installer.md#preserving-an-existing-
 | `linux/arch/.config/kitty/*.conf` | `~/.config/kitty/` | Arch theme overrides |
 | `common/htop/htoprc` | `~/.config/htop/htoprc` | htop settings |
 | `.vim/` configuration files and `settings/*.vim` | `~/.vim/` | Vimscript, mappings, plugins, and CoC JSON |
+| `linux/arch/.vim/settings/theme-overlay.vim` or `darwin/.vim/settings/theme-overlay.vim` | `~/.vim/settings/theme-overlay.vim` | Selected by OS: Arch personal-pink background, macOS stock Mocha; none elsewhere. Not loaded inside SSH sessions |
 | (none) | `~/.vimrc` | Backed up and removed: Vim ignores `~/.vim/vimrc` while any `~/.vimrc` exists |
 | `common/nvim/init.vim` | `~/.config/nvim/init.vim` | Loads `~/.vim/vimrc` |
 | `.vim/coc-settings.json` | `~/.config/nvim/coc-settings.json` | CoC settings shared with Vim |

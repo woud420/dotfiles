@@ -124,7 +124,7 @@ jobs:
             test -f ~/.config/kitty/current-theme.conf && echo "PASS: current-theme.conf"
 
             echo "=== Arch desktop configs ==="
-            for f in .config/sway/config .config/waybar/config .config/gtk-3.0/settings.ini .config/gtk-4.0/settings.ini; do
+            for f in .config/sway/config .config/waybar/config .config/gtk-3.0/settings.ini .config/gtk-4.0/settings.ini .vim/settings/theme-overlay.vim; do
               test -f ~/$f && echo "PASS: $f" || { echo "FAIL: $f"; exit 1; }
             done
 
@@ -357,6 +357,10 @@ jobs:
           grep -q "Catppuccin-Mocha" ~/.config/kitty/current-theme.conf && echo "PASS: macOS Catppuccin Mocha theme"
           ! grep -q "personal-pink" ~/.config/kitty/current-theme.conf && echo "PASS: no personal-pink leak on macOS"
           grep -q "FiraCode" ~/.config/kitty/kitty.conf && echo "PASS: FiraCode font (macOS)"
+
+          echo "=== Vim theme overlay ==="
+          cmp -s ~/.vim/settings/theme-overlay.vim darwin/.vim/settings/theme-overlay.vim \
+            && echo "PASS: macOS Vim theme overlay" || { echo "FAIL: expected darwin/.vim/settings/theme-overlay.vim"; exit 1; }
 
       - name: Validate Vim config
         run: |

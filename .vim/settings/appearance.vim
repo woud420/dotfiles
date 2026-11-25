@@ -8,6 +8,15 @@ set laststatus=2
 let g:catppuccin_flavour = 'mocha' " latte, frappe, macchiato, mocha
 silent! colorscheme catppuccin_mocha
 
+" Platform theme overlay, copied here by install.sh from the current platform's
+" layer: linux/arch/.vim/settings/ (personal-pink) or darwin/.vim/settings/
+" (stock Mocha). Other platforms have none and keep stock Mocha.
+" Skipped over SSH: the overlay matches this machine's terminal, but an SSH
+" session is drawn in the client's terminal, so stock Mocha is the safer guess.
+if empty($SSH_CONNECTION) && filereadable(expand('~/.vim/settings/theme-overlay.vim'))
+  source ~/.vim/settings/theme-overlay.vim
+endif
+
 " catppuccin/vim predates tree-sitter captures. Neovim links most @captures to
 " the classic groups, but @variable (and the .parameter/.member captures that
 " inherit from it) keep Neovim's stock grey; use the theme's text colour instead.
