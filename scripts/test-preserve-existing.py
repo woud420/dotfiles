@@ -212,6 +212,11 @@ case "$*" in
 esac
 ''', executable=True)
     full = temp / 'full-install'
+    # On Arch the installer themes Firefox, and --check fails without a profile
+    write(full / '.mozilla/firefox/profiles.ini',
+          '[InstallTest]\nDefault=test.default\nLocked=1\n\n'
+          '[Profile0]\nName=default\nIsRelative=1\nPath=test.default\nDefault=1\n')
+    (full / '.mozilla/firefox/test.default').mkdir()
     invoke(full, '--no-packages')
     for destination in [full / '.agents/skills', full / '.claude/skills']:
         for name in ['tool-active', 'tool-maintenance']:
