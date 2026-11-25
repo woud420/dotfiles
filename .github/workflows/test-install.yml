@@ -352,11 +352,12 @@ jobs:
           done
 
           echo "=== Kitty ==="
-          test -f ~/.config/kitty/kitty.conf && echo "PASS: kitty.conf"
-          test -f ~/.config/kitty/current-theme.conf && echo "PASS: current-theme.conf"
-          grep -q "Catppuccin-Mocha" ~/.config/kitty/current-theme.conf && echo "PASS: macOS Catppuccin Mocha theme"
-          ! grep -q "personal-pink" ~/.config/kitty/current-theme.conf && echo "PASS: no personal-pink leak on macOS"
-          grep -q "FiraCode" ~/.config/kitty/kitty.conf && echo "PASS: FiraCode font (macOS)"
+          # A failed check in `check && echo` doesn't trip set -e, so each one exits explicitly.
+          test -f ~/.config/kitty/kitty.conf && echo "PASS: kitty.conf" || { echo "FAIL: kitty.conf missing"; exit 1; }
+          test -f ~/.config/kitty/current-theme.conf && echo "PASS: current-theme.conf" || { echo "FAIL: current-theme.conf missing"; exit 1; }
+          grep -q "Catppuccin-Mocha" ~/.config/kitty/current-theme.conf && echo "PASS: macOS Catppuccin Mocha theme" || { echo "FAIL: expected the Catppuccin Mocha theme"; exit 1; }
+          ! grep -q "personal-pink" ~/.config/kitty/current-theme.conf && echo "PASS: no personal-pink leak on macOS" || { echo "FAIL: personal-pink theme leaked onto macOS"; exit 1; }
+          grep -q "FiraCode" ~/.config/kitty/kitty.conf && echo "PASS: FiraCode font (macOS)" || { echo "FAIL: expected FiraCode in kitty.conf"; exit 1; }
 
           echo "=== Vim theme overlay ==="
           cmp -s ~/.vim/settings/theme-overlay.vim darwin/.vim/settings/theme-overlay.vim \
