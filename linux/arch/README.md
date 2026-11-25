@@ -1,7 +1,8 @@
 # Arch Linux configuration
 
 The Arch layer contains native and AUR package lists, SwayFX/Waybar/GTK/
-Rofi/Mako configuration, the personal-pink Kitty overlay, and Firefox styling.
+Rofi/Mako configuration, the personal-pink Kitty and Vim overlays, and Firefox
+styling.
 
 - [Desktop setup and verification](../../docs/operations/arch-desktop.md).
 - [Package inventory](packages.list) and [AUR inventory](packages-aur.list).

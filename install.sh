@@ -1013,6 +1013,18 @@ install_vim_config() {
         fi
     done
 
+    # Platform theme overlay: personal-pink on Arch (as in kitty), stock Mocha
+    # on macOS. Other platforms have none.
+    local theme_overlay=""
+    if is_arch_family; then
+        theme_overlay="$DOTFILES_DIR/linux/arch/.vim/settings/theme-overlay.vim"
+    elif [[ "$OS" == "macos" ]]; then
+        theme_overlay="$DOTFILES_DIR/darwin/.vim/settings/theme-overlay.vim"
+    fi
+    if [[ -n "$theme_overlay" ]]; then
+        install_file "$theme_overlay" "$HOME/.vim/settings/theme-overlay.vim"
+    fi
+
     if state_only_mode; then
         return 0
     fi

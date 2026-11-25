@@ -188,14 +188,22 @@ grep -q '^stale vimrc$' "$INSTALL_BACKUP/files/.vimrc" || fail "stale ~/.vimrc w
 grep -q 'IdentityFile ~/.ssh/github_ed25519' "$INSTALL_BACKUP/files/.ssh/config" \
     || fail "machine-local SSH config was not backed up"
 
+os_id=""
 if [[ -f /etc/os-release ]]; then
     # shellcheck disable=SC1091
     source /etc/os-release
-    if [[ "${ID,,}" == "arch" ]]; then
-        assert_regular_copy "$TEST_HOME/.mozilla/firefox/test.default/user.js" "$ROOT_DIR/linux/arch/firefox/user.js"
-        assert_regular_copy "$TEST_HOME/.mozilla/firefox/test.default/chrome/userChrome.css" "$ROOT_DIR/linux/arch/firefox/chrome/userChrome.css"
-        assert_regular_copy "$TEST_HOME/.mozilla/firefox/test.default/chrome/userContent.css" "$ROOT_DIR/linux/arch/firefox/chrome/userContent.css"
-    fi
+    os_id="${ID,,}"
+fi
+if [[ "$os_id" == "arch" ]]; then
+    assert_regular_copy "$TEST_HOME/.mozilla/firefox/test.default/user.js" "$ROOT_DIR/linux/arch/firefox/user.js"
+    assert_regular_copy "$TEST_HOME/.mozilla/firefox/test.default/chrome/userChrome.css" "$ROOT_DIR/linux/arch/firefox/chrome/userChrome.css"
+    assert_regular_copy "$TEST_HOME/.mozilla/firefox/test.default/chrome/userContent.css" "$ROOT_DIR/linux/arch/firefox/chrome/userContent.css"
+    assert_regular_copy "$TEST_HOME/.vim/settings/theme-overlay.vim" "$ROOT_DIR/linux/arch/.vim/settings/theme-overlay.vim"
+elif [[ "$(uname -s)" == "Darwin" ]]; then
+    assert_regular_copy "$TEST_HOME/.vim/settings/theme-overlay.vim" "$ROOT_DIR/darwin/.vim/settings/theme-overlay.vim"
+else
+    [[ ! -e "$TEST_HOME/.vim/settings/theme-overlay.vim" ]] \
+        || fail "a Vim theme overlay was installed on a platform without one"
 fi
 
 if ! run_installer "$TEST_HOME" "$INSTALL_BACKUP" --check > "$TMP_DIR/check-clean.log" 2>&1; then

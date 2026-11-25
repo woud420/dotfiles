@@ -29,6 +29,12 @@ endfunction
 
 call s:Check('colorscheme', get(g:, 'colors_name', '') ==# 'catppuccin_mocha', 'got ' . get(g:, 'colors_name', ''))
 
+" Arch gets the personal-pink plum base outside SSH; everything else keeps
+" stock Mocha.
+let s:expected_bg = filereadable('/etc/arch-release') && empty($SSH_CONNECTION) ? '#2a1e2e' : '#1e1e2e'
+let s:normal_bg = tolower(synIDattr(hlID('Normal'), 'bg#'))
+call s:Check('Normal background', s:normal_bg ==# s:expected_bg, 'expected ' . s:expected_bg . ', got ' . s:normal_bg)
+
 for s:command in ['CocList', 'Files', 'GFiles', 'RG', 'Format']
   call s:Check('command ' . s:command, s:HasCommand(s:command), 'missing')
 endfor

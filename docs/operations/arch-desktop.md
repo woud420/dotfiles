@@ -16,8 +16,10 @@ Its configuration lives in [`linux/arch/`](../../linux/arch/).
 | Firefox | [`linux/arch/firefox/`](../../linux/arch/firefox/) |
 
 The desktop uses a purple/pink palette and FiraCode Nerd Font. The Kitty overlay
-uses the personal-pink plum background `#2A1E2E`; macOS and other Linux platforms
-retain the shared theme. Package and runtime files are authoritative for versions
+uses the personal-pink plum background `#2A1E2E`, and the
+[Vim theme overlay](../../linux/arch/.vim/settings/theme-overlay.vim) gives Vim
+and Neovim the same background; macOS and other Linux platforms retain the
+shared theme. Package and runtime files are authoritative for versions
 and exact visual settings.
 
 ## Install and verify

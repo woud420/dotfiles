@@ -20,11 +20,11 @@ jobs:
       - name: Shell syntax check (bash -n)
         run: |
           echo "=== Checking shell configs ==="
-          bash -n common/shell/.bashrc && echo "PASS: .bashrc"
-          bash -n common/shell/.bashrc.server && echo "PASS: .bashrc.server"
+          fail=0
+          bash -n common/shell/.bashrc && echo "PASS: .bashrc" || { echo "FAIL: .bashrc"; fail=1; }
+          bash -n common/shell/.bashrc.server && echo "PASS: .bashrc.server" || { echo "FAIL: .bashrc.server"; fail=1; }
 
           echo "=== Checking shell functions ==="
-          fail=0
           for f in common/shell-functions/*.sh; do
             bash -n "$f" && echo "PASS: $(basename $f)" || { echo "FAIL: $(basename $f)"; fail=1; }
           done
@@ -38,7 +38,7 @@ jobs:
       - name: Zsh syntax check
         run: |
           sudo apt-get update && sudo apt-get install -y zsh
-          zsh -n common/shell/.zshrc && echo "PASS: .zshrc"
+          zsh -n common/shell/.zshrc && echo "PASS: .zshrc" || { echo "FAIL: .zshrc"; exit 1; }
 
       - name: ShellCheck
         uses: ludeeus/action-shellcheck@master
@@ -53,11 +53,11 @@ jobs:
 
       - name: Vim CoC settings JSON validation
         run: |
-          python3 -c "import json; json.load(open('.vim/coc-settings.json'))" && echo "PASS: coc-settings.json"
+          python3 -c "import json; json.load(open('.vim/coc-settings.json'))" && echo "PASS: coc-settings.json" || { echo "FAIL: coc-settings.json"; exit 1; }
 
       - name: install.sh syntax check
         run: |
-          bash -n install.sh && echo "PASS: install.sh"
+          bash -n install.sh && echo "PASS: install.sh" || { echo "FAIL: install.sh"; exit 1; }
 
       - name: Installer smoke test (temp HOME)
         run: ./scripts/test-install.sh
@@ -116,15 +116,15 @@ jobs:
             for f in .vim/vimrc .vim/plugins.vim .vim/mappings.vim .vim/settings.vim; do
               test -f ~/$f && ! test -L ~/$f && echo "PASS: $f (copied)" || { echo "FAIL: $f"; exit 1; }
             done
-            ! test -e ~/.vimrc && echo "PASS: no ~/.vimrc shadowing ~/.vim/vimrc"
-            ls ~/.config/shell-functions/*.sh > /dev/null && echo "PASS: shell-functions deployed"
+            ! test -e ~/.vimrc && echo "PASS: no ~/.vimrc shadowing ~/.vim/vimrc" || { echo "FAIL: ~/.vimrc shadows ~/.vim/vimrc"; exit 1; }
+            ls ~/.config/shell-functions/*.sh > /dev/null && echo "PASS: shell-functions deployed" || { echo "FAIL: shell-functions missing"; exit 1; }
 
             echo "=== Kitty ==="
-            test -f ~/.config/kitty/kitty.conf && echo "PASS: kitty.conf"
-            test -f ~/.config/kitty/current-theme.conf && echo "PASS: current-theme.conf"
+            test -f ~/.config/kitty/kitty.conf && echo "PASS: kitty.conf" || { echo "FAIL: kitty.conf missing"; exit 1; }
+            test -f ~/.config/kitty/current-theme.conf && echo "PASS: current-theme.conf" || { echo "FAIL: current-theme.conf missing"; exit 1; }
 
             echo "=== Arch desktop configs ==="
-            for f in .config/sway/config .config/waybar/config .config/gtk-3.0/settings.ini .config/gtk-4.0/settings.ini; do
+            for f in .config/sway/config .config/waybar/config .config/gtk-3.0/settings.ini .config/gtk-4.0/settings.ini .vim/settings/theme-overlay.vim; do
               test -f ~/$f && echo "PASS: $f" || { echo "FAIL: $f"; exit 1; }
             done
 
@@ -134,7 +134,7 @@ jobs:
             done
 
             echo "=== Audit log ==="
-            ls ~/.dotfiles-backup-*/install-audit.tsv > /dev/null && echo "PASS: install audit written"
+            ls ~/.dotfiles-backup-*/install-audit.tsv > /dev/null && echo "PASS: install audit written" || { echo "FAIL: install audit missing"; exit 1; }
           '
 
       - name: Verify live files match the repository
@@ -246,20 +246,20 @@ jobs:
             done
 
             echo "=== Kitty ==="
-            test -f ~/.config/kitty/kitty.conf && echo "PASS: kitty.conf"
-            test -f ~/.config/kitty/current-theme.conf && echo "PASS: current-theme.conf"
-            grep -q "Catppuccin-Mocha" ~/.config/kitty/current-theme.conf && echo "PASS: Catppuccin Mocha theme"
-            ! grep -q "personal-pink" ~/.config/kitty/current-theme.conf && echo "PASS: no personal-pink leak on non-arch"
+            test -f ~/.config/kitty/kitty.conf && echo "PASS: kitty.conf" || { echo "FAIL: kitty.conf missing"; exit 1; }
+            test -f ~/.config/kitty/current-theme.conf && echo "PASS: current-theme.conf" || { echo "FAIL: current-theme.conf missing"; exit 1; }
+            grep -q "Catppuccin-Mocha" ~/.config/kitty/current-theme.conf && echo "PASS: Catppuccin Mocha theme" || { echo "FAIL: expected the Catppuccin Mocha theme"; exit 1; }
+            ! grep -q "personal-pink" ~/.config/kitty/current-theme.conf && echo "PASS: no personal-pink leak on non-arch" || { echo "FAIL: personal-pink theme leaked onto non-arch"; exit 1; }
 
             echo "=== No desktop configs on non-arch ==="
-            ! test -e ~/.config/sway && echo "PASS: sway config not installed"
+            ! test -e ~/.config/sway && echo "PASS: sway config not installed" || { echo "FAIL: sway config installed on non-arch"; exit 1; }
           '
 
       - name: Validate shell configs
         run: |
           su testuser -c '
-            bash -n ~/.bashrc && echo "PASS: .bashrc syntax"
-            zsh -n ~/.zshrc && echo "PASS: .zshrc syntax"
+            bash -n ~/.bashrc && echo "PASS: .bashrc syntax" || { echo "FAIL: .bashrc syntax"; exit 1; }
+            zsh -n ~/.zshrc && echo "PASS: .zshrc syntax" || { echo "FAIL: .zshrc syntax"; exit 1; }
             for f in ~/.config/shell-functions/*.sh; do
               bash -n "$f" && echo "PASS: $(basename $f)" || { echo "FAIL: $(basename $f)"; exit 1; }
             done
@@ -315,8 +315,11 @@ jobs:
           ./install.sh --no-packages 2>&1 | tee /tmp/install.log
 
       - name: Validate Neovim config (headless load with plugins)
+        # bash (not the default bash -e) adds pipefail, so the Lua check's
+        # exit status survives the pipe into tr.
+        shell: bash
         run: |
-          nvim --version | head -1
+          nvim --version | head -1 || true  # display only; head may close the pipe early
           # The first headless start builds the tree-sitter parsers synchronously
           # (progress lines); anything else on startup is an error.
           output=$(nvim --headless -c 'qa!' 2>&1 | tr -d '\r' | grep -v '^\[nvim-treesitter' || true)
@@ -327,12 +330,14 @@ jobs:
             -c 'qa!' 2>&1 | tr -d '\r'
 
       - name: Build tree-sitter parsers (macOS toolchain)
+        # pipefail, as above: the Lua check's exit status must survive the greps.
+        shell: bash
         run: |
           nvim --headless \
             -c 'lua local ts = require("nvim-treesitter"); local want = vim.g.dotfiles_treesitter_languages; ts.install(want):wait(600000); local have = ts.get_installed(); local miss = {}; for _, l in ipairs(want) do if not vim.list_contains(have, l) then miss[#miss + 1] = l end end; if #miss > 0 then io.stderr:write("FAIL: parsers missing " .. table.concat(miss, " ") .. "\n"); os.exit(1) end; print("PASS: all " .. #want .. " configured parsers installed: " .. table.concat(have, " "))' \
             -c 'qa!' 2>&1 | tr -d '\r' | grep -v '^\[nvim-treesitter' | grep -v '^\s*$'
           nvim --headless "+checkhealth nvim-treesitter" "+w! /tmp/ts-health.txt" "+qa!" 2>/dev/null
-          grep -E 'OK|ERROR|WARNING' /tmp/ts-health.txt | head -20
+          grep -E 'OK|ERROR|WARNING' /tmp/ts-health.txt | head -20 || true  # display only
           ! grep -q 'ERROR' /tmp/ts-health.txt || { echo "FAIL: nvim-treesitter health reports errors"; exit 1; }
 
       - name: Editor parity (Vim and Neovim load the same config)
@@ -352,11 +357,16 @@ jobs:
           done
 
           echo "=== Kitty ==="
-          test -f ~/.config/kitty/kitty.conf && echo "PASS: kitty.conf"
-          test -f ~/.config/kitty/current-theme.conf && echo "PASS: current-theme.conf"
-          grep -q "Catppuccin-Mocha" ~/.config/kitty/current-theme.conf && echo "PASS: macOS Catppuccin Mocha theme"
-          ! grep -q "personal-pink" ~/.config/kitty/current-theme.conf && echo "PASS: no personal-pink leak on macOS"
-          grep -q "FiraCode" ~/.config/kitty/kitty.conf && echo "PASS: FiraCode font (macOS)"
+          # A failed check in `check && echo` doesn't trip set -e, so each one exits explicitly.
+          test -f ~/.config/kitty/kitty.conf && echo "PASS: kitty.conf" || { echo "FAIL: kitty.conf missing"; exit 1; }
+          test -f ~/.config/kitty/current-theme.conf && echo "PASS: current-theme.conf" || { echo "FAIL: current-theme.conf missing"; exit 1; }
+          grep -q "Catppuccin-Mocha" ~/.config/kitty/current-theme.conf && echo "PASS: macOS Catppuccin Mocha theme" || { echo "FAIL: expected the Catppuccin Mocha theme"; exit 1; }
+          ! grep -q "personal-pink" ~/.config/kitty/current-theme.conf && echo "PASS: no personal-pink leak on macOS" || { echo "FAIL: personal-pink theme leaked onto macOS"; exit 1; }
+          grep -q "FiraCode" ~/.config/kitty/kitty.conf && echo "PASS: FiraCode font (macOS)" || { echo "FAIL: expected FiraCode in kitty.conf"; exit 1; }
+
+          echo "=== Vim theme overlay ==="
+          cmp -s ~/.vim/settings/theme-overlay.vim darwin/.vim/settings/theme-overlay.vim \
+            && echo "PASS: macOS Vim theme overlay" || { echo "FAIL: expected darwin/.vim/settings/theme-overlay.vim"; exit 1; }
 
       - name: Validate Vim config
         run: |

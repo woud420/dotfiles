@@ -73,7 +73,13 @@ macOS Kitty configuration lives in [`darwin/kitty.conf`](../../darwin/kitty.conf
 Linux uses [`linux/common/kitty.conf`](../../linux/common/kitty.conf).
 Shared named themes live in [`common/themes/`](../../common/themes/).
 Arch's selected theme is an overlay under
-[`linux/arch/.config/kitty/`](../../linux/arch/.config/kitty/).
+[`linux/arch/.config/kitty/`](../../linux/arch/.config/kitty/). Vim and Neovim
+load a per-platform theme overlay: the Arch one
+([`linux/arch/.vim/settings/theme-overlay.vim`](../../linux/arch/.vim/settings/theme-overlay.vim))
+matches the Kitty background, and the macOS one
+([`darwin/.vim/settings/theme-overlay.vim`](../../darwin/.vim/settings/theme-overlay.vim))
+keeps stock Mocha. Inside SSH sessions no overlay loads, because the session is
+drawn in the client's terminal; Vim uses stock Mocha there.
 
 Make shared changes in `common/` and platform changes in `darwin/` or `linux/`.
 Live files are copies: edit repository sources when a change should survive
